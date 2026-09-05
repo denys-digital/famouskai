@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/denys-digital/famouskai/discussions
+    about: For questions, ideas, or open-ended discussion — not a bug or a concrete feature request.
+  - name: Security vulnerability
+    url: https://github.com/denys-digital/famouskai/security/advisories/new
+    about: Please do NOT open a public issue for security vulnerabilities. Use this private channel instead.
