@@ -1,0 +1,589 @@
+<!--
+    /*
+     * Famouskai Editor - Local-First PWA IDE
+     * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
+     *
+     * This program is free software: you can redistribute it and/or modify
+     * it under the terms of the GNU Affero General Public License as published
+     * by the Free Software Foundation, either version 3 of the License, or
+     * (at your option) any later version.
+     *
+     * This program is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+     * GNU Affero General Public License for more details.
+     *
+     * You should have received a copy of the GNU Affero General Public License
+     * along with this program. If not, see <https://www.gnu.org/licenses/>.
+     *
+     * -------------------------------------------------------------------------
+     * COMMERCIAL LICENSE
+     * For commercial integration without the AGPLv3 strict open-source 
+     * restrictions, please contact the author to acquire a commercial license.
+     * -------------------------------------------------------------------------
+     */
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Vendor Updater</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .tabs {
+            display: flex;
+            background-color: #f3f4f6;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: #2563eb;
+            background-color: white;
+            border-bottom: 2px solid #2563eb;
+        }
+        .tab-content {
+            display: none;
+            padding: 2rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        select {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            width: 250px;
+            background-color: white;
+        }
+        input[type="text"] {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            width: 150px;
+        }
+        .primary-btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: block;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .primary-btn:hover { background-color: #1d4ed8; }
+        .primary-btn:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .terminal {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #1f2937;
+            color: #10b981;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-blue {
+            color: #60a5fa;
+        }
+        .error { color: #ef4444; }
+        .info { color: #60a5fa; }
+        .success { color: #10b981; }
+        .folder-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            display: none;
+            font-size: 0.9rem;
+            color: #1e3a8a;
+        }
+        /* Snippet specific styles */
+        .snippet-box {
+            display: flex;
+            align-items: center;
+            background: #1f2937;
+            border-radius: 6px;
+            padding: 0.5rem;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+        .snippet-box code {
+            flex: 1;
+            color: #10b981;
+            font-family: monospace;
+            padding: 0.5rem;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .copy-btn {
+            background-color: #374151;
+            color: white;
+            border: 1px solid #4b5563;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #4b5563;
+        }
+    </style>
+    <!-- Loading the central configuration SSOT -->
+    <script src="vendor-config.js"></script>
+</head>
+<body>
+
+    <div class="card">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('downloader')">Downloader</button>
+            <button class="tab-btn" onclick="switchTab('log')">Log File</button>
+            <button class="tab-btn" onclick="switchTab('info')">Info File</button>
+            <button class="tab-btn" onclick="switchTab('snippets')">Doc Snippets</button>
+        </div>
+
+        <div id="downloader" class="tab-content active">
+            <h2 style="margin-top: 0;" id="app-title">Central Vendor Updater</h2>
+            
+            <div class="form-group">
+                <label for="vendor-select"><strong>Select Library:</strong></label>
+                <select id="vendor-select"></select>
+            </div>
+            
+            <p>Latest version available on API: <strong id="version-display">Fetching...</strong></p>
+            
+            <div class="form-group">
+                <label for="version-input">Target Version to download:</label>
+                <input type="text" id="version-input" placeholder="e.g. 1.44.0">
+            </div>
+
+            <button id="download-btn" class="primary-btn" disabled>Select Target Folder & Download</button>
+            
+            <div id="folder-info" class="folder-info">
+                <strong>Selected Directory:</strong> <span id="folder-name"></span>
+                <br>
+                <em>(Note: For security reasons, web browsers do not expose the absolute local path)</em>
+            </div>
+
+            <div id="status-log" class="terminal"></div>
+        </div>
+
+        <div id="log" class="tab-content">
+            <h2 style="margin-top: 0;">Generated Log File</h2>
+            <p>This content is written locally as <code>_vendor-update.log</code></p>
+            <div id="log-viewer" class="terminal">No log generated yet. Run a download first.</div>
+        </div>
+
+        <div id="info" class="tab-content">
+            <h2 style="margin-top: 0;">Generated Info File</h2>
+            <p>This content is written locally as <code>_VENDOR-INFO.md</code></p>
+            <div id="info-viewer" class="terminal terminal-blue">No info generated yet. Run a download first.</div>
+        </div>
+
+        <div id="snippets" class="tab-content">
+            <h2 style="margin-top: 0;">Documentation Snippets</h2>
+            <p>Copy these snippets to update the root project documentation.</p>
+            
+            <div id="snippets-placeholder" class="terminal terminal-blue">No snippets generated yet. Run a download first.</div>
+            
+            <div id="snippets-content" style="display: none;">
+                <h3 style="font-size: 1rem; color: #374151; margin-bottom: 0.5rem;">THIRD-PARTY-NOTICES.md</h3>
+                <div class="snippet-box">
+                    <code id="code-notices"></code>
+                    <button onclick="copySnippet('code-notices')" class="copy-btn">Copy</button>
+                </div>
+
+                <h3 style="font-size: 1rem; color: #374151; margin-bottom: 0.5rem;">README.md Table Row</h3>
+                <div class="snippet-box">
+                    <code id="code-readme"></code>
+                    <button onclick="copySnippet('code-readme')" class="copy-btn">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentVendor = null;
+
+        // UI Elements
+        const logElement = document.getElementById('status-log');
+        const btnElement = document.getElementById('download-btn');
+        const versionInput = document.getElementById('version-input');
+        const versionDisplay = document.getElementById('version-display');
+        const logViewer = document.getElementById('log-viewer');
+        const infoViewer = document.getElementById('info-viewer');
+        const folderInfo = document.getElementById('folder-info');
+        const folderNameDisplay = document.getElementById('folder-name');
+        const vendorSelect = document.getElementById('vendor-select');
+        const snippetsPlaceholder = document.getElementById('snippets-placeholder');
+        const snippetsContent = document.getElementById('snippets-content');
+
+        /**
+         * Switch between UI tabs.
+         */
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        /**
+         * Utility to append log messages to the UI terminal.
+         */
+        function log(message, type = 'info', prefix = '> ') {
+            const span = document.createElement('span');
+            span.className = type;
+            span.textContent = `${prefix}${message}\n`;
+            logElement.appendChild(span);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        /**
+         * Initialize the vendor dropdown and handle selection change
+         */
+        function initVendorSelect() {
+            if (typeof FAMOUSKAI_VENDORS === 'undefined' || FAMOUSKAI_VENDORS.length === 0) {
+                log('Error: FAMOUSKAI_VENDORS not found in vendor-config.js.', 'error');
+                return;
+            }
+
+            FAMOUSKAI_VENDORS.forEach((vendor, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = vendor.name;
+                vendorSelect.appendChild(option);
+            });
+
+            vendorSelect.addEventListener('change', (e) => {
+                currentVendor = FAMOUSKAI_VENDORS[e.target.value];
+                document.getElementById('app-title').textContent = `${currentVendor.name} Updater`;
+                fetchLatestVersion();
+            });
+
+            // Trigger initialization for the first vendor
+            currentVendor = FAMOUSKAI_VENDORS[0];
+            document.getElementById('app-title').textContent = `${currentVendor.name} Updater`;
+            fetchLatestVersion();
+        }
+
+        /**
+         * Fetches the latest version of the package from the jsDelivr API.
+         */
+        async function fetchLatestVersion() {
+            if (!currentVendor) return;
+            
+            btnElement.disabled = true;
+            versionDisplay.textContent = 'Fetching...';
+            
+            try {
+                // Visual separator for the log history
+                log('\n--------------------------------------------------', 'info', '');
+                log(`[ TARGET: ${currentVendor.name.toUpperCase()} ]`, 'info', '');
+                log('--------------------------------------------------', 'info', '');
+                
+                log(`Checking for the latest version of ${currentVendor.npmPackage}...`, 'info');
+                const response = await fetch(`https://data.jsdelivr.com/v1/package/npm/${currentVendor.npmPackage}`);
+                
+                if (!response.ok) throw new Error('Failed to fetch version from registry.');
+                
+                const data = await response.json();
+                const latestVersion = data.tags.latest;
+                
+                versionDisplay.textContent = latestVersion;
+                versionInput.value = latestVersion;
+                btnElement.disabled = false;
+                
+                log(`Latest version retrieved: ${latestVersion}.`, 'success');
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                versionDisplay.textContent = 'Error fetching version';
+                btnElement.disabled = false;
+            }
+        }
+
+        /**
+         * Generates the content for the physical log file.
+         */
+        function generateLogFileContent(version, processedFiles, totalRequested, vendor) {
+            const now = new Date().toISOString();
+            let content = `--- ${vendor.name} Update Log ---\n`;
+            content += `Timestamp : ${now}\n`;
+            content += `Package   : ${vendor.npmPackage}\n`;
+            content += `Version   : ${version}\n`;
+            content += `User Agent: ${navigator.userAgent}\n`;
+            content += `Summary   : ${totalRequested} files requested, ${processedFiles.length} files downloaded and saved locally.\n`;
+            content += `Status    : Success\n\n`;
+            content += `Files Processed:\n`;
+            
+            processedFiles.forEach((file, index) => {
+                content += ` ${index + 1}. ${file.name}\n   Source: ${file.url}\n\n`;
+            });
+            
+            return content;
+        }
+
+        /**
+         * Generates the content for the _VENDOR-INFO.md file
+         */
+        function generateVendorInfoContent(vendor, version) {
+            const fileListMd = vendor.files.map(f => `* \`${f}\``).join('\n');
+            
+            return `# Vendor Info: ${vendor.name}
+
+- **Project**: [${vendor.description}](${vendor.repoUrl})
+- **Version**: ${version}
+- **License**: ${vendor.license}
+- **Distribution**: [jsDelivr npm registry](https://www.jsdelivr.com/package/npm/${vendor.npmPackage})
+
+**How to update**
+1. Open the central \`vendor/updater.html\` tool in your browser.
+2. Select **${vendor.name}** from the dropdown menu.
+3. Click "Download" and select this local directory (\`vendor/${vendor.id}/\`) when prompted.
+4. The tool will automatically update this \`_VENDOR-INFO.md\` file.
+5. Update the version number in the root [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md) and [README.md](../../README.md).
+
+**Files maintained by the updater**
+${fileListMd}
+`;
+        }
+
+        /**
+         * Populates the Doc Snippets tab
+         */
+        function generateDocSnippets(vendor, version) {
+            const noticesSnippet = `*   **${vendor.name}** (v${version}) - ${vendor.copyright}`;
+            
+            const readmeSnippet = `| **[${vendor.name}](${vendor.repoUrl})** | ${version} | ${vendor.role} | ${vendor.license} |`;
+            
+            document.getElementById('code-notices').textContent = noticesSnippet;
+            document.getElementById('code-readme').textContent = readmeSnippet;
+            
+            snippetsPlaceholder.style.display = 'none';
+            snippetsContent.style.display = 'block';
+        }
+
+        /**
+         * Copies text from an element to the clipboard
+         */
+        function copySnippet(elementId) {
+            const codeElement = document.getElementById(elementId);
+            const text = codeElement.textContent;
+            
+            // On cible directement le bouton situé juste après la balise code
+            const btn = codeElement.nextElementSibling;
+
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = btn.textContent;
+                
+                // Effet visuel de confirmation
+                btn.textContent = '✓ Copied!';
+                btn.style.backgroundColor = '#10b981';
+                btn.style.borderColor = '#10b981';
+                btn.style.color = 'white';
+                
+                // Retour à l'état normal après 2 secondes
+                setTimeout(() => { 
+                    btn.textContent = originalText; 
+                    btn.style.backgroundColor = '';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                log('Failed to copy to clipboard: ' + err.message, 'error');
+            });
+        }
+
+        /**
+         * Recursively creates and returns the directory handle for a given relative path.
+         */
+        async function ensureDirectoryHandle(baseHandle, relativePath) {
+            const parts = relativePath.split('/').filter(p => p);
+            let currentHandle = baseHandle;
+            // Iterate up to the second-to-last part (excluding the filename itself)
+            for (let i = 0; i < parts.length - 1; i++) {
+                currentHandle = await currentHandle.getDirectoryHandle(parts[i], { create: true });
+            }
+            return currentHandle;
+        }
+
+        /**
+         * Handles the download process using the File System Access API.
+         */
+        async function startDownload() {
+            const targetVersion = versionInput.value.trim();
+            if (!targetVersion || !currentVendor) {
+                log('Please specify a valid version number and vendor.', 'error');
+                return;
+            }
+
+            try {
+                const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                
+                if (dirHandle.name !== currentVendor.npmPackage) {
+                    log(`Security check failed: Selected folder is "${dirHandle.name}", but expected "${currentVendor.npmPackage}". Process aborted.`, 'error');
+                    return;
+                }
+                
+                folderNameDisplay.textContent = dirHandle.name;
+                folderInfo.style.display = 'block';
+                log(`Target directory selected: ${dirHandle.name}`, 'info');
+                
+                btnElement.disabled = true;
+                
+                const baseUrl = currentVendor.getBaseUrl(targetVersion);
+                let downloadedFiles = [];
+                let filesToDownload = [];
+
+                // 1. STRATEGY ROUTING
+                if (currentVendor.strategy === "regex-tree") {
+                    log('Using regex-tree strategy. Fetching remote file tree...', 'info');
+                    const treeResponse = await fetch(`https://data.jsdelivr.com/v1/package/npm/${currentVendor.npmPackage}@${targetVersion}/flat`);
+                    if (!treeResponse.ok) throw new Error('Failed to fetch file tree from jsDelivr.');
+                    
+                    const treeData = await treeResponse.json();
+                    const keepRegexes = currentVendor.keepPatterns.map(p => new RegExp(p));
+                    const ignoreRegexes = currentVendor.ignorePatterns.map(p => new RegExp(p));
+
+                    // Filter the tree based on keep and ignore patterns
+                    const filteredFiles = treeData.files.filter(file => {
+                        const name = file.name;
+                        const keeps = keepRegexes.some(r => r.test(name));
+                        const ignores = ignoreRegexes.some(r => r.test(name));
+                        return keeps && !ignores;
+                    });
+
+                    log(`Tree filtered: ${filteredFiles.length} files matched the criteria.`, 'info');
+
+                    filesToDownload = filteredFiles.map(f => ({
+                        remotePath: f.name,
+                        localPath: f.name.replace(currentVendor.basePath, ''),
+                        url: baseUrl + f.name
+                    }));
+                } else {
+                    filesToDownload = currentVendor.files.map(filename => ({
+                        remotePath: filename,
+                        localPath: filename,
+                        url: baseUrl + filename
+                    }));
+                }
+
+                const totalFiles = filesToDownload.length;
+
+                // 2. DOWNLOAD PIPELINE
+                for (let i = 0; i < totalFiles; i++) {
+                    const file = filesToDownload[i];
+                    const stepNumber = i + 1;
+                    
+                    log(`${stepNumber}. ${file.localPath} - downloading...`, 'info', '');
+                    
+                    const response = await fetch(file.url);
+                    if (!response.ok) {
+                        throw new Error(`Failed to download ${file.localPath} (HTTP ${response.status})`);
+                    }
+                    
+                    const blob = await response.blob();
+                    
+                    // Recursive directory creation
+                    const targetDirHandle = await ensureDirectoryHandle(dirHandle, file.localPath);
+                    const filename = file.localPath.split('/').pop();
+                    
+                    const fileHandle = await targetDirHandle.getFileHandle(filename, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    
+                    downloadedFiles.push({ name: file.localPath, url: file.url });
+                    log(`Successfully saved ${file.localPath}`, 'success');
+                }
+
+                // Dynamically update the vendor files array for the documentation generators
+                currentVendor.files = downloadedFiles.map(f => f.name);
+
+                // 3. GENERATE LOGS & DOCS
+                const LOG_FILE_NAME = '_vendor-update.log';
+                log(`Generating ${LOG_FILE_NAME}...`, 'info');
+                const logContent = generateLogFileContent(targetVersion, downloadedFiles, totalFiles, currentVendor);
+                const logFileHandle = await dirHandle.getFileHandle(LOG_FILE_NAME, { create: true });
+                const logWritable = await logFileHandle.createWritable();
+                await logWritable.write(logContent);
+                await logWritable.close();
+
+                const INFO_FILE_NAME = '_VENDOR-INFO.md';
+                log(`Generating ${INFO_FILE_NAME}...`, 'info');
+                const infoContent = generateVendorInfoContent(currentVendor, targetVersion);
+                const infoFileHandle = await dirHandle.getFileHandle(INFO_FILE_NAME, { create: true });
+                const infoWritable = await infoFileHandle.createWritable();
+                await infoWritable.write(infoContent);
+                await infoWritable.close();
+
+                generateDocSnippets(currentVendor, targetVersion);
+
+                logViewer.textContent = logContent;
+                infoViewer.textContent = infoContent;
+
+                log(`\nSummary: ${totalFiles} files requested, ${downloadedFiles.length} files downloaded and saved locally.`, 'success', '');
+                log('All operations completed successfully.', 'success', '');
+                
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    log('Directory selection was cancelled by the user.', 'error');
+                    folderInfo.style.display = 'none';
+                } else {
+                    log(`Error during execution: ${error.message}`, 'error');
+                }
+            } finally {
+                btnElement.disabled = false;
+            }
+        }
+
+        // Initialize listeners
+        btnElement.addEventListener('click', startDownload);
+        window.addEventListener('DOMContentLoaded', initVendorSelect);
+
+    </script>
+</body>
+</html>
