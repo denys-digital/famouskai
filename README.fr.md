@@ -20,13 +20,13 @@ Couplé à **Diffskai**, son outil natif de résolution de conflits, Famouskai g
 
 Famouskai est conçu pour être résilient. Pour garantir une véritable capacité de fonctionnement hors ligne, **toutes les dépendances sont embarquées localement** (aucun appel CDN). Consultez [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) pour les détails juridiques.
 
-| Bibliothèque | Rôle |
-| :--- | :--- |
-| **[Ace Editor](https://github.com/ajaxorg/ace)** | Moteur principal d'édition de texte (Coloration syntaxique) |
-| **[Monaco Editor](https://github.com/microsoft/monaco-editor)** | Utilisé exclusivement dans Diffskai pour la résolution de diffs |
-| **[Marked](https://github.com/markedjs/marked)** | Parseur Markdown ultra-rapide pour la prévisualisation en direct |
-| **[idb-keyval](https://github.com/jakearchibald/idb-keyval)** | Stockage IndexedDB basé sur des Promises |
-| **[js-beautify](https://github.com/beautifier/js-beautify)** | Outils de formatage de code et d'indentation |
+| Bibliothèque | Version | Rôle | Licence |
+| --- | --- | --- | --- |
+| **[Ace Editor](https://github.com/ajaxorg/ace)** | 1.44.0 | Moteur principal d'édition de texte (Coloration syntaxique) | BSD-3-Clause |
+| **[Monaco Editor](https://github.com/microsoft/monaco-editor)** | 0.56.0 | Utilisé exclusivement dans Diffskai pour la résolution de diffs | MIT |
+| **[Marked](https://github.com/markedjs/marked)** | 18.0.11 | Parseur Markdown ultra-rapide pour la prévisualisation en direct | MIT |
+| **[js-beautify](https://github.com/beautifier/js-beautify)** | 2.0.3 | Outils de formatage de code et d'indentation | MIT |
+| **[idb-keyval](https://github.com/jakearchibald/idb-keyval)** | 6.3.0 | Stockage IndexedDB basé sur des Promises | Apache-2.0 |
 
 ## Licence & Utilisation (Double Licence)
 
@@ -57,17 +57,18 @@ famouskai/
 ├── index.html, et tous les autres fichiers source   ← le projet lui-même
 ├── CHANGELOG.md                                     ← historique des versions, lié au cycle de release
 ├── LICENSE                                          ← texte AGPLv3 complet (doit rester à la racine)
+├── THIRD-PARTY-NOTICES.md                           ← licences des librairie (doit rester à la racine)
 ├── README.md / README.fr.md
 ├── docs/                                            ← tout ce qu'un humain lit, rien de "magique" pour GitHub
 │   ├── 00-START-HERE-HOW-TO.md                      ← à lire en premier pour contribuer
-│   ├── CLA.md                                       ← Contributor License Agreement
+│   ├── CLA.md                                       ← Licence d'accord de contribution
 │   ├── COMMERCIAL-LICENSE.md
 │   └── WORKFLOW.fr.md                               ← notes de cadrage du mainteneur (en français)
 └── .github/                                         ← tout ce que GitHub lit automatiquement
     ├── CODE_OF_CONDUCT.md, CONTRIBUTING.md, FUNDING.yml
     ├── PULL_REQUEST_TEMPLATE.md, SECURITY.md
-    ├── ISSUE_TEMPLATE/
-    └── workflows/
+    ├── ISSUE_TEMPLATE/bug_report.md, config.yml, feature_request.md
+    └── workflows/cla.yml
 ```
 
 **Pourquoi ce découpage ?** `.github/` contient les fichiers que GitHub détecte et exploite
