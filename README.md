@@ -56,6 +56,7 @@ famouskai/
 ├── index.html, and all other source files       ← the actual project
 ├── CHANGELOG.md                                 ← version history (release-adjacent, kept at root)
 ├── LICENSE                                      ← full AGPLv3 text (must stay at root)
+├── THIRD-PARTY-NOTICES.md                       ← vendors licenses (must stay at root)
 ├── README.md / README.fr.md
 ├── docs/                                        ← everything a human reads, not GitHub-"magic"
 │   ├── 00-START-HERE-HOW-TO.md                  ← start here if you want to contribute
@@ -65,8 +66,8 @@ famouskai/
 └── .github/                                     ← everything GitHub reads automatically
     ├── CODE_OF_CONDUCT.md, CONTRIBUTING.md, FUNDING.yml
     ├── PULL_REQUEST_TEMPLATE.md, SECURITY.md
-    ├── ISSUE_TEMPLATE/
-    └── workflows/
+    ├── ISSUE_TEMPLATE/bug_report.md, config.yml, feature_request.md
+    └── workflows/cla.yml
 ```
 
 **Why split this way?** `.github/` holds files GitHub itself detects and acts on (issue/PR
