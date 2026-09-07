@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Open Source governance structure: `LICENSE` (AGPLv3), `docs/COMMERCIAL-LICENSE.md`,
-  `docs/CLA.md`, `.github/CODE_OF_CONDUCT.md`, `.github/CONTRIBUTING.md`,
-  `.github/SECURITY.md`, issue and pull request templates, automated CLA signature
-  bot, and branch protection on `main`.
+- Open Source governance structure: `LICENSE` (AGPLv3), `THIRD-PARTY-NOTICES.md`,
+  `docs/COMMERCIAL-LICENSE.md`, `docs/CLA.md`, `.github/CODE_OF_CONDUCT.md`, 
+  `.github/CONTRIBUTING.md`, `.github/SECURITY.md`, issue and pull request templates,
+  automated CLA signature bot, and branch protection on `main`.
 - `docs/00-START-HERE-HOW-TO.md`: contributor onboarding guide covering both a
   browser-only workflow and a local Git command-line workflow.
 - Ko-fi sponsorship link.
