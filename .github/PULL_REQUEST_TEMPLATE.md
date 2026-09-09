@@ -28,6 +28,14 @@
 
 <!-- Browser(s)/operating system (OS) tested, manual steps, etc. -->
 
+## Quality Assurance Certification
+
+- [ ] I have executed the relevant Manual Test Suites located in the `tests/` directory for the features impacted by this PR.
+
+**Executed Manual Tests:**
+*(List the Test IDs from the manual test documents you successfully ran, e.g., SYNC-01, CONF-02. If no existing test suite applies, write "N/A")*
+- 
+
 ## Anything else reviewers should know?
 
 <!-- Thanks for your contribution. You rock! -->
