@@ -71,6 +71,24 @@ has a specific "local-first, no backend" philosophy, and not every idea fits tha
 - If your change affects Diffskai's conflict-resolution logic, describe the scenario you tested
   (what conflict, what the expected outcome was).
 
+## Quality Assurance & Testing
+
+To maintain stability, all critical workflows in Famouskai are documented with manual test suites. 
+
+### Manual Testing Protocol
+
+Manual test definitions are located directly in the `tests/` directory. 
+When creating a new manual test suite, use the suffix `-manual` to distinguish them clearly:
+`tests/[feature-name]-manual.md` (e.g., `tests/sync-diffskai-manual.md`).
+
+**Structure Requirements:**
+Every manual test file MUST include a markdown table defining:
+1. **Test ID:** (e.g., `SYNC-01`)
+2. **Scenario:** Brief description.
+3. **Pre-conditions:** System state before action.
+4. **Action Steps:** Numbered list of user inputs.
+5. **Expected Outcome:** Strict definition of the UI/System state post-action.
+
 ## What "good first issue" means here
 
 Issues labeled `good first issue` are scoped to be self-contained and don't require deep
