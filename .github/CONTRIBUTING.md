@@ -71,6 +71,83 @@ has a specific "local-first, no backend" philosophy, and not every idea fits tha
 - If your change affects Diffskai's conflict-resolution logic, describe the scenario you tested
   (what conflict, what the expected outcome was).
 
+## Coding Standards
+
+### In General
+
+#### 1. Comments are written in English
+
+All comments (HTML, JS, CSS, MD) are written in
+English, regardless of the contributor's native language, so the
+files read consistently for the whole open-source community.
+
+### CSS Style Guide
+
+No linter or formatter enforces these rules — they exist so every
+contributor writes CSS the same way by hand, from the very first commit.
+Please read this section before opening a pull request that touches `style.css`.
+
+#### 1. One declaration per line, except for single-property rules
+
+If a ruleset has **two or more declarations**, each one goes on its own
+indented line, with the opening brace on the selector's line and the
+closing brace alone on its own line:
+```css
+    .workspace-file-item {
+        cursor: pointer;
+        padding: 4px 6px;
+        color: var(--color-text-primary);
+    }
+```
+
+If a ruleset has **exactly one declaration**, it may stay on a single
+line. This is the only accepted exception, typically used for grouped
+one-liners such as color/icon variants:
+```css
+    #toast-msg.show { bottom: 20px; }
+    .sidebar-header .sidebar-title { margin-bottom: 0; }
+    .workspace-folder > summary::-webkit-details-marker { display: none; }
+```
+
+**Why:** a one-property-per-line diff shows exactly which property changed
+in a pull request. A dense single-line rule makes every edit look like
+the whole line changed, which makes code review harder and increases
+merge-conflict noise.
+
+#### 2. Never hardcode a color value in a rule
+
+Every `color`, `background`, `border-color`, `box-shadow` color, etc.
+must reference a token from the `:root` block at the top of the file
+(`﹥ 0. DESIGN TOKENS`). If the token you need doesn't exist yet, add it
+to that block first — do not inline a hex value anywhere else in the
+file *(and in any other files)*.
+```css
+    :root {
+        --color-text-primary:   #e8eaed;
+    }
+    ...
+    .workspace-file-item {
+        padding: 4px 6px;
+        ...
+        color: var(--color-text-primary);
+    }
+```
+
+#### 3. Name tokens by usage, not by hue
+
+Tokens describe **what the color is used for**, never what it looks
+like. `--color-toc-markdown` is correct; `--color-blue` or
+`--color-syntax-pink` is not. This lets you reason about "how Markdown
+is represented in the outline" as a single line to edit, instead of
+hunting for "the pink one" across the file.
+
+#### 4. Section banners stay in place
+
+The numbered `/* ﹥ N. SECTION NAME */` banners define the file's table
+of contents. New rules belong inside the most relevant existing
+section; only add a new numbered section for a genuinely new feature
+area.
+
 ## Quality Assurance & Testing
 
 To maintain stability, all critical workflows in Famouskai are documented with manual test suites. 
