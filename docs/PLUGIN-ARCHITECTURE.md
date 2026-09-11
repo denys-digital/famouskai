@@ -234,7 +234,7 @@ Famouskai does not use separate CSS files for plugins. Loading a dozen small CSS
 
 To keep the monolith clean and prevent CSS collision, we enforce a **Strict Namespacing Rule**:
 
-1. **Location:** Scroll to the very bottom of `style.css` and locate the `/* ﹥ 13. PLUGINS & EXTENSIONS */` section. Place your CSS there.
+1. **Location:** Scroll to the very bottom of `style.css` and locate the `LAYER 5: PLUGINS & EXTENSIONS` section (specifically `﹥ 5.a.`). Place your CSS there.
 2. **Namespacing:** You must prefix every single class with your extension or tool's name. Avoid generic names entirely.
     - *Invalid:* `.panel`, `.counter-text`, `.btn-active`
     - *Valid:* `.ext-wordcounter-panel`, `.ext-wordcounter-text`
@@ -249,7 +249,8 @@ Example of a perfect plugin styling workflow:
     display.classList.add("ext-wordcounter-display");   // Clean class injection
     toolbar.prepend(display);
 ```
-**In `style.css` (Section 13):**
+
+**In `style.css` (Layer 5):**
 ```css
     .ext-wordcounter-display {
         margin-right: 10px;
