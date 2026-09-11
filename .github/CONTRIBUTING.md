@@ -148,6 +148,59 @@ of contents. New rules belong inside the most relevant existing
 section; only add a new numbered section for a genuinely new feature
 area.
 
+#### 5. Strict Namespacing for Plugins and Extensions
+
+All CSS related to new tools or extensions must be placed at the very bottom of `style.css`, under the `/* ﹥ 13. PLUGINS & EXTENSIONS */` banner. 
+To prevent styling conflicts with the core editor, **you must namespace your classes** using the plugin's name. Never use generic class names like `.button`, `.container`, or `.title`.
+
+**Bad:**
+```css
+    .wrapper { padding: 10px; }
+    .title { font-weight: bold; }
+```
+
+**Good:**
+```css
+    .ext-wordcounter-wrapper { padding: 10px; }
+    .ext-wordcounter-title { font-weight: bold; }
+```
+
+C'est une excellente idée. Ajouter une définition courte de l'ITCSS (Inverted Triangle CSS) permet d'éduquer immédiatement les contributeurs et de justifier ce choix technique. S'ils comprennent que le but est d'éviter la fameuse "guerre des spécificités", ils respecteront l'ordre naturel du document.
+
+Voici le bloc mis à jour pour ton fichier `.github/CONTRIBUTING.md`, incluant l'explication du concept :
+
+#### 6. The CSS Architecture Roadmap (ITCSS-Inspired)
+
+Famouskai uses an ITCSS-inspired architecture (Inverted Triangle CSS). This methodology organizes styles from generic, low-specificity rules (like theme variables and base layouts) down to explicit, high-specificity rules (like specific UI components and plugins). By ordering CSS this way, we naturally prevent "specificity wars" and keep the monolith highly scalable without ever needing to rely on `!important`.
+
+Our `style.css` is divided into 5 strictly ordered layers. If you are contributing a new UI element, please consult this roadmap to know exactly where it belongs in the future structure of the file:
+
+*   **LAYER 1: SETTINGS**
+    *   ***Current:*** Design Tokens (Colors, Fonts).
+    *   *Future additions:* Z-Index Map, Typography scales, Standard Animations.
+*   **LAYER 2: LAYOUT & STRUCTURE**
+    *   ***Current:*** Global layout, Toolbar, Sidebar.
+    *   *Future additions:* Resizers/Splitters, Mobile PWA Layout bottom-bars.
+*   **LAYER 3: CORE UI COMPONENTS (Design System)**
+    *   ***Current:*** Buttons, Native Dialogs, Toast Notifications, Generic Boxes.
+    *   *Future additions:* Tooltips, Context Menus, Forms & Inputs (Toggles, Radios), Custom Scrollbars.
+*   **LAYER 4: FUNCTIONAL DOMAINS (Core App Features)**
+    *   ***Current:*** Workspace, Live Preview, Print Engine.
+    *   *Future additions:* Settings Screen, Onboarding/Welcome Screen, Global Search Panel, PWA System UI.
+*   **LAYER 5: PLUGINS & EXTENSIONS**
+    *   ***Current:*** Core Extensions (Outline, Snippets).
+    *   *Future additions:* Custom Theme Overrides, 3rd-party community plugins.
+
+**Rule of thumb:** Never mix layers. A generic button (Layer 3) should never contain styling specific to the Workspace (Layer 4).
+
+### JavaScript Architecture & Plugins
+
+Famouskai strictly adheres to a **"Local-First, Zero-Build"** philosophy. This means the application must run flawlessly by simply double-clicking `index.html` (using the `file://` protocol), without requiring a local web server, Node.js, or bundlers (Webpack/Vite).
+
+Because modern browsers block ES Module imports (`<script type="module">`) over the `file://` protocol due to CORS security policies, we use a **Single Global Namespace Pattern** instead of native ES modules.
+
+Before adding a new tool, modifying the editor's behavior, or writing any JavaScript, you **must** read our [Plugin & Architecture Guide](docs/PLUGIN-ARCHITECTURE.md). It explains how to register your tools cleanly without polluting the global scope.
+
 ## Quality Assurance & Testing
 
 To maintain stability, all critical workflows in Famouskai are documented with manual test suites. 
