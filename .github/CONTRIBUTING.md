@@ -118,7 +118,7 @@ merge-conflict noise.
 
 Every `color`, `background`, `border-color`, `box-shadow` color, etc.
 must reference a token from the `:root` block at the top of the file
-(`﹥ 0. DESIGN TOKENS`). If the token you need doesn't exist yet, add it
+(`﹥ 1.a. Design Tokens (Theme)`). If the token you need doesn't exist yet, add it
 to that block first — do not inline a hex value anywhere else in the
 file *(and in any other files)*.
 ```css
@@ -143,27 +143,54 @@ hunting for "the pink one" across the file.
 
 #### 4. Section banners stay in place
 
-The numbered `/* ﹥ N. SECTION NAME */` banners define the file's table
-of contents. New rules belong inside the most relevant existing
-section; only add a new numbered section for a genuinely new feature
-area.
+The numbered `/* ﹥ X.y. SECTION NAME */` banners define the file's table of contents. New rules belong inside the most relevant existing section. Do not create a new section unless it fits perfectly into the predefined architectural roadmap (see Rule 6).
 
 #### 5. Strict Namespacing for Plugins and Extensions
 
-All CSS related to new tools or extensions must be placed at the very bottom of `style.css`, under the `/* ﹥ 13. PLUGINS & EXTENSIONS */` banner. 
+All CSS related to new tools or extensions must be placed at the very bottom of `style.css`, within `LAYER 5: PLUGINS & EXTENSIONS`.
 To prevent styling conflicts with the core editor, **you must namespace your classes** using the plugin's name. Never use generic class names like `.button`, `.container`, or `.title`.
 
 **Bad:**
+
 ```css
     .wrapper { padding: 10px; }
     .title { font-weight: bold; }
 ```
 
 **Good:**
+
 ```css
     .ext-wordcounter-wrapper { padding: 10px; }
     .ext-wordcounter-title { font-weight: bold; }
 ```
+
+#### 6. The CSS Architecture Roadmap (ITCSS-Inspired)
+
+Famouskai uses an ITCSS-inspired architecture (Inverted Triangle CSS). This methodology organizes styles from generic, low-specificity rules (like theme variables and base layouts) down to explicit, high-specificity rules (like specific UI components and plugins). By ordering CSS this way, we naturally prevent "specificity wars" and keep the monolith highly scalable without ever needing to rely on `!important`.
+
+Our `style.css` is divided into 5 strictly ordered layers. If you are contributing a new UI element, please consult this roadmap to know exactly where it belongs in the future structure of the file:
+
+*   **LAYER 1: SETTINGS**
+    *   ***Current:*** Design Tokens (Colors, Fonts).
+    *   *Future additions:* Z-Index Map, Typography scales, Standard Animations.
+
+*   **LAYER 2: LAYOUT & STRUCTURE**
+    *   ***Current:*** Global layout, Toolbar, Sidebar.
+    *   *Future additions:* Resizers/Splitters, Mobile PWA Layout bottom-bars.
+
+*   **LAYER 3: CORE UI COMPONENTS (Design System)**
+    *   ***Current:*** Buttons, Native Dialogs, Toast Notifications, Generic Boxes.
+    *   *Future additions:* Tooltips, Context Menus, Forms & Inputs (Toggles, Radios), Custom Scrollbars.
+
+*   **LAYER 4: FUNCTIONAL DOMAINS (Core App Features)**
+    *   ***Current:*** Workspace, Live Preview, Print Engine.
+    *   *Future additions:* Settings Screen, Onboarding/Welcome Screen, Global Search Panel, PWA System UI.
+
+*   **LAYER 5: PLUGINS & EXTENSIONS**
+    *   ***Current:*** Core Extensions (Outline, Snippets).
+    *   *Future additions:* Custom Theme Overrides, 3rd-party community plugins.
+
+**Rule of thumb:** Never mix layers. A generic button (Layer 3) should never contain styling specific to the Workspace (Layer 4).
 
 ## Quality Assurance & Testing
 
