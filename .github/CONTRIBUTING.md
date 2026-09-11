@@ -148,6 +148,23 @@ of contents. New rules belong inside the most relevant existing
 section; only add a new numbered section for a genuinely new feature
 area.
 
+#### 5. Strict Namespacing for Plugins and Extensions
+
+All CSS related to new tools or extensions must be placed at the very bottom of `style.css`, under the `/* ﹥ 13. PLUGINS & EXTENSIONS */` banner. 
+To prevent styling conflicts with the core editor, **you must namespace your classes** using the plugin's name. Never use generic class names like `.button`, `.container`, or `.title`.
+
+**Bad:**
+```css
+    .wrapper { padding: 10px; }
+    .title { font-weight: bold; }
+```
+
+**Good:**
+```css
+    .ext-wordcounter-wrapper { padding: 10px; }
+    .ext-wordcounter-title { font-weight: bold; }
+```
+
 ## Quality Assurance & Testing
 
 To maintain stability, all critical workflows in Famouskai are documented with manual test suites. 
