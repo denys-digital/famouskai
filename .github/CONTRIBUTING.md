@@ -198,7 +198,7 @@ Famouskai strictly adheres to a **"Local-First, Zero-Build"** philosophy. This m
 
 Because modern browsers block ES Module imports (`<script type="module">`) over the `file://` protocol due to CORS security policies, we use a **Single Global Namespace Pattern** instead of native ES modules.
 
-Before adding a new tool, modifying the editor's behavior, or writing any JavaScript, you **must** read our [Plugin & Architecture Guide](docs/PLUGIN-ARCHITECTURE.md). It explains how to register your tools cleanly without polluting the global scope.
+Before adding a new tool, modifying the editor's behavior, or writing any JavaScript, you **must** read our [Plugin & Architecture Guide](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md). It explains how to register your tools cleanly without polluting the global scope.
 
 ## Quality Assurance & Testing
 
