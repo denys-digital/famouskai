@@ -192,6 +192,14 @@ Our `style.css` is divided into 5 strictly ordered layers. If you are contributi
 
 **Rule of thumb:** Never mix layers. A generic button (Layer 3) should never contain styling specific to the Workspace (Layer 4).
 
+### JavaScript Architecture & Plugins
+
+Famouskai strictly adheres to a **"Local-First, Zero-Build"** philosophy. This means the application must run flawlessly by simply double-clicking `index.html` (using the `file://` protocol), without requiring a local web server, Node.js, or bundlers (Webpack/Vite).
+
+Because modern browsers block ES Module imports (`<script type="module">`) over the `file://` protocol due to CORS security policies, we use a **Single Global Namespace Pattern** instead of native ES modules.
+
+Before adding a new tool, modifying the editor's behavior, or writing any JavaScript, you **must** read our [Plugin & Architecture Guide](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md). It explains how to register your tools cleanly without polluting the global scope.
+
 ## Quality Assurance & Testing
 
 To maintain stability, all critical workflows in Famouskai are documented with manual test suites. 
