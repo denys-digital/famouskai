@@ -110,6 +110,49 @@ Double-click `index.html` in your file explorer. Press **F12** (or Ctrl+Shift+I)
 * [ ] **Contextual Visibility:** Does my tool appear in the sidebar's "Tools" section *only* when a matching file type is opened?
 * [ ] **Execution:** Does `console.log()` confirm my data is flowing correctly when I click the tool? Does my tool work as expected.
 
+
+### 3.a Adding a Toolbar Shortcut (Toolbar Icon)
+
+By default, all registered tools must appear in the left sidebar under the "Tools" section. However, for frequently used tools, you can provide a quick access button directly in the top-right toolbar (next to the "Preview" button).
+
+To preserve Famouskai's visual lightness and avoid the "rainbow" effect of heavy IDEs, the API imposes strict and elegant constraints:
+
+1. **Single character:** The button will only contain one uppercase letter (the initial of your tool).
+2. **Semantic hover color:** The button remains discreet (neutral gray) and only reveals its custom color on hover (`:hover`).
+
+To enable this option, add the `toolbar` object to your tool's configuration when calling `FamousPluginCore.Manager.register`:
+
+```javascript
+/*
+ * Famouskai Editor - [Your Tool Name]
+ * Author: [Your Name/GitHub Handle]
+ */
+window.FamousPluginCore.Manager.register({
+    name: "Generate Markdown Table",
+    extensions: ['md', 'txt'], 
+    
+    // HERE: Toolbar button configuration
+    toolbar: {
+        // The displayed letter (If multiple letters are provided, only the 1st is kept and capitalized)
+        icon: "T", 
+        // The hover color. ALWAYS use Famouskai palette tokens (see style.css Layer 1)
+        color: "var(--fm-magenta)" 
+    },
+    
+    confirmMsg: "...",
+    
+    action: function(editor) {
+        // Your business logic here...
+    }
+});
+```
+
+#### Toolbar Constraints & Best Practices
+
+* **Zero DOM Manipulation:** **Never** attempt to inject an HTML button into the toolbar yourself. The Framework (`renderTools` and `updateUI`) takes care of generating the button with the correct width, aligning it to the right, injecting the CSS variable for dynamic hover, and smartly managing the vertical divider with native buttons.
+* **Color Selection:** You must **never** hardcode a hexadecimal value (e.g., `#ff0000`). Refer to **LAYER 1: SETTINGS (Global Variables)** in the `style.css` file and choose a color from the "Primary Colors" or "Secondary Colors" (e.g., `var(--fm-orange)`, `var(--fm-green)`, `var(--fm-sky)`). This guarantees your button will remain accessible if a global dark/light theme is added in the future.
+* **Contextual Availability:** If your tool defines an array like `extensions: ['md']`, the toolbar button will smartly appear (and disappear) *only* when the user is viewing a Markdown file. The entire lifecycle is managed by the core.
+
 ---
 
 ## 4. Advanced: Extending Core Logic (Passive Extensions)
