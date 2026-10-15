@@ -1,0 +1,18 @@
+--- Oswald (Fontsource) Update Log ---
+Timestamp : 2026-10-15T13:57:13.137Z
+Package   : @fontsource/oswald
+Version   : 5.3.0
+User Agent: Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36
+Summary   : 3 files requested, 3 files downloaded and saved locally.
+Status    : Success
+
+Files Processed:
+ 1. files/oswald-latin-500-normal.woff2
+   Source: https://cdn.jsdelivr.net/npm/@fontsource/oswald@5.3.0/files/oswald-latin-500-normal.woff2
+
+ 2. files/oswald-latin-700-normal.woff2
+   Source: https://cdn.jsdelivr.net/npm/@fontsource/oswald@5.3.0/files/oswald-latin-700-normal.woff2
+
+ 3. LICENSE
+   Source: https://cdn.jsdelivr.net/npm/@fontsource/oswald@5.3.0/LICENSE
+

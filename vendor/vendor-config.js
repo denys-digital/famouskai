@@ -17,16 +17,16 @@
  *
  * -------------------------------------------------------------------------
  * COMMERCIAL LICENSE
- * For commercial integration without the AGPLv3 strict open-source 
+ * For commercial integration without the AGPLv3 strict open-source
  * restrictions, please contact the author to acquire a commercial license.
  * -------------------------------------------------------------------------
  */
 /**
  * Famouskai Editor - Central Vendor Configuration
  * Single Source of Truth for all third-party dependencies.
- * 
+ *
  * VENDOR OBJECT ANATOMY & USAGE:
- * 
+ *
  * @property {string} id                 - Internal identifier. Used to specify the local target folder path in the generated `_VENDOR-INFO.md` instructions (`vendor/${id}/`).
  * @property {string} name               - Display name. Used in the `updater.html` UI dropdown, log titles, `_VENDOR-INFO.md` header, and both doc snippets.
  * @property {string} description        - Brief project description. Used to populate the Project line in the generated `_VENDOR-INFO.md`.
@@ -57,10 +57,13 @@ const FAMOUSKAI_VENDORS = [
             'ace.js',
             'ext-searchbox.js',
             'mode-css.js',
+            'mode-csv.js',
+            'mode-diff.js',
             'mode-html.js',
             'mode-javascript.js',
             'mode-json.js',
             'mode-markdown.js',
+            'mode-svg.js',
             'mode-text.js',
             'mode-xml.js',
             'mode-yaml.js',
@@ -117,6 +120,35 @@ const FAMOUSKAI_VENDORS = [
         ]
     },
     {
+        id: "diff2html",
+        name: "Diff2Html",
+        description: "Fast diff-to-HTML generator (parser + renderer, no UI/highlight wrapper)",
+        license: "MIT",
+        repoUrl: "https://github.com/rtfpessoa/diff2html",
+        npmPackage: "diff2html",
+        copyright: "Copyright 2014-present Rodrigo Fernandes.",
+        role: "Read-only pretty rendering of .patch/.diff files in the Preview pane",
+        getBaseUrl: (version) => `https://cdn.jsdelivr.net/npm/diff2html@${version}/bundles/`,
+        files: [
+            'js/diff2html.min.js',
+            'css/diff2html.min.css'
+        ]
+    },
+    {
+        id: "dompurify",
+        name: "DOMPurify",
+        description: "DOM-only XSS sanitizer for HTML, MathML and SVG",
+        license: "MPL-2.0 OR Apache-2.0",
+        repoUrl: "https://github.com/cure53/DOMPurify",
+        npmPackage: "dompurify",
+        copyright: "Copyright (c) Dr.-Ing. Mario Heiderich, Cure53.",
+        role: "Sanitizes the rendered Markdown preview and HTML export",
+        getBaseUrl: (version) => `https://cdn.jsdelivr.net/npm/dompurify@${version}/dist/`,
+        files: [
+            'purify.min.js'
+        ]
+    },
+    {
         id: "monaco-editor",
         name: "Monaco Editor",
         description: "The code editor that powers VS Code",
@@ -129,18 +161,34 @@ const FAMOUSKAI_VENDORS = [
         basePath: "/min/vs/",
         getBaseUrl: (version) => `https://cdn.jsdelivr.net/npm/monaco-editor@${version}`,
         keepPatterns: [
-            "^/min/vs/loader\\.js$",        // Core loader
-            "^/min/vs/editor/",             // Core editor folders
-            "^/min/vs/base/",               // Base utilities
-            // Keep specific language server folders
+            "^/min/vs/assets/",
+            "^/min/vs/basic-languages/monaco\\.contribution\\.js$",
+            "^/min/vs/editor/",
             "^/min/vs/language/(css|html|json|typescript)/",
-            "^/min/vs/basic-languages/(markdown|xml)/",
-            // Keep hashed root chunks ONLY for our supported languages & core editor
-            "^/min/vs/(css|html|javascript|json|markdown|ts|typescript|xml|yaml|editor|workers)[a-zA-Z0-9_-]*\\.js$"
+            "^/min/vs/(css|html|javascript|json|markdown|ts|typescript|xml|yaml)[a-zA-Z0-9_.-]*\\.js$",
+            "^/min/vs/loader\\.js$",
+            "^/min/vs/nls\\.messages-loader\\.js$",
+            "^/min/vs/(editor|index|initialize|lspLanguageFeatures|main|monaco\\.contribution|toggleHighContrast|workers)[a-zA-Z0-9_.-]*\\.(js|css)$"
         ],
         ignorePatterns: [
             "\\.map$",                      // Ignore heavy source maps
             "^/min/vs/nls/lang/"            // Ignore foreign localizations (keeps English default)
+        ]
+    },
+    {
+        id: "fontsource-oswald",
+        name: "Oswald (Fontsource)",
+        description: "Headings font of the Markdown preview themes",
+        license: "OFL-1.1",
+        repoUrl: "https://github.com/googlefonts/OswaldFont",
+        npmPackage: "@fontsource/oswald",
+        copyright: "Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont)",
+        role: "Headings font of the Markdown preview themes (weights 500 and 700, latin subset)",
+        getBaseUrl: (version) => `https://cdn.jsdelivr.net/npm/@fontsource/oswald@${version}/`,
+        files: [
+            'files/oswald-latin-500-normal.woff2',
+            'files/oswald-latin-700-normal.woff2',
+            'LICENSE'
         ]
     }
 ];

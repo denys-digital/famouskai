@@ -16,10 +16,13 @@
 * `ace.js`
 * `ext-searchbox.js`
 * `mode-css.js`
+* `mode-csv.js`
+* `mode-diff.js`
 * `mode-html.js`
 * `mode-javascript.js`
 * `mode-json.js`
 * `mode-markdown.js`
+* `mode-svg.js`
 * `mode-text.js`
 * `mode-xml.js`
 * `mode-yaml.js`

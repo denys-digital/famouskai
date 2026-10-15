@@ -23,10 +23,13 @@ Famouskai is built to be resilient. To guarantee true offline capability, **all 
 | Library | Version | Role | License |
 | --- | --- | --- | --- |
 | **[Ace Editor](https://github.com/ajaxorg/ace)** | 1.44.0 | Core text editing engine | BSD-3-Clause |
-| **[Monaco Editor](https://github.com/microsoft/monaco-editor)** | 0.56.0 | Diff/Merge resolution engine (Diffskai) | MIT |
-| **[Marked](https://github.com/markedjs/marked)** | 18.0.11 | Ultra-fast Markdown parser | MIT |
-| **[js-beautify](https://github.com/beautifier/js-beautify)** | 2.0.3 | Code formatting and indentation tools | MIT |
+| **[Diff2Html](https://github.com/rtfpessoa/diff2html)** | 3.4.56 | Read-only pretty rendering of .patch/.diff files in the Preview pane | MIT |
+| **[DOMPurify](https://github.com/cure53/DOMPurify)** | 3.4.17 | Sanitizes the rendered Markdown preview and HTML export | MPL-2.0 OR Apache-2.0 |
 | **[idb-keyval](https://github.com/jakearchibald/idb-keyval)** | 6.3.0 | Promise-based IndexedDB storage | Apache-2.0 |
+| **[js-beautify](https://github.com/beautifier/js-beautify)** | 2.0.3 | Code formatting and indentation tools | MIT |
+| **[Marked](https://github.com/markedjs/marked)** | 18.1.1 | Ultra-fast Markdown parser for live preview | MIT |
+| **[Monaco Editor](https://github.com/microsoft/monaco-editor)** | 0.56.0 | Diff/Merge resolution engine (Diffskai) | MIT |
+| **[Oswald (Fontsource)](https://github.com/googlefonts/OswaldFont)** | 5.3.0 | Headings font of the Markdown preview themes (weights 500 and 700, latin subset) | OFL-1.1 |
 
 ## License & Usage (Dual License)
 

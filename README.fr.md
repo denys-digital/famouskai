@@ -23,10 +23,13 @@ Famouskai est conçu pour être résilient. Pour garantir une véritable capacit
 | Bibliothèque | Version | Rôle | Licence |
 | --- | --- | --- | --- |
 | **[Ace Editor](https://github.com/ajaxorg/ace)** | 1.44.0 | Moteur principal d'édition de texte (Coloration syntaxique) | BSD-3-Clause |
-| **[Monaco Editor](https://github.com/microsoft/monaco-editor)** | 0.56.0 | Utilisé exclusivement dans Diffskai pour la résolution de diffs | MIT |
-| **[Marked](https://github.com/markedjs/marked)** | 18.0.11 | Parseur Markdown ultra-rapide pour la prévisualisation en direct | MIT |
-| **[js-beautify](https://github.com/beautifier/js-beautify)** | 2.0.3 | Outils de formatage de code et d'indentation | MIT |
+| **[Diff2Html](https://github.com/rtfpessoa/diff2html)** | 3.4.56 | Rendu lisible des fichiers .patch/.diff dans le volet d'aperçu | MIT |
+| **[DOMPurify](https://github.com/cure53/DOMPurify)** | 3.4.17 | Assainit l'aperçu Markdown et l'export HTML | MPL-2.0 OR Apache-2.0 |
 | **[idb-keyval](https://github.com/jakearchibald/idb-keyval)** | 6.3.0 | Stockage IndexedDB basé sur des Promises | Apache-2.0 |
+| **[js-beautify](https://github.com/beautifier/js-beautify)** | 2.0.3 | Outils de formatage de code et d'indentation | MIT |
+| **[Marked](https://github.com/markedjs/marked)** | 18.1.1 | Parseur Markdown ultra-rapide pour la prévisualisation en direct | MIT |
+| **[Monaco Editor](https://github.com/microsoft/monaco-editor)** | 0.56.0 | Utilisé exclusivement dans Diffskai pour la résolution de diffs | MIT |
+| **[Oswald (Fontsource)](https://github.com/googlefonts/OswaldFont)** | 5.3.0 | Police des titres des thèmes d'aperçu Markdown (graisses 500 et 700, sous-ensemble latin) | OFL-1.1 |
 
 ## Licence & Utilisation (Double Licence)
 
