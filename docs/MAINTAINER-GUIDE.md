@@ -72,8 +72,7 @@ famouskai/
 │   ├── CLA.md
 │   ├── COMMERCIAL-LICENSE.md
 │   ├── MAINTAINER-GUIDE.md
-│   ├── PLUGIN-ARCHITECTURE.md
-│   └── WORKFLOW.fr.md
+│   └── PLUGIN-ARCHITECTURE.md
 ├── plugins/
 ├── tests/
 ├── vendor/
@@ -790,7 +789,6 @@ Every few months, or before a major release, review:
 - [`README.md`](https://github.com/denys-digital/famouskai/blob/main/README.md)
 - [`README.fr.md`](https://github.com/denys-digital/famouskai/blob/main/README.fr.md)
 - [`00-START-HERE-HOW-TO.md`](https://github.com/denys-digital/famouskai/blob/main/docs/00-START-HERE-HOW-TO.md)
-- [`WORKFLOW.fr.md`](https://github.com/denys-digital/famouskai/blob/main/docs/WORKFLOW.fr.md)
 - [`CONTRIBUTING.md`](https://github.com/denys-digital/famouskai/blob/main/.github/CONTRIBUTING.md)
 - [`PLUGIN-ARCHITECTURE.md`](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md)
 - [`CODE_OF_CONDUCT.md`](https://github.com/denys-digital/famouskai/blob/main/.github/CODE_OF_CONDUCT.md)

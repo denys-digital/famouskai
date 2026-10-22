@@ -1,9 +1,7 @@
 # Start Here: Getting Started with the Famouskai Repository
 
 This guide assumes **zero prior GitHub workflow experience**. If you already know Git, skip to
-whichever section you need. For the *why* behind these steps, see
-[`WORKFLOW.fr.md`](./WORKFLOW.fr.md)
-(in French).
+whichever section you need.
 
 **Famouskai has no build step.** It's plain HyperText Markup Language, Cascading Style Sheets, and
 JavaScript (HTML/CSS/JS) — there is no `npm install`, no bundler, nothing to compile. You edit
