@@ -11,9 +11,17 @@ before opening an issue or a pull request.
   [`COMMERCIAL-LICENSE.md`](https://github.com/denys-digital/famouskai/blob/main/docs/COMMERCIAL-LICENSE.md)).
   Your first pull request will trigger a bot asking you to sign our lightweight
   [Contributor License Agreement (CLA)](https://github.com/denys-digital/famouskai/blob/main/docs/CLA.md).
-  This is a one-time step; read it, it's short.
+  This is a one-time step; read it, it's short. You keep the copyright on your contribution; the
+  CLA only lets the maintainer distribute it under both licenses. Without it, contributed code
+  could not be offered under the commercial license, which is what funds the project's maintenance.
 - **Code of Conduct:** all interactions in this project are governed by our
   [Code of Conduct](https://github.com/denys-digital/famouskai/blob/main/.github/CODE_OF_CONDUCT.md).
+
+## Response time
+
+The maintainer aims to give a first answer to every new Issue and Pull Request **within 7 days**.
+This is a first response (a question, a review or a decision), not a promise to merge. If a week
+has passed without any answer, a polite comment on the Issue or PR is welcome.
 
 ## Ways to contribute
 
@@ -43,7 +51,7 @@ follows.
    - `fix/diffskai-merge-crash`
    - `docs/update-readme-fr`
 3. **Edit and test locally** — Famouskai has no build step. Open `index.html` directly in a
-   browser to test your change. See
+   browser to test your change (see [Testing your change](#testing-your-change) below). See
    [`docs/00-START-HERE-HOW-TO.md`](https://github.com/denys-digital/famouskai/blob/main/docs/00-START-HERE-HOW-TO.md)
    for the full step-by-step setup on either path.
 4. **Commit** using clear, present-tense messages (for example,
@@ -54,6 +62,46 @@ follows.
 6. **Sign the CLA** if the bot asks (first-time contributors only).
 7. **Respond to review.** For non-trivial changes, expect at least one round of feedback before
    merge — this isn't a formality; it's how we keep the codebase coherent as a small team.
+
+## Testing your change
+
+**Browsers.** Test in a desktop Chromium browser: Chrome or Edge. Famouskai needs the File System
+Access API to open and save files, and Firefox and Safari do not implement it. If your change
+touches startup code or the toolbar, also open the app once in Firefox: it must show the
+"unsupported browser" banner and start without any JavaScript error in the console.
+
+**What works from `file://`.** Double-clicking `index.html` runs almost everything: editing,
+opening and saving files, the sidebar, the Markdown preview, the tools and Diffskai. A few things
+need the app to be served over HTTP(S) instead, for example from a local web server on
+`localhost`:
+
+- the Service Worker: offline mode and the cache list in `sw.js`;
+- installing the app (PWA), and opening files from the operating system's file manager, which
+  only works in the installed app;
+- the app version shown at the bottom of the sidebar, which is read from `sw.js`;
+- the `tests/unit-app-integrity.html` page, which checks the cache list.
+
+If you have a terminal (your own, or a GitHub Codespace), `python3 -m http.server 8080` run at
+the repository root is enough; then open `http://localhost:8080`.
+
+**Unit test pages.** Open the `tests/unit-*.html` page that matches the file you changed; it must
+show "N/N passed". Manual test plans for the main workflows are the `tests/manual-*.md` files.
+
+## Eat your own dogfood
+
+Famouskai is an editor, so the most honest test of a change is to use it. Before you open a Pull
+Request, we invite you to use your branch as your everyday editor for a few days: write your
+notes, your commit messages, even the PR description with it. This is an invitation, not a
+requirement, and a small fix does not need it.
+
+Real use finds what the test pages miss: a shortcut that clashes with another one, a message that
+pops up too often, a large file that becomes slow, a setting that resets. It also tells you,
+before any reviewer does, whether your change is worth keeping.
+
+Your branch runs the same way as in [Testing your change](#testing-your-change): open its
+`index.html` in Chrome or Edge, or serve it locally if you need the installed app. If you did use
+it day to day, tick the optional "tested in real use" box in the PR template and say in one line
+what you used it for.
 
 ## Before opening a Pull Request for a non-trivial change
 
@@ -70,6 +118,19 @@ has a specific "local-first, no backend" philosophy, and not every idea fits tha
   (GIF) in the PR description.
 - If your change affects Diffskai's conflict-resolution logic, describe the scenario you tested
   (what conflict, what the expected outcome was).
+
+## Quality bar
+
+The project's [DNA](https://github.com/denys-digital/famouskai/blob/main/DNA.md) says what
+Famouskai is. These four rules say how we change it:
+
+- **Impact first, code second.** Before writing code, find everything the change touches. There
+  is often a surgical change that does the job.
+- **Zero regression.** Every change runs the manual and unit test pages of the area it touches.
+- **By the book.** Follow this guide and the
+  [Plugin & Architecture Guide](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md)
+  to the letter.
+- **Open-source grade.** Readable, commented, no shortcut a maintainer would have to undo.
 
 ## Coding Standards
 
@@ -200,6 +261,14 @@ Because modern browsers block ES Module imports (`<script type="module">`) over 
 
 Before adding a new tool, modifying the editor's behavior, or writing any JavaScript, you **must** read our [Plugin & Architecture Guide](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md). It explains how to register your tools cleanly without polluting the global scope.
 
+Start from one of the two model files, which follow every rule in this guide and come with a
+zero-build unit test page you can copy:
+
+- a **tool** (an action in the Tools tab): `plugins/tool-cleanup-text.js`, tested by
+  `tests/unit-cleanup-text.html`;
+- an **extension** (passive behavior such as folding or the Outline): `plugins/ext-famous-core.js`,
+  tested by `tests/unit-famous-mark.html`.
+
 ## Quality Assurance & Testing
 
 To maintain stability, all critical workflows in Famouskai are documented with manual test suites. 
@@ -207,8 +276,7 @@ To maintain stability, all critical workflows in Famouskai are documented with m
 ### Manual Testing Protocol
 
 Manual test definitions are located directly in the `tests/` directory. 
-When creating a new manual test suite, use the suffix `-manual` to distinguish them clearly:
-`tests/[feature-name]-manual.md` (e.g., `tests/sync-diffskai-manual.md`).
+New manual test files use the manual- prefix (e.g., tests/manual-[feature].md). Test data files use the fixtures- prefix (e.g., tests/fixtures-syntax-sample.md), and zero-build unit test pages use the unit- prefix (e.g., tests/unit-famous-mark.html). Everything stays flat in tests/. (e.g., `tests/manual-diffskai-sync.md`).
 
 **Structure Requirements:**
 Every manual test file MUST include a markdown table defining:
