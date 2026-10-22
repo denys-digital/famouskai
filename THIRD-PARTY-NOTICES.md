@@ -7,8 +7,9 @@ original license, independent of Famouskai's AGPLv3 / Commercial dual license.
 
 The following software is provided under the MIT License:
 
+*   **Diff2Html** (v3.4.56) - Copyright 2014-present Rodrigo Fernandes.
 *   **js-beautify** (v2.0.3) - Copyright (c) 2007-2018 Einar Lielmanis, Liam Newman, and contributors.
-*   **Marked** (v18.0.11) - Copyright (c) 2018+, MarkedJS. Copyright (c) 2011-2018, Christopher Jeffrey.
+*   **Marked** (v18.1.1) - Copyright (c) 2018+, MarkedJS. Copyright (c) 2011-2018, Christopher Jeffrey.
 *   **Monaco Editor** (v0.56.0) - Copyright (c) Microsoft Corporation.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -23,6 +24,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 The following software is provided under the Apache License 2.0:
 
+*   **DOMPurify** (v3.4.17) - Copyright (c) Dr.-Ing. Mario Heiderich, Cure53.
 *   **idb-keyval** (v6.3.0) - Copyright 2016, Jake Archibald.
 
 Full text of the Apache License 2.0 is available at:
@@ -42,3 +44,14 @@ Redistribution and use in source and binary forms, with or without modification,
 3. Neither the name of Ajax.org B.V. nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+
+---
+
+## SIL Open Font License 1.1
+
+The following font is provided under the SIL Open Font License, Version 1.1:
+
+*   **Oswald (Fontsource)** (v5.3.0) - Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont)
+
+The full license text is included in `vendor/fontsource-oswald/LICENSE` and is available at:
+https://openfontlicense.org

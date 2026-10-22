@@ -1,9 +1,9 @@
 --- Ace Editor Update Log ---
-Timestamp : 2026-09-06T09:52:51.719Z
+Timestamp : 2026-09-27T01:07:38.357Z
 Package   : ace-builds
 Version   : 1.44.0
 User Agent: Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36
-Summary   : 16 files requested, 16 files downloaded and saved locally.
+Summary   : 19 files requested, 19 files downloaded and saved locally.
 Status    : Success
 
 Files Processed:
@@ -16,42 +16,51 @@ Files Processed:
  3. mode-css.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-css.js
 
- 4. mode-html.js
+ 4. mode-csv.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-csv.js
+
+ 5. mode-diff.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-diff.js
+
+ 6. mode-html.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-html.js
 
- 5. mode-javascript.js
+ 7. mode-javascript.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-javascript.js
 
- 6. mode-json.js
+ 8. mode-json.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-json.js
 
- 7. mode-markdown.js
+ 9. mode-markdown.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-markdown.js
 
- 8. mode-text.js
+ 10. mode-svg.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-svg.js
+
+ 11. mode-text.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-text.js
 
- 9. mode-xml.js
+ 12. mode-xml.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-xml.js
 
- 10. mode-yaml.js
+ 13. mode-yaml.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-yaml.js
 
- 11. worker-css.js
+ 14. worker-css.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-css.js
 
- 12. worker-html.js
+ 15. worker-html.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-html.js
 
- 13. worker-javascript.js
+ 16. worker-javascript.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-javascript.js
 
- 14. worker-json.js
+ 17. worker-json.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-json.js
 
- 15. worker-xml.js
+ 18. worker-xml.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-xml.js
 
- 16. worker-yaml.js
+ 19. worker-yaml.js
    Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-yaml.js
 
