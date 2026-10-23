@@ -1,0 +1,74 @@
+# Famouskai consistency checks (launch lot S3).
+# Pure shell, no install step: runs on every pull request and every push to main.
+name: Sanity
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every path in the Service Worker cache list exists
+        run: |
+          fail=0
+          paths=$(sed -n '/URLS_TO_CACHE *= *\[/,/\]/p' sw.js | grep -o "'/[^']*'" | tr -d "'")
+          [ -n "$paths" ] || { echo "::error::URLS_TO_CACHE not found in sw.js"; exit 1; }
+          for p in $paths; do
+            [ "$p" = "/" ] && continue
+            if [ ! -f ".${p}" ]; then echo "::error file=sw.js::Missing cached file: ${p}"; fail=1; fi
+          done
+          exit $fail
+
+      - name: Every local script and stylesheet of index.html exists
+        run: |
+          fail=0
+          refs=$(grep -oE '<(script|link)[^>]+(src|href)="[^"]+"' index.html | grep -oE '(src|href)="[^"]+"' | cut -d'"' -f2 | grep -vE '^(https?:|data:|#|//)')
+          for r in $refs; do
+            r="${r%%\?*}"
+            if [ ! -f "./${r#/}" ]; then echo "::error file=index.html::Missing local file: ${r}"; fail=1; fi
+          done
+          exit $fail
+
+      - name: Every JSON file is valid (test fixtures excluded)
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            jq empty "$f" > /dev/null 2>&1 || { echo "::error file=${f}::Invalid JSON"; fail=1; }
+          done < <(find . -name '*.json' -not -path './.git/*' -not -path './vendor/*' -not -name 'fixtures-*')
+          exit $fail
+
+      - name: Every plugin carries the AGPLv3 license header
+        run: |
+          fail=0
+          for f in plugins/*.js plugins/*/*.js; do
+            [ -f "$f" ] || continue
+            grep -q "GNU Affero" "$f" || { echo "::error file=${f}::Missing the GNU Affero license header"; fail=1; }
+          done
+          exit $fail
+
+      - name: No private-only file is published
+        run: |
+          fail=0
+          for f in AGENTS.md _github plugins/ext-famous-up.js plugins/tool-toolbar-demo.js \
+                   vendor/updater.html vendor/vendor-config.js vendor/github-uploader.html \
+                   vendor/github-uploader.md vendor/VENDOR-TOOLCHAIN.md tests/manual-famous-up.md docs-lab \
+                   docs/FAMOUS-ANCHOR-SPEC.md docs/FAMOUS-MARK-EXTENDED.md docs/SPEC-BLOCK-FILENAME.md \
+                   docs/FEATURE-AUDIT.md docs/STEP1-LOCAL-AI.md docs/MCP-ARCHITECTURE.md \
+                   docs/PLUGIN-TRIGGER-ARCHITECTURE.md docs/WORKFLOW.fr.md; do
+            if [ -e "$f" ]; then echo "::error::Private-only file present: ${f}"; fail=1; fi
+          done
+          for f in docs/SANKUKAI-0.1.0-*.md; do
+            [ -e "$f" ] && { echo "::error::Private-only file present: ${f}"; fail=1; }
+          done
+          if [ -n "$(find vendor -maxdepth 1 -type f 2>/dev/null)" ]; then
+            echo "::error::vendor/ root must contain folders only"; find vendor -maxdepth 1 -type f; fail=1
+          fi
+          exit $fail
