@@ -336,10 +336,11 @@
                     </div>
 
                     <!-- Multi-Workspace Selector Dropdown -->
-                    <div class="workspace-select-wrapper" style="margin-bottom: 10px;">
-                        <select id="workspace-select" class="fmk-select" style="width: 100%; background: var(--color-bg-app); color: var(--color-text-primary); border: 1px solid var(--color-border); padding: 4px; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: 12px;">
+                    <div class="workspace-select-wrapper" style="margin-bottom: 10px; display: flex; gap: 6px;">
+                        <select id="workspace-select" class="fmk-select" style="flex: 1; background: var(--color-bg-app); color: var(--color-text-primary); border: 1px solid var(--color-border); padding: 4px; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: 12px;">
                             <option value="">-- No workspace selected --</option>
                         </select>
+                        <button id="workspace-remove" type="button" title="Remove selected workspace from the list" aria-label="Remove selected workspace" style="background: var(--color-bg-app); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 2px 8px; cursor: pointer;">×</button>
                     </div>
 
                     <!-- Current Workspace Display Name -->
@@ -798,6 +799,22 @@
             });
         }
 
+        async function removeSelectedWorkspace() {
+            const selectEl = document.getElementById('workspace-select');
+            if (!selectEl || selectEl.value === '') return;
+            const idx = Number(selectEl.value);
+            let workspaces = await getSavedWorkspaces();
+            if (!Number.isInteger(idx) || idx < 0 || idx >= workspaces.length) return;
+            const removed = workspaces[idx];
+            workspaces.splice(idx, 1);
+            await idbKeyval.set('famouskai_workspaces', workspaces);
+            if (window.currentWorkspaceHandle && window.currentWorkspaceHandle.name === removed.name) {
+                window.currentWorkspaceHandle = null;
+                await idbKeyval.del('default_workspace_handle');
+            }
+            await renderWorkspaceSelect();
+        }
+
         async function initWorkspace() {
             try {
                 const defaultHandle = await idbKeyval.get('default_workspace_handle');
@@ -813,6 +830,13 @@
                 }
             } catch (err) {
                 console.error("Failed to load workspace:", err);
+            }
+            const removeBtn = document.getElementById('workspace-remove');
+            if (removeBtn && !removeBtn.dataset.bound) {
+                removeBtn.dataset.bound = '1';
+                removeBtn.addEventListener('click', () => {
+                    removeSelectedWorkspace().catch((err) => console.error('Failed to remove workspace:', err));
+                });
             }
             renderRecentFilesList();
         }
