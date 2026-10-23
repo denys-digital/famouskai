@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - Tidy & Sanitize Text Plugin</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="../plugins/tools.js"></script>
+    <script src="../plugins/tool-cleanup-text.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - Tidy & Sanitize Text Plugin</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+
+    <script>
+        (function() {
+            const tool = window.FamousPluginCore.Manager.registry.find(t => t.name === "Tidy & Sanitize Text");
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+
+            if (!tool) {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = 'Error: "Tidy & Sanitize Text" tool not registered in window.FamousPluginCore.Manager.registry';
+                console.error('Error: "Tidy & Sanitize Text" tool not registered');
+                return;
+            }
+
+            const testCases = [
+                {
+                    name: "LF trailing spaces",
+                    input: "Hello world   \nSecond line\t\n",
+                    isSelection: false,
+                    expected: "Hello world\nSecond line\n"
+                },
+                {
+                    name: "CRLF trailing spaces (separator preserved)",
+                    input: "Hello world   \r\nSecond line\t\r\n",
+                    isSelection: false,
+                    expected: "Hello world\r\nSecond line\r\n"
+                },
+                {
+                    name: "whitespace-only lines become empty",
+                    input: "Line 1\n   \n\t\t\nLine 2\n",
+                    isSelection: false,
+                    expected: "Line 1\n\nLine 2\n"
+                },
+                {
+                    name: "leading blank lines removed",
+                    input: "\n\n\nLine 1\nLine 2\n",
+                    isSelection: false,
+                    expected: "Line 1\nLine 2\n"
+                },
+                {
+                    name: "3 blank lines merged into 1",
+                    input: "Line 1\n\n\n\nLine 2\n",
+                    isSelection: false,
+                    expected: "Line 1\n\nLine 2\n"
+                },
+                {
+                    name: "document gets exactly one final newline",
+                    input: "Line 1\nLine 2\n\n\n",
+                    isSelection: false,
+                    expected: "Line 1\nLine 2\n"
+                },
+                {
+                    name: "empty string",
+                    input: "",
+                    isSelection: false,
+                    expected: ""
+                },
+                {
+                    name: "selection mode compresses double spaces but keeps indentation",
+                    input: "    const  foo  =  \"bar\";\n",
+                    isSelection: true,
+                    expected: "    const foo = \"bar\";\n"
+                },
+                {
+                    name: "full-document mode keeps the spaces of an aligned Markdown table",
+                    input: "| Header 1 | Header 2 |\n|   col 1  |   col 2  |\n",
+                    isSelection: false,
+                    expected: "| Header 1 | Header 2 |\n|   col 1  |   col 2  |\n"
+                },
+
+                // Rule 7 (Markdown empty list items) test cases:
+                {
+                    name: "Rule 7: orphan hyphen list item removed",
+                    input: "- a\n- \n\nNext\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "- a\n\nNext\n"
+                },
+                {
+                    name: "Rule 7: orphan asterisk list item removed",
+                    input: "* a\n*   \n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "* a\n"
+                },
+                {
+                    name: "Rule 7: orphan numbered list item removed",
+                    input: "1. a\n2. \n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "1. a\n"
+                },
+                {
+                    name: "Rule 7: indented orphan list item removed",
+                    input: "  - \n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: ""
+                },
+                {
+                    name: "Rule 7: CRLF input with orphan list item preserves CRLF",
+                    input: "- a\r\n- \r\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "- a\r\n"
+                },
+                {
+                    name: "Rule 7: selection mode removes orphan list item",
+                    input: "- a\n- \n",
+                    isSelection: true,
+                    options: { markdown: true },
+                    expected: "- a\n"
+                },
+                {
+                    name: "Rule 7 disabled (markdown: false) keeps hyphen as per Rule 1 trim",
+                    input: "- a\n- \n",
+                    isSelection: false,
+                    options: { markdown: false },
+                    expected: "- a\n-\n"
+                },
+
+                // Rule 7: lines that must NOT be touched
+                {
+                    name: "Protected: lone hyphen setext heading underline",
+                    input: "Title\n-\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "Title\n-\n"
+                },
+                {
+                    name: "Protected: horizontal rule ---",
+                    input: "---\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "---\n"
+                },
+                {
+                    name: "Protected: horizontal rule ***",
+                    input: "***\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "***\n"
+                },
+                {
+                    name: "Protected: horizontal rule * * *",
+                    input: "* * *\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "* * *\n"
+                },
+                {
+                    name: "Protected: task item - [ ]",
+                    input: "- [ ]\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "- [ ]\n"
+                },
+                {
+                    name: "Protected: minus text -text",
+                    input: "-text\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "-text\n"
+                },
+                {
+                    name: "Protected: hyphenated text - text",
+                    input: "- text\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "- text\n"
+                },
+                {
+                    name: "Protected: decimal number 1.5",
+                    input: "1.5\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "1.5\n"
+                },
+                {
+                    name: "Protected: dot number without space 1.",
+                    input: "1.\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "1.\n"
+                },
+                {
+                    name: "Protected: orphan list marker inside fenced code block",
+                    input: "```markdown\n- \n```\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "```markdown\n-\n```\n"
+                },
+                {
+                    name: "Protected: JSDoc star line in non-Markdown file (markdown: false)",
+                    input: " * \n",
+                    isSelection: false,
+                    options: { markdown: false },
+                    expected: " *\n"
+                }
+            ];
+
+            let passed = 0;
+            let total = testCases.length;
+
+            testCases.forEach((tc, index) => {
+                const result = tool.sanitizeText(tc.input, tc.isSelection, tc.options);
+                const isPass = result.cleanedText === tc.expected;
+
+                if (isPass) {
+                    passed++;
+                }
+
+                const card = document.createElement('div');
+                card.className = `test-case ${isPass ? 'pass' : 'fail'}`;
+
+                const badge = document.createElement('span');
+                badge.className = `badge ${isPass ? 'pass' : 'fail'}`;
+                badge.textContent = isPass ? 'PASS' : 'FAIL';
+
+                const title = document.createElement('span');
+                title.textContent = `Case ${index + 1}: ${tc.name}`;
+
+                card.appendChild(badge);
+                card.appendChild(title);
+
+                if (!isPass) {
+                    const diff = document.createElement('div');
+                    diff.className = 'diff-details';
+                    diff.textContent = `Expected: ${JSON.stringify(tc.expected)}\nActual:   ${JSON.stringify(result.cleanedText)}`;
+                    card.appendChild(diff);
+                }
+
+                container.appendChild(card);
+            });
+
+            const summaryText = `${passed}/${total} passed`;
+            summaryEl.className = `summary ${passed === total ? 'passed' : 'failed'}`;
+            summaryEl.textContent = summaryText;
+
+            console.log(`Unit Tests - Tidy & Sanitize Text: ${summaryText}`);
+        })();
+    </script>
+</body>
+</html>

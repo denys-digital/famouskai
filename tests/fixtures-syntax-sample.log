@@ -1,0 +1,96 @@
+# Famouskai syntax sample: log files (plugins/ace-custom/mode-log.js)
+# One release day of a small local-first web app, seen through six kinds of logs.
+# Lines that start with # or = are comments. Fold arrows appear on stack traces
+# (an Error line followed by "at" lines) and on every Famous Mark header below.
+# All names, addresses and paths are examples: no real user, host or account.
+
+# ﹥ 1. Local web server (access log, Common Log Format)
+# Offline mode needs HTTPS or localhost, so the app is served locally for testing:
+# python3 -m http.server 8080 --bind 127.0.0.1
+127.0.0.1 - - [25/Oct/2026:09:00:01 +0900] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/Oct/2026:09:00:01 +0900] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [25/Oct/2026:09:00:01 +0900] "GET /plugins/ext-famous-core.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Oct/2026:09:00:02 +0900] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [25/Oct/2026:09:00:02 +0900] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [25/Oct/2026:09:00:03 +0900] "GET /favicon.ico HTTP/1.1" 404 -
+192.168.1.20 - - [25/Oct/2026:09:04:12 +0900] "GET /index.html HTTP/1.1" 200 -
+# A phone on the same network gets the page, but no offline mode: plain http on a LAN address.
+
+# ﹥ 2. Browser console (Chrome DevTools, copied with "Save as...")
+index.html:1520 Service Worker registered with scope: http://127.0.0.1:8080/
+sw.js:48 [SW] Install: caching 64 files in famouskai-v37.7
+sw.js:61 [SW] Activate: deleting old cache famouskai-v37.6
+ext-famous-core.js:212 [FamousPluginCore] 14 tools registered (Word Count, Diffskai, Export HTML...)
+index.html:2310 [Violation] 'requestAnimationFrame' handler took 61ms
+index.html:2875 Opened "notes-2026-10-25.md" (12.4 KB) - File System Access handle kept for Save
+index.html:2902 Auto-cleanup on Open: 3 trailing spaces removed, file marked as modified
+Uncaught (in promise) TypeError: Cannot read properties of null (reading 'getValue')
+    at updatePreviewContent (index.html:3329:34)
+    at togglePreview (index.html:3241:9)
+    at HTMLButtonElement.<anonymous> (index.html:1180:43)
+# Firefox prints the same stack with "@" between the function and its file:
+updatePreviewContent @ index.html:3329:34
+togglePreview @ index.html:3241:9
+
+# ° Opening index.html straight from the disk (file://) instead of a server
+Access to script at 'file:///home/user/famouskai/sw.js' from origin 'null' has been Blocked by CORS policy.
+sw.js:1  Failed to load resource: net::ERR_FAILED
+index.html:1525 Service Worker registration failed: TypeError: The URL protocol of the current origin ('null') is not supported.
+# Lesson: file:// works for editing, never for offline mode. Use a local server or the hosted app.
+
+# ﹥ 3. Continuous integration (GitHub Actions, "Sanity" workflow)
+2026-10-25T00:58:01.1023456Z ##[group]Run actions/checkout@v4
+2026-10-25T00:58:02.4410022Z Syncing repository: example-org/famouskai
+2026-10-25T00:58:03.0021547Z ##[endgroup]
+2026-10-25T00:58:03.1188010Z ##[group]Every path in the Service Worker cache list exists
+2026-10-25T00:58:03.2290015Z ::error file=sw.js::Missing cached file: /plugins/ext-old-tool.js
+2026-10-25T00:58:03.2301876Z ##[error]Process completed with exit code 1.
+2026-10-25T00:58:03.2410541Z FAILED: 1 of 3 checks
+2026-10-25T01:12:44.5501920Z Re-run after fix (commit 4f2c9e1): 3 of 3 checks PASSED
+2026-10-25T01:12:44.5617730Z Job succeeded - total time (43s)
+
+# ﹥ 4. Server system log (syslog), from a borrowed Linux box
+Oct 25 10:15:04 lab-host-01 sshd[12345]: Failed password for invalid user admin from 203.0.113.50 port 54321 ssh2
+Oct 25 10:15:05 lab-host-01 sshd[12345]: Connection closed by 203.0.113.50 port 54321 [preauth]
+Oct 25 10:15:09 lab-host-01 kernel: [ 1234.567890] nft: DROP IN=eth0 SRC=2001:0db8:85a3:0000:0000:8a2e:0370:7334 PROTO=TCP
+Oct 25 10:16:00 lab-host-01 systemd[1]: Started Daily backup of /srv/notes.
+Oct 25 10:16:42 lab-host-01 backup.sh[2201]: DONE - 1 284 files (38 MB) in 42s
+
+# ﹥ 5. Java service (Log4j pattern), with a folding stack trace
+2026-10-25 10:20:00.000 [main] INFO  org.notesync.SyncServer - Starting sync server v2.4.1 on port 8443
+2026-10-25 10:20:01.245 [worker-1] DEBUG org.notesync.FileIndex - Indexing /srv/notes (depth=3, followLinks=false)
+2026-10-25 10:20:01.500 [worker-2] TRACE org.notesync.Watcher - state: {"changed": 2, "deleted": 0, "conflicts": null}
+2026-10-25 10:20:02.010 [worker-1] WARN  org.notesync.Lock - Lock held for 5000ms: TIMEOUT on "notes/todo.md"
+2026-10-25 10:20:03.404 [worker-2] ERROR org.notesync.Store - Cannot write "notes/todo.md" to jdbc:postgresql://db.example.org:5432/sync
+java.io.IOException: Disk quota exceeded
+    at java.base/java.io.FileOutputStream.writeBytes(Native Method)
+    at org.notesync.Store.save(Store.java:124)
+    at org.notesync.SyncServer.lambda$handle$3(SyncServer.java:88)
+Caused by: org.notesync.QuotaException: quota=10240MB, used=10240MB
+    at org.notesync.Quota.check(Quota.java:41)
+    ... 14 more
+2026-10-25 10:20:04.000 [main] FATAL org.notesync.SyncServer - Shutting down: CRITICAL storage failure
+# The same file, kept local in Famouskai, would have been saved: no server, no quota.
+
+# ﹥ 6. Node.js build tools (ANSI color codes, as written by a terminal)
+[32m[2026-10-25T10:30:00.123Z] info:[0m Express server listening on port 3000 (env: development)
+[34m[2026-10-25T10:30:05.456Z] debug:[0m GET /api/notes/42 - Cache MISS
+[33m[2026-10-25T10:30:10.789Z] warn:[0m EventEmitter memory leak detected: 11 listeners added
+[31m[2026-10-25T10:30:15.000Z] error:[0m Connection to cache server failed after 5000ms
+[35m[2026-10-25T10:30:22.111Z] custom-level:[0m Background job #781 queued
+[32m✓[0m Ready in 1200ms
+[32m✓[0m Compiled /notes in 450ms (421 modules)
+[31m⨯[0m src/app/api/route.ts (14:22) @ GET
+[31m⨯[0m Database connection failed.
+  13 |   const client = await pool.connect();
+> 14 |   const res = await client.query('SELECT NOW()');
+     |                      ^
+  15 |   return Response.json(res.rows[0]);
+# Famouskai itself has none of this: no build, no server, no node_modules. Open index.html, start writing.
+
+# ﹥ 7. Markup inside a log line
+2026-10-25 10:40:00 [render] NOTICE - Unsafe markup removed from preview: <img src="x" onerror="alert(1)">
+2026-10-25 10:40:01 [render] INFO - Preview rendered: <h1>Release notes</h1> (3 headings, 0 scripts)
+======================================================================
+# • End of the day: 0 data sent to any server by the editor.
+======================================================================

@@ -1,0 +1,1012 @@
+/*
+ * Famouskai Editor - Local-First PWA IDE
+ * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * -------------------------------------------------------------------------
+ * COMMERCIAL LICENSE
+ * For commercial integration without the AGPLv3 strict open-source 
+ * restrictions, please contact the author to acquire a commercial license.
+ * -------------------------------------------------------------------------
+ */
+/*
+ * Famouskai Editor - Syntax Themes
+ * -------------------------------------------------------------------------
+ * WORLD-CLASS ARCHITECTURE:
+ * 1. Absolute Isolation: Each language has its own CSS variables (e.g., --js-*, --md-*).
+ * 2. Zero Collision: Scoped strictly via the data-lang attribute on the editor container.
+ * 3. Extreme Maintainability: ACE classes are grouped semantically using :is().
+ * -------------------------------------------------------------------------
+ */
+/* ==========================================================================
+   ﹥ 0. PALETTE CORE (Basic Design Tokens)
+   ========================================================================== */
+:root {
+    /* --- Neutrals & Bases --- */
+    --fm-dark:       #202124;  /* Very dark gray (Google Dark type) */
+    --fm-light:      #F8F8F2;  /* Off-white (Famouskai Foreground type) */
+    --fm-gray:       #75715E;  /* Warm gray (Famouskai Comment type) */
+    --fm-gray-light: #9AA0A6;  /* Light gray (UI) */
+    /* --- Famouskai Colors --- */
+    --fm-magenta:    #F92672;  /* Bright pink / Magenta */
+    --fm-yellow:     #E6DB74;  /* Pale yellow */
+    --fm-sky:        #8AB4F8;  /* Pastel light blue */
+    /* --- Primary Colors --- */
+    --fm-orange:     #FD971F;  /* Bright orange */
+    --fm-green:      #A6E22E;  /* Bright green */
+    --fm-red:        #F95B56;  /* Coral red */
+    --fm-purple:     #AE81FF;  /* Purple */
+    /* --- Secondary Colors --- */
+    --fm-pink:       #FF87B4;  /* Light pink */
+    --fm-brown:      #B87A34;  /* Brown / Bronze */
+    --fm-lime:       #C6FF77;  /* Light lime green */
+    --fm-cyan:       #66D9EF;  /* Cyan blue */
+    --fm-blue:       #569CD6;  /* Classic blue */
+    /* --- Editor Colors (syntax highlighting palette) --- */
+    --fm-emerald:    #60D673;  /* Emerald green (strings) */
+    --fm-gold:       #FFDB0F;  /* Bright gold (functions, classes) */
+    --fm-carnation:  #FF96DA;  /* Pink carnation (numbers, constants) */
+}
+
+/* ==========================================================================
+   ﹥ 1. COLOR PALETTES (THE USER CUSTOMIZATION ZONE)
+   Change colors here. You never need to touch the ACE classes below.
+   ========================================================================== */
+/* ﹥ ...1. JS TS */
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) {
+    /* Comments */
+    --js-comment:                 var(--fm-gray);
+    --js-doc-comment:             var(--fm-gray);
+    --js-doc-body:                var(--fm-gray);
+    /* Keywords, Operators & Storage */
+    --js-keyword:                 var(--fm-magenta);
+    --js-operator:                var(--fm-magenta);
+    --js-storage-type:            var(--fm-cyan);
+    /* Literals & Constants */
+    --js-numeric:                 var(--fm-purple);
+    --js-boolean:                 var(--fm-purple);
+    --js-language-constant:       var(--fm-purple);
+    --js-string:                  var(--fm-yellow);
+    /* Template Literals */
+    --js-template-string:         var(--fm-yellow);
+    --js-template-quote-start:    var(--fm-yellow);
+    --js-template-quote-end:      var(--fm-yellow);
+    --js-template-interp-start:   var(--fm-magenta);
+    --js-template-interp-end:     var(--fm-magenta);
+    /* Functions & Identifiers */
+    --js-function-name:           var(--fm-green);
+    --js-identifier:              var(--fm-light);
+    --js-parameter:               var(--fm-orange);
+    /* Built-ins (Language Support & APIs) */
+    --js-language-variable:       var(--fm-cyan);
+    --js-support-function:        var(--fm-cyan);
+    --js-console-function:        var(--fm-cyan);
+    --js-support-constant:        var(--fm-cyan);
+    /* Regular Expressions */
+    --js-regex:                   var(--fm-orange);
+    --js-regex-escape:            var(--fm-pink);
+    --js-regex-operator:          var(--fm-pink);
+    /* TypeScript Generics (Parsed as XML in ACE) */
+    --js-generics-open:           var(--fm-cyan);
+    --js-generics-close:          var(--fm-cyan);
+    --js-generics-name:           var(--fm-cyan);
+    --js-string-xml:              var(--fm-light);
+    /* Punctuation & Brackets */
+    --js-punctuation:             var(--fm-light);
+    --js-lparen:                  var(--fm-light);
+    --js-rparen:                  var(--fm-light);
+    --js-bracket:                 var(--fm-light);
+    /* Miscellaneous */
+    --js-cjk:                     var(--fm-pink);
+    --js-indent-guide:            var(--fm-gray);
+}
+
+
+/* ﹥ ...2. JSON */
+.ace-famouskai[data-lang="json"] {
+    --json-cjk:           var(--fm-light);   /* Special characters / Emojis */
+    --json-boolean:       var(--fm-purple);  /* true, false */
+    --json-escape:        var(--fm-magenta); /* Escaped characters like \n, \t */
+    --json-number:        var(--fm-purple);  /* Integers and floats */
+    --json-indent-guide:  var(--fm-gray);    /* Indentation lines */
+    --json-empty-bracket: var(--fm-light);   /* Empty arrays [] or objects {} */
+    --json-lparen:        var(--fm-orange);   /* Left brackets/braces */
+    --json-rparen:        var(--fm-orange);   /* Right brackets/braces */
+    --json-operator:      var(--fm-light);   /* Commas, colons */
+    --json-string:        var(--fm-yellow);  /* String values */
+    --json-key:           var(--fm-cyan);    /* Object keys */
+}
+
+/* ﹥ ...3. HTML XML SVG */
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) {
+    /* Comments */
+    --html-comment:                        var(--fm-gray);
+    --html-comment-end:                    var(--fm-gray);
+    --html-comment-start:                  var(--fm-gray);
+    --html-comment-body:                   var(--fm-gray);
+    /* Text & Whitespace */
+    --html-text:                           var(--fm-light);
+    --html-cjk:                            var(--fm-light);
+    --html-whitespace:                     var(--fm-light);
+    --html-tag-whitespace:                 var(--fm-light);
+    --html-indent-guide:                   var(--fm-gray);
+    /* Tags & Punctuation */
+    --html-tag-name:                       var(--fm-magenta);
+    --html-tag-anchor:                     var(--fm-magenta);
+    --html-tag-form:                       var(--fm-magenta);
+    --html-tag-script:                     var(--fm-magenta);
+    --html-tag-style:                      var(--fm-magenta);
+    --html-tag-table:                      var(--fm-magenta);
+    --html-tag-punctuation-open:           var(--fm-gray);
+    --html-tag-punctuation-close:          var(--fm-gray);
+    --html-tag-punctuation-end-open:       var(--fm-gray);
+    /* Attributes */
+    --html-attribute-name:                 var(--fm-green);
+    --html-attribute-value:                var(--fm-yellow);
+    --html-attribute-value-unquoted:       var(--fm-yellow);
+    --html-attribute-equals:               var(--fm-sky);
+    /* Entities, CDATA & DOCTYPE */
+    --html-doctype:                        var(--fm-gray);
+    --html-doctype-content:                var(--fm-gray);
+    --html-cdata:                          var(--fm-orange);
+    --html-escape:                         var(--fm-purple);
+    --html-entity-reference:               var(--fm-purple);
+    /* Embedded CSS & JS Support */
+    --html-constant:                       var(--fm-purple);
+    --html-numeric:                        var(--fm-purple);
+    --html-function-name:                  var(--fm-green);
+    --html-identifier:                     var(--fm-light);
+    --html-keyword:                        var(--fm-magenta);
+    --html-operator:                       var(--fm-magenta);
+    --html-punctuation-operator:           var(--fm-light);
+    --html-storage-type:                   var(--fm-cyan);
+    --html-string:                         var(--fm-yellow);
+    --html-string-start:                   var(--fm-yellow);
+    --html-string-end:                     var(--fm-yellow);
+    --html-regexp:                         var(--fm-orange);
+    --html-paren-crochet:                  var(--fm-light);
+    --html-paren-left:                     var(--fm-light);
+    --html-paren-right:                    var(--fm-light);
+    --html-support-constant:               var(--fm-cyan);
+    --html-support-font:                   var(--fm-cyan);
+    --html-support-function:               var(--fm-cyan);
+    --html-support-function-firebug:       var(--fm-cyan);
+    --html-support-type:                   var(--fm-cyan);
+    --html-variable:                       var(--fm-orange);
+    --html-variable-language:              var(--fm-orange);
+}
+
+/* ﹥ ...4. CSS */
+.ace-famouskai[data-lang="css"] {
+    --css-comment:      var(--fm-gray);
+    --css-string:       var(--fm-brown);
+    --css-escape:      yellow;
+    --css-numeric:      var(--fm-pink);
+    --css-constant:     var(--fm-cyan);
+    --css-curly-brace:  var(--fm-orange);
+    --css-keyword:      var(--fm-red);
+    --css-start-end:    var(--fm-green);
+    --css-crochet:      var(--fm-yellow);
+    --css-punctuation:  var(--fm-sky);
+    --css-property:     var(--fm-blue);
+    --css-value:        var(--fm-lime);
+    --css-variable:     var(--fm-purple);
+}
+
+/* ﹥ ...5. YAML */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) {
+    /* Comments */
+    --yml-comment:        var(--fm-gray);
+    /* Keys, Tags and Anchors */
+    --yml-tag:            var(--fm-cyan);
+    --yml-constant:       var(--fm-cyan);
+    --yml-anchor:         var(--fm-orange);
+    /* Scalar Values */
+    --yml-string:         var(--fm-yellow);
+    --yml-numeric:        var(--fm-purple);
+    --yml-boolean:        var(--fm-purple);
+    /* Punctuation and Structural Markers */
+    --yml-keyword:        var(--fm-magenta);
+    --yml-operator:       var(--fm-magenta);
+    --yml-markup-list:    var(--fm-magenta);
+    /* Parentheses and Brackets */
+    --yml-bracket:        var(--fm-green);
+    --yml-paren-left:     var(--fm-green);
+    --yml-paren-right:    var(--fm-green);
+    /* Editor Visual Elements */
+    --yml-indent:         var(--fm-gray);
+    --yml-indent-guide:   var(--fm-gray);
+}
+
+/* ﹥ ...6. MARKDOWN */
+.ace-famouskai[data-lang="md"] {
+    --md-text:          var(--fm-light);
+    --md-comment:       var(--fm-gray);
+    --md-heading:       var(--fm-orange);
+    --md-blockquote:    var(--fm-magenta);
+    --md-xml-title:     var(--fm-magenta);
+    --md-list-markup:   var(--fm-gray);
+    --md-list:          var(--fm-light);
+    --md-strong:        var(--fm-yellow);
+    --md-link-text:     var(--fm-purple);
+    --md-code:          var(--fm-pink);
+    --md-invisible:     var(--fm-dark);
+    --md-emphasis:      var(--fm-lime);
+    --md-link-url:      var(--fm-blue);
+}
+
+/* ﹥ ...7. CSV TSV */
+.ace-famouskai[data-lang="csv"],
+.ace-famouskai[data-lang="tsv"] {
+    --csv-col-1:        var(--fm-sky);
+    --csv-col-2:        var(--fm-yellow);
+    --csv-col-3:        var(--fm-green);
+    --csv-col-4:        var(--fm-magenta);
+    --csv-col-5:        var(--fm-orange);
+    --csv-col-6:        var(--fm-purple);
+    --csv-col-7:        var(--fm-cyan);
+    --csv-col-8:        var(--fm-lime);
+    --csv-col-9:        var(--fm-pink);
+    --csv-col-10:       var(--fm-brown);
+    --csv-separator:    var(--fm-gray);
+    --csv-quote:        var(--fm-gray);
+}
+
+/* ﹥ ...8. LOG TXT */
+.ace-famouskai[data-lang="txt"],
+.ace-famouskai[data-lang="log"] {
+    --log-text:         var(--fm-gray-light);
+    --log-datetime:     var(--fm-blue);
+    
+    --log-critique:     var(--fm-red);
+    --log-warning:      var(--fm-orange);
+    --log-info:         var(--fm-purple);
+    --log-debug:        var(--fm-brown);
+    
+    --log-ip:           var(--fm-cyan);
+    --log-package:      var(--fm-yellow);
+    
+    --log-quotes:       var(--fm-sky);
+    --log-brackets:     var(--fm-lime);
+    --log-sqbrackets:   var(--fm-gray);
+    --log-xml:          var(--fm-pink);
+    
+    --log-stacktrace:   var(--fm-pink);
+    --log-at:           var(--fm-magenta);
+    --log-more:         var(--fm-yellow);
+    
+    --log-ansi:         var(--fm-gray);
+    --log-comment:      var(--fm-gray);
+    --log-hided:        var(--fm-dark);
+}
+
+/* ==========================================================================
+   ﹥ 2. ACE CLASSES MAPPING (THE ENGINE)
+   Maps the chaotic ACE token output to our clean variables.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   ﹥ ...1. JS TS
+   -------------------------------------------------------------------------- */
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_cjk
+) { color: var(--js-cjk); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_comment
+) { color: var(--js-comment); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_comment.ace_doc
+) { color: var(--js-doc-comment); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_comment.ace_doc.ace_body
+) { color: var(--js-doc-body); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_constant.ace_language
+) { color: var(--js-language-constant); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_constant.ace_language.ace_boolean
+) { color: var(--js-boolean); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_constant.ace_language.ace_escape
+) { color: var(--js-regex-escape); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_constant.ace_numeric
+) { color: var(--js-numeric); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_entity.ace_name.ace_function
+) { color: var(--js-function-name); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_identifier
+) { color: var(--js-identifier); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_indent-guide
+) { color: var(--js-indent-guide); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_keyword
+) { color: var(--js-keyword); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_keyword.ace_operator
+) { color: var(--js-operator); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_meta.ace_tag.ace_punctuation.ace_tag-close.ace_xml
+) { color: var(--js-generics-close); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_meta.ace_tag.ace_punctuation.ace_tag-open.ace_xml
+) { color: var(--js-generics-open); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_meta.ace_tag.ace_tag-name.ace_xml
+) { color: var(--js-generics-name); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_paren.ace_keyword.ace_crochet
+) { color: var(--js-bracket); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_paren.ace_lparen
+) { color: var(--js-lparen); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_paren.ace_quasi.ace_end
+) { color: var(--js-template-interp-end); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_paren.ace_quasi.ace_start
+) { color: var(--js-template-interp-start); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_paren.ace_rparen
+) { color: var(--js-rparen); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_punctuation.ace_operator
+) { color: var(--js-punctuation); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_regexp.ace_keyword.ace_operator
+) { color: var(--js-regex-operator); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_storage.ace_type
+) { color: var(--js-storage-type); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_string
+) { color: var(--js-string); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_string.ace_quasi
+) { color: var(--js-template-string); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_string.ace_quasi.ace_end
+) { color: var(--js-template-quote-end); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_string.ace_quasi.ace_start
+) { color: var(--js-template-quote-start); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_string.ace_regexp
+) { color: var(--js-regex); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_string.ace_xml
+) { color: var(--js-string-xml); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_support.ace_constant
+) { color: var(--js-support-constant); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_support.ace_function
+) { color: var(--js-support-function); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_support.ace_function.ace_firebug
+) { color: var(--js-console-function); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_variable.ace_language
+) { color: var(--js-language-variable); }
+
+:is(.ace-famouskai[data-lang="js"], .ace-famouskai[data-lang="ts"]) :is(
+    .ace_variable.ace_parameter
+) { color: var(--js-parameter); }
+
+/* --------------------------------------------------------------------------
+   ﹥ ...2. JSON
+   -------------------------------------------------------------------------- */
+/* CJK characters and emojis */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_cjk
+) { color: var(--json-cjk); }
+
+/* Boolean values */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_constant.ace_language.ace_boolean
+) { color: var(--json-boolean); }
+
+/* Escape sequences inside strings */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_constant.ace_language.ace_escape
+) { color: var(--json-escape); }
+
+/* Numeric values */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_constant.ace_numeric
+) { color: var(--json-number); }
+
+/* Editor indentation guides */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_indent-guide
+) { color: var(--json-indent-guide); }
+
+/* Empty brackets representation */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_paren.ace_keyword.ace_crochet
+) { color: var(--json-empty-bracket); }
+
+/* Left parentheses, brackets, and braces */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_paren.ace_lparen
+) { color: var(--json-lparen); }
+
+/* Right parentheses, brackets, and braces */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_paren.ace_rparen
+) { color: var(--json-rparen); }
+
+/* Punctuation and operators */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_punctuation.ace_operator
+) { color: var(--json-operator); }
+
+/* Standard string values */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_string
+) { color: var(--json-string); }
+
+/* Object keys */
+:is(.ace-famouskai[data-lang="json"]) :is(
+    .ace_variable
+) { color: var(--json-key); }
+
+
+/* --------------------------------------------------------------------------
+   ﹥ ...3. HTML XML SVG
+   -------------------------------------------------------------------------- */
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_cjk
+) { color: var(--html-cjk); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_comment
+) { color: var(--html-comment); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_comment.ace_end.ace_xml
+) { color: var(--html-comment-end); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_comment.ace_start.ace_xml
+) { color: var(--html-comment-start); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_comment.ace_xml
+) { color: var(--html-comment-body); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_constant
+) { color: var(--html-constant); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_constant.ace_language.ace_escape
+) { color: var(--html-escape); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_constant.ace_language.ace_escape.ace_reference.ace_xml
+) { color: var(--html-entity-reference); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_constant.ace_numeric
+) { color: var(--html-numeric); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_entity.ace_name.ace_function
+) { color: var(--html-function-name); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_entity.ace_other.ace_attribute-name.ace_xml
+) { color: var(--html-attribute-name); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_identifier
+) { color: var(--html-identifier); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_indent-guide
+) { color: var(--html-indent-guide); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_keyword
+) { color: var(--html-keyword); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_keyword.ace_operator
+) { color: var(--html-operator); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_keyword.ace_operator.ace_attribute-equals.ace_xml
+) { color: var(--html-attribute-equals); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_anchor.ace_tag-name.ace_xml
+) { color: var(--html-tag-anchor); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_form.ace_tag-name.ace_xml
+) { color: var(--html-tag-form); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_punctuation.ace_end-tag-open.ace_xml
+) { color: var(--html-tag-punctuation-end-open); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_punctuation.ace_tag-close.ace_xml
+) { color: var(--html-tag-punctuation-close); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_punctuation.ace_tag-open.ace_xml
+) { color: var(--html-tag-punctuation-open); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_script.ace_tag-name.ace_xml
+) { color: var(--html-tag-script); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_style.ace_tag-name.ace_xml
+) { color: var(--html-tag-style); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_table.ace_tag-name.ace_xml
+) { color: var(--html-tag-table); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_meta.ace_tag.ace_tag-name.ace_xml
+) { color: var(--html-tag-name); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_paren.ace_keyword.ace_crochet
+) { color: var(--html-paren-crochet); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_paren.ace_lparen
+) { color: var(--html-paren-left); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_paren.ace_rparen
+) { color: var(--html-paren-right); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_punctuation.ace_operator
+) { color: var(--html-punctuation-operator); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_storage.ace_type
+) { color: var(--html-storage-type); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_string
+) { color: var(--html-string); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_string.ace_attribute-value.ace_xml
+) { color: var(--html-attribute-value); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_string.ace_cdata.ace_xml
+) { color: var(--html-cdata); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_string.ace_end
+) { color: var(--html-string-end); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_string.ace_regexp
+) { color: var(--html-regexp); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_string.ace_start
+) { color: var(--html-string-start); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_string.ace_unquoted.ace_attribute-value.ace_html
+) { color: var(--html-attribute-value-unquoted); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_support.ace_constant
+) { color: var(--html-support-constant); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_support.ace_constant.ace_fonts
+) { color: var(--html-support-font); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_support.ace_function
+) { color: var(--html-support-function); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_support.ace_function.ace_firebug
+) { color: var(--html-support-function-firebug); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_support.ace_type
+) { color: var(--html-support-type); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_text.ace_tag-whitespace.ace_xml
+) { color: var(--html-tag-whitespace); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_text.ace_whitespace.ace_xml
+) { color: var(--html-whitespace); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_text.ace_xml
+) { color: var(--html-text); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_variable
+) { color: var(--html-variable); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_variable.ace_language
+) { color: var(--html-variable-language); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_xml-pe.ace_doctype.ace_xml
+) { color: var(--html-doctype); }
+
+:is(.ace-famouskai[data-lang="html"], .ace-famouskai[data-lang="xml"], .ace-famouskai[data-lang="svg"]) :is(
+    .ace_xml-pe.ace_xml
+) { color: var(--html-doctype-content); }
+
+/* --------------------------------------------------------------------------
+   ﹥ ...4. CSS SCSS
+   -------------------------------------------------------------------------- */
+.ace-famouskai[data-lang="css"] :is(
+    .ace_comment
+) { color: var(--css-comment); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_keyword
+) { color: var(--css-keyword); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_support.ace_type
+) { color: var(--css-property); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_constant
+) { color: var(--css-constant); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_support.ace_constant, .ace_support.ace_constant.ace_color
+) { color: var(--css-value); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_constant.ace_numeric.ace_numeric /* bypass */
+) { color: var(--css-numeric); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_constant.ace_language.ace_escape
+) { color: var(--css-escape); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_string, .ace_support.ace_function
+) { color: var(--css-string); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_string.ace_end, .ace_string.ace_start
+) { color: var(--css-start-end); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_variable
+) { color: var(--css-variable); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_paren.ace_lparen, .ace_paren.ace_rparen
+) { color: var(--css-curly-brace); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_punctuation.ace_operator
+) { color: var(--css-punctuation); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_indent-guide
+) { color: var(--css-punctuation); }
+
+.ace-famouskai[data-lang="css"] :is(
+    .ace_paren.ace_keyword.ace_crochet
+) { color: var(--css-crochet); }
+
+
+
+
+
+/* --------------------------------------------------------------------------
+   ﹥ ...5. YAML
+   -------------------------------------------------------------------------- */
+/* Comments (e.g., # This is a comment) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_comment) { 
+    color: var(--yml-comment); 
+}
+/* Explicit typing tags (e.g., !!str, !!int) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_constant) { 
+    color: var(--yml-constant); 
+}
+/* Anchors and aliases (e.g., &id001, *id001) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_constant.ace_language) { 
+    color: var(--yml-anchor); 
+}
+/* Booleans (e.g., true, false, yes, no) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_constant.ace_language.ace_boolean) { 
+    color: var(--yml-boolean); 
+}
+/* Numbers (e.g., 42, 3.14, 0x2A) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_constant.ace_numeric) { 
+    color: var(--yml-numeric); 
+}
+/* Standard indentation spaces */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_indent) { 
+    color: var(--yml-indent); 
+}
+/* Visual indentation guide lines */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_indent-guide) { 
+    color: var(--yml-indent-guide); 
+}
+/* Colons for mappings (e.g., key: value) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_keyword) { 
+    color: var(--yml-keyword); 
+}
+/* Operators and merge keys (e.g., <<:) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_keyword.ace_operator) { 
+    color: var(--yml-operator); 
+}
+/* List indicators and document separators (e.g., -, ---, ...) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_list.ace_markup) { 
+    color: var(--yml-markup-list); 
+}
+/* Object keys (e.g., my_key:) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_meta.ace_tag) { 
+    color: var(--yml-tag); 
+}
+/* Flow sequence brackets (e.g., [1, 2, 3]) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_paren.ace_keyword.ace_crochet) { 
+    color: var(--yml-bracket); 
+}
+/* Flow mapping left parenthesis (e.g., { ) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_paren.ace_lparen) { 
+    color: var(--yml-paren-left); 
+}
+/* Flow mapping right parenthesis (e.g., } ) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_paren.ace_rparen) { 
+    color: var(--yml-paren-right); 
+}
+/* String values (e.g., "text", 'text', | blocks) */
+:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) :is(.ace_string) { 
+    color: var(--yml-string); 
+}
+
+
+/* --------------------------------------------------------------------------
+   ﹥ ...6. MARKDOWN
+   -------------------------------------------------------------------------- */
+.ace-famouskai[data-lang="md"] :is(
+    .ace_comment.ace_start.ace_xml, .ace_comment.ace_end.ace_xml, 
+    .ace_comment.ace_xml,
+    .ace_meta.ace_tag.ace_punctuation.ace_tag-open.ace_xml, 
+    .ace_meta.ace_tag.ace_punctuation.ace_tag-close.ace_xml
+) { color: var(--md-comment); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_meta.ace_tag.ace_tag-name.ace_xml
+) { 
+    color: var(--md-xml-title); 
+    font-weight: 300; 
+    opacity: 0.65; 
+}
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_comment, .ace_meta.ace_tag.ace_punctuation.ace_end-tag-open.ace_xml
+) { color: var(--md-comment); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_heading, 
+    .ace_markup.ace_heading.ace_1, .ace_markup.ace_heading.ace_2,
+    .ace_markup.ace_heading.ace_3, .ace_markup.ace_heading.ace_4
+) { color: var(--md-heading); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_list
+) { color: var(--md-list); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_markup.ace_list
+) { color: var(--md-list-markup); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_string
+) { color: var(--md-code); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_string.ace_attribute-value.ace_xml
+) { color: var(--md-code); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_support.ace_function, .ace_support.ace_function.ace_firebug
+) { color: var(--md-code); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_string.ace_strong
+) { color: var(--md-strong); font-weight: bold; }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_string.ace_emphasis
+) { color: var(--md-emphasis); font-style: italic; }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_paren.ace_keyword.ace_bracket_title
+) { color: var(--md-link-text); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_paren.ace_keyword.ace_bracket_url, .ace_markup.ace_underline
+) { color: var(--md-link-url); }
+
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_cjk, .ace_entity.ace_name.ace_function, .ace_entity.ace_other.ace_attribute-name.ace_xml, 
+    .ace_identifier, .ace_keyword.ace_operator, .ace_keyword.ace_operator.ace_attribute-equals.ace_xml, 
+    .ace_paren.ace_lparen, .ace_paren.ace_rparen, 
+    .ace_punctuation.ace_operator, .ace_storage.ace_type, .ace_text.ace_tag-whitespace.ace_xml
+) { color: var(--md-text); }
+
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_text.ace_xml
+) { color: var(--md-text); }
+
+.ace-famouskai[data-lang="md"] :is(
+    .ace_paren.ace_keyword.ace_crochet
+) { color: var(--md-link-text); }
+ 
+.ace-famouskai[data-lang="md"] :is(
+    .ace_invisible.ace_invisible_space.ace_invalid
+) { color: var(--md-invisible); }
+
+.ace-famouskai[data-lang="md"] .ace_line:has(.ace_blockquote) span {
+    color: var(--md-blockquote) !important;
+}
+
+/* --------------------------------------------------------------------------
+   ﹥ ...7. CSV TSV
+   -------------------------------------------------------------------------- */
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_1 { color: var(--csv-col-1); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_2 { color: var(--csv-col-2); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_3 { color: var(--csv-col-3); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_4 { color: var(--csv-col-4); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_5 { color: var(--csv-col-5); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_6 { color: var(--csv-col-6); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_7 { color: var(--csv-col-7); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_8 { color: var(--csv-col-8); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_9 { color: var(--csv-col-9); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_col_10 { color: var(--csv-col-10); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_separator { color: var(--csv-separator); }
+:is(.ace-famouskai[data-lang="csv"], .ace-famouskai[data-lang="tsv"]) .ace_csv_quote { color: var(--csv-quote); }
+
+/* --------------------------------------------------------------------------
+   ﹥ ...8. LOG TXT
+   -------------------------------------------------------------------------- */
+.ace-famouskai[data-lang="txt"] :is(
+    .ace_paren.ace_keyword.ace_crochet, .ace_indent-guide
+) { color: var(--log-text); }
+
+/* LOG */
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-comment
+) { color: var(--log-comment); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-datetime
+) { color: var(--log-datetime); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-critique
+) { color: var(--log-critique); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-warning
+) { color: var(--log-warning); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-info
+) { color: var(--log-info); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-debug
+) { color: var(--log-debug); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-ip, .ace_log-file
+) { color: var(--log-ip); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-package
+) { color: var(--log-package); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-quotes
+) { color: var(--log-quotes); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-brackets
+) { color: var(--log-brackets); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-sqbrackets
+) { color: var(--log-sqbrackets); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-xml
+) { color: var(--log-xml); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-stacktrace
+) { color: var(--log-stacktrace); font-style: italic; }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-at
+) { color: var(--log-at); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-more
+) { color: var(--log-more); font-style: italic; }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-ansi
+) { color: var(--log-ansi); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_invisible.ace_invisible_space.ace_invalid
+) { color: var(--log-hided); }
+
+.ace-famouskai[data-lang="log"] :is(
+    .ace_log-text
+) { color: var(--log-text); }

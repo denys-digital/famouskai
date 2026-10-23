@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <ellipse style="fill: rgb(32, 33, 36); stroke: rgb(32, 33, 36);" cx="250" cy="250" rx="250" ry="250"/>
+  <text style="fill: rgb(249, 38, 114); font-family: Cousine; font-size: 255.5px; font-weight: 700; stroke: rgb(249, 38, 114); white-space: pre;" x="20.012" y="334.774">&lt;  </text>
+  <text style="fill: rgb(230, 219, 116); font-family: Cousine; font-size: 255.5px; font-weight: 700; stroke: rgb(230, 219, 116); white-space: pre;" x="20.012" y="334.774"> f </text>
+  <text style="fill: rgb(138, 180, 248); font-family: Cousine; font-size: 255.5px; font-weight: 700; stroke: rgb(138, 180, 248); white-space: pre;" x="20.012" y="334.774">  &gt;</text>
+</svg>

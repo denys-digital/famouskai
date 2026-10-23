@@ -1,0 +1,3794 @@
+<!-- 
+/*
+ * Famouskai Editor - Local-First PWA IDE
+ * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * -------------------------------------------------------------------------
+ * COMMERCIAL LICENSE
+ * For commercial integration without the AGPLv3 strict open-source 
+ * restrictions, please contact the author to acquire a commercial license.
+ * -------------------------------------------------------------------------
+ */
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[New] - Famouskai Editor</title>
+
+    <!-- LINKS FOR CLOUDFLARE PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2f3033">
+    
+    <!-- Tab icon (Favicon) -->
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    
+    <!-- Ultra-light Markdown Parser (Local) -->
+    <script src="vendor/marked/marked.umd.min.js"></script>
+    <!-- DOMPurify for HTML Sanitization -->
+    <script src="vendor/dompurify/purify.min.js"></script>
+    
+    <!-- Read-only unified-diff-to-HTML renderer -->
+    <script src="vendor/diff2html/js/diff2html.min.js" onerror="this.onerror=null;this.src='vendor/diff2html/js/diff2html.min.js?v='+Date.now();"></script>
+    <link rel="stylesheet" href="vendor/diff2html/css/diff2html.min.css" onerror="this.onerror=null;this.href='vendor/diff2html/css/diff2html.min.css?v='+Date.now();">
+    
+    <!-- Application style with auto-recovery cache-buster -->
+    <link rel="stylesheet" href="style.css" onerror="this.onerror=null;this.href='style.css?v=' + Date.now();">
+    <link rel="stylesheet" href="syntax-themes.css" onerror="this.onerror=null;this.href='syntax-themes.css?v=' + Date.now();">
+    <!-- Preview Themes ready for user customization -->
+    <link rel="stylesheet" href="preview-themes.css" onerror="this.onerror=null;this.href='preview-themes.css?v=' + Date.now();">
+    
+    <style id="ace_searchbox">
+        /* ------------------------------------------------------------------------------------------
+         * Editor Search Form - Dark Theme Patch (Pixel-Perfect Cloud9 Style)
+         * --------------------------------------------------------------------------------------- */
+        .ace_search {
+            background-color: #202124;
+            color: #e8eaed;
+            border: 1px solid #3c4043;
+            border-top: 0 none;
+            overflow: hidden;
+            margin: 0;
+            padding: 4px 6px 4px 4px;
+            position: absolute;
+            top: 0;
+            z-index: 99;
+            white-space: normal;
+            min-width: 340px;
+        }
+
+        .ace_search.left {
+            border-left: 0 none;
+            border-radius: 0px 0px 5px 0px;
+            left: 0;
+        }
+
+        .ace_search.right {
+            border-radius: 0px 0px 0px 5px;
+            border-right: 0 none;
+            right: 0;
+        }
+
+        .ace_search_form,
+        .ace_replace_form {
+            margin: 0 25px 4px 0;
+            overflow: hidden;
+            line-height: 1.9;
+            display: flex;
+        }
+
+        .ace_replace_form {
+            margin-right: 0;
+        }
+
+        .ace_search_form.ace_nomatch {
+            outline: 1px solid #ea4335;
+        }
+
+        .ace_search_field {
+            flex: 1;
+            border-radius: 0;
+            background-color: #000000;
+            color: #e8eaed;
+            border: 1px solid #3c4043;
+            border-right: 0 none;
+            outline: 0;
+            padding: 0 8px;
+            font-size: inherit;
+            margin: 0;
+            line-height: inherit;
+            min-width: 17em;
+            vertical-align: top;
+            min-height: 1.8em;
+            box-sizing: content-box;
+            font-family: inherit;
+        }
+
+        .ace_search_field::placeholder {
+            color: #5f6368;
+        }
+
+        .ace_search_form button,
+        .ace_replace_form button,
+        .ace_searchbtn {
+            background: #000000;
+            order: 2 !important;
+            border: 1px solid #3c4043 !important;
+            border-right: 0 none !important;
+            border-radius: 0;
+            color: #e8eaed;
+            line-height: inherit;
+            display: inline-block;
+            padding: 0 8px;
+            margin: 0;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: inherit;
+            box-sizing: content-box;
+            min-height: 1.8em;
+        }
+
+        .ace_search_form .ace_search_field {
+            order: 1 !important;
+        }
+
+        .ace_search_form .ace_searchbtn.prev {
+            order: 2;
+        }
+
+        .ace_search_form .ace_searchbtn.next {
+            order: 3;
+        }
+
+        .ace_search_form button:last-child {
+            order: 4;
+        }
+
+        .ace_replace_form .ace_search_field {
+            order: 1 !important;
+        }
+
+        .ace_replace_form button:nth-child(2) {
+            order: 2;
+        }
+
+        .ace_replace_form button:last-child {
+            order: 3;
+        }
+
+        .ace_search_form button:hover,
+        .ace_replace_form button:hover,
+        .ace_searchbtn:hover {
+            background-color: #2f3033;
+        }
+
+        .ace_search_form button:disabled,
+        .ace_replace_form button:disabled,
+        .ace_searchbtn:disabled {
+            color: #5f6368;
+            cursor: default;
+            background: #000000;
+        }
+
+        .ace_searchbtn.prev,
+        .ace_searchbtn.next {
+            padding: 0px 0.7em;
+        }
+
+        .ace_searchbtn.prev:after,
+        .ace_searchbtn.next:after {
+            content: "";
+            border: solid 1px #888;
+            width: 0.5em;
+            height: 0.5em;
+            display: inline-block;
+            transform: rotate(-45deg);
+        }
+
+        .ace_searchbtn.prev:after {
+            border-width: 1px 0 0 1px;
+        }
+
+        .ace_searchbtn.next:after {
+            border-width: 0 1px 1px 0;
+        }
+
+        .ace_searchbtn_close {
+            position: absolute !important;
+            right: 7px;
+            top: 9px;
+            background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAcCAYAAABRVo5BAAAAZ0lEQVR42u2SUQrAMAhDvazn8OjZBilCkYVVxiis8H4CT0VrAJb4WHT3C5xU2a2IQZXJjiQIRMdkEoJ5Q2yMqpfDIo+XY4k6h+YXOyKqTIj5REaxloNAd0xiKmAtsTHqW8sR2W5f7gCu5nWFUpVjZwAAAABJRU5ErkJggg==) no-repeat 50% 0;
+            border: 0 none !important;
+            border-radius: 50% !important;
+            color: #e8eaed;
+            cursor: pointer;
+            font: 16px/16px Arial;
+            padding: 0 !important;
+            height: 14px;
+            width: 14px;
+            filter: invert(0.6);
+            min-height: auto;
+            order: 99 !important;
+        }
+
+        .ace_searchbtn_close:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            background-position: 50% 100%;
+            filter: invert(1);
+        }
+
+        .ace_search_options {
+            margin-top: 3px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            user-select: none;
+        }
+
+        .ace_search_counter {
+            margin-right: auto;
+            font-family: inherit;
+            color: #9aa0a6;
+            padding-left: 6px;
+        }
+
+        .ace_button {
+            margin-left: 2px;
+            cursor: pointer;
+            user-select: none;
+            overflow: hidden;
+            opacity: 0.6;
+            border: 1px solid transparent;
+            background: transparent;
+            padding: 2px 6px;
+            box-sizing: border-box !important;
+            color: #e8eaed;
+            font-family: inherit;
+            display: inline-block;
+        }
+
+        .ace_button:hover {
+            background-color: #2f3033;
+            border-color: #3c4043;
+            opacity: 1;
+        }
+
+        .ace_button.checked {
+            border-color: #8ab4f8;
+            color: #8ab4f8;
+            opacity: 1;
+            background: rgba(138, 180, 248, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ﹥ TOOLBAR -->
+    <div id="toolbar">
+        <div id="sidebar-tab-group" role="tablist" aria-label="Sidebar">
+            <button class="sidebar-tab-btn" id="tab-explorer" role="tab" aria-controls="panel-explorer" aria-selected="false" data-tab="explorer" title="Explorer (Workspaces & Files)">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            </button>
+            <button class="sidebar-tab-btn" id="tab-outline" role="tab" aria-controls="panel-outline" aria-selected="false" data-tab="outline" title="Outline (Structure & Reorder)">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            </button>
+            <button class="sidebar-tab-btn" id="tab-tools" role="tab" aria-controls="panel-tools" aria-selected="false" data-tab="tools" title="Tools & Magic Snippets">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.4a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            </button>
+            <button class="sidebar-tab-btn" id="tab-settings" role="tab" aria-controls="panel-settings" aria-selected="false" data-tab="settings" title="Windows, Settings & Lexicon">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+        </div>
+        <button id="btn-menu" title="Menu" style="display: none;">☰</button>
+        <div class="divider"></div>
+        <button id="btn-new-window" title="Open new window">&nbsp;+&nbsp;</button>
+        <button id="btn-new" title="New document">New</button>
+        <button id="btn-open" title="Open local file">Open</button>
+        <button id="btn-save" title="Save (Ctrl+S)">Save</button>
+        <button id="btn-save-as" title="Save to a new file">As...</button>
+        <button id="btn-move" title="Move file to another folder" disabled>Move</button>
+        <button id="btn-reload" title="Reload from disk" disabled>Reload</button>
+        <div class="divider"></div>
+
+        <span id="file-name" title="">[New]</span>
+
+        <div id="toolbar-right">
+            <div id="toolbar-plugins"></div>
+            <div id="toolbar-plugins-divider" class="divider" style="display: none;"></div>
+            <button id="btn-print" title="Export to PDF" style="display: none;">Print PDF</button>
+            <button id="btn-export-html" title="Export to Standalone HTML" style="display: none;">Export</button>
+            <button id="btn-preview-theme" title="Dark preview" aria-label="Switch preview to dark theme" style="display: none;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
+            <button id="btn-preview-full" title="Expand preview to full width" style="display: none;">Full View</button>
+            <button id="btn-preview" title="Toggle Preview" style="display: none;">Preview</button>
+        </div>
+    </div>
+
+    <!-- ﹥ MAIN AREA -->
+    <div id="main-area">
+
+        <!-- ﹥ SIDE MENU -->
+        <div id="sidebar-left">
+            <div class="sidebar-inner">
+
+                <!-- ﹥ PANEL 1: EXPLORER (WORKSPACES & FILES) -->
+                <div id="panel-explorer" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-explorer" style="display: flex;">
+                    <div class="sidebar-header">
+                        <div class="sidebar-title">WORKSPACES &amp; FILES</div>
+                        <div class="sidebar-actions">
+                            <button class="fold-btn" id="btn-add-workspace" title="Set New Workspace">+</button>
+                            <button class="fold-btn" id="btn-refresh-workspace" title="Refresh">↻</button>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Workspace Selector Dropdown -->
+                    <div class="workspace-select-wrapper" style="margin-bottom: 10px;">
+                        <select id="workspace-select" class="fmk-select" style="width: 100%; background: var(--color-bg-app); color: var(--color-text-primary); border: 1px solid var(--color-border); padding: 4px; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: 12px;">
+                            <option value="">-- No workspace selected --</option>
+                        </select>
+                    </div>
+
+                    <!-- Current Workspace Display Name -->
+                    <div id="workspace-name" class="workspace-name-display" title="Click to set default folder" style="display: none;">Not set</div>
+
+                    <!-- Filter area -->
+                    <div class="workspace-search-box">
+                        <input type="text" id="workspace-search" placeholder="Filter files..." autocomplete="off">
+                        <button id="workspace-search-clear" title="Clear filter">×</button>
+                    </div>
+                    <!-- Compact Extension Filters -->
+                    <div class="sidebar-actions" id="workspace-ext-filters">
+                        <!-- Buttons injected here by JS -->
+                    </div>
+
+                    <!-- List -->
+                    <div class="workspace-list-box" id="workspace-file-list">
+                        <div class="workspace-empty-msg">No folder selected.</div>
+                    </div>
+
+                    <hr class="sidebar-divider">
+
+                    <!-- Recent Files Section -->
+                    <div class="sidebar-header">
+                        <div class="sidebar-title">RECENT FILES</div>
+                        <div class="sidebar-actions">
+                            <button class="fold-btn" id="btn-recent-filter-workspace" aria-pressed="false" title="Show only recent files from the current workspace">Wks</button>
+                        </div>
+                    </div>
+                    <div id="recent-files-list" class="workspace-list-box">
+                        <div class="workspace-empty-msg">No recent files</div>
+                    </div>
+                </div>
+
+                <!-- ﹥ PANEL 2: OUTLINE (STRUCTURE & REORDERING) -->
+                <div id="panel-outline" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-outline">
+                    <div class="sidebar-header">
+                        <div class="sidebar-title">OUTLINE</div>
+                        <div class="sidebar-actions" id="markdown-fold-buttons">
+                            <button class="fold-btn" id="btn-unfold-all" title="Unfold all">+</button>
+                            <button class="fold-btn" data-fold-level="1" title="Fold Headings 1">H1</button>
+                            <button class="fold-btn" data-fold-level="2" title="Fold Headings 2">H2</button>
+                            <button class="fold-btn" data-fold-level="3" title="Fold Headings 3">H3</button>
+                            <button class="fold-btn" data-fold-level="4" title="Fold Headings 4">H4</button>
+                        </div>
+                        <button class="fold-btn" id="btn-outline-copy" title="Copy Outline Text">
+                            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- Fuzzy Search & A-Z Sort & Reorder Switch Bar -->
+                    <div class="outline-search-row">
+                        <div class="workspace-search-box outline-search-wrapper">
+                            <input type="text" id="outline-search" placeholder="Filter outline..." autocomplete="off">
+                            <button id="outline-search-clear" title="Clear filter">×</button>
+                        </div>
+                        <button id="btn-outline-sort" class="fold-btn" title="Sort A-Z">A-Z</button>
+                        <button id="btn-outline-reorder-mode" class="fold-btn" title="Toggle Drag &amp; Drop Reordering Mode">⇄ Reorder</button>
+                    </div>
+
+                    <!-- Compact Famous Marks & Headings Quick Filter Badges -->
+                    <div id="outline-mark-filters" class="sidebar-actions" style="margin-bottom: 10px; gap: 4px; flex-wrap: wrap;">
+                        <button class="fold-btn active-filter" data-mark-filter="all" title="Show All">All</button>
+                        <button class="fold-btn" data-mark-filter="﹥" title="Filter Famous Arrow (﹥)">﹥</button>
+                        <button class="fold-btn" data-mark-filter="•" title="Filter Magic Dot (•)">•</button>
+                        <button class="fold-btn" data-mark-filter="°" title="Filter Flying Bubble (°)">°</button>
+                        <button class="fold-btn" data-mark-filter="TODO" title="Filter TODOs">TODO</button>
+                        <button class="fold-btn" data-mark-filter="@" title="Filter @ mentions">@</button>
+                        <button class="fold-btn" data-mark-filter="</>" id="btn-outline-filter-xml" title="Filter HTML/XML tags" style="display: none;">&lt;/&gt;</button>
+                        <button class="fold-btn" data-mark-filter="JS" id="btn-outline-filter-js" title="Filter JavaScript symbols" style="display: none;">JS</button>
+                    </div>
+
+                    <div id="toc-list"></div>
+                </div>
+
+                <!-- ﹥ PANEL 3: TOOLS & MAGIC SNIPPETS -->
+                <div id="panel-tools" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-tools">
+                    <div class="sidebar-title">TOOLS</div>
+                    <div id="tools-list"></div>
+
+                    <hr class="sidebar-divider">
+
+                    <!-- SNIPPETS SECTION -->
+                    <div class="sidebar-header">
+                        <div class="sidebar-title" style="margin-bottom: 0;">MAGIC SNIPPETS</div>
+                        <button class="fold-btn" id="btn-manage-snippets" title="Manage snippets">
+                            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></svg>
+                        </button>
+                    </div>
+                    <div class="snippet-search-row" style="margin: 6px 0;">
+                        <div class="workspace-search-box snippet-search-wrapper">
+                            <input type="text" id="snippet-search" placeholder="Filter snippets..." autocomplete="off">
+                            <button id="snippet-search-clear" title="Clear filter" style="display: none;">×</button>
+                        </div>
+                        <div class="snippet-type-filters">
+                            <button type="button" class="fold-btn btn-filter-custom" id="btn-snip-filter-custom" title="Filter Custom snippets">Custom</button>
+                            <button type="button" class="fold-btn btn-filter-default" id="btn-snip-filter-default" title="Filter Default snippets">Default</button>
+                        </div>
+                    </div>
+                    <div class="ext-snippets-box" id="snippets-lexicon">
+                        <!-- Injected dynamically by JS -->
+                    </div>
+                </div>
+
+                <!-- ﹥ PANEL 4: FENÊTRES, SETTINGS & RACCOURCIS -->
+                <div id="panel-settings" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-settings">
+                    <!-- Screen Layout & Windows Section -->
+                    <div class="sidebar-header">
+                        <div class="sidebar-title">SCREEN LAYOUT &amp; WINDOWS</div>
+                    </div>
+                    <div id="window-layout-controls" class="sidebar-actions" style="margin-bottom: 10px; display: flex; gap: 6px;">
+                        <button id="btn-layout-tile-left" class="fold-btn" style="flex: 1; text-align: center;" title="Tile Left (50%)">◧ Left</button>
+                        <button id="btn-layout-tile-right" class="fold-btn" style="flex: 1; text-align: center;" title="Tile Right (50%)">◨ Right</button>
+                        <button id="btn-layout-fullscreen" class="fold-btn" style="flex: 1; text-align: center;" title="Fullscreen / Maximize">□ Full</button>
+                    </div>
+                    <div id="active-windows-list" class="workspace-list-box" style="max-height: 120px; margin-bottom: 15px;">
+                        <div class="workspace-empty-msg">Detecting active instances...</div>
+                    </div>
+
+                    <hr class="sidebar-divider">
+
+                    <!-- Settings Section -->
+                    <div class="sidebar-header" style="margin-bottom: 5px;">
+                        <div class="sidebar-title" style="margin-bottom: 0;">SETTINGS</div>
+                    </div>
+                    <div id="settings-container">
+                        <label class="sidebar-label">
+                            Word Wrap
+                            <input type="checkbox" id="toggle-wrap" checked class="sidebar-checkbox" data-setting="wrap">
+                        </label>
+                        <label class="sidebar-label" title="Auto-saves 1.5s after you stop typing.">
+                            AutoSave
+                            <input type="checkbox" id="toggle-autosave" disabled class="sidebar-checkbox" data-setting="autosave">
+                        </label>
+                        <label class="sidebar-label" title="Enable clickable links (Ctrl+Click behavior)">
+                            Clickable links
+                            <input type="checkbox" id="toggle-links" class="sidebar-checkbox" data-setting="links">
+                        </label>
+                        <label class="sidebar-label" title="Open Markdown preview in full width by default">
+                            Full preview by default
+                            <input type="checkbox" id="toggle-full-preview-startup" class="sidebar-checkbox" data-setting="fullPreviewStartup">
+                        </label>
+                        <label class="sidebar-label" title="Keep the side menu open when starting the application">
+                            Sidebar open on startup
+                            <input type="checkbox" id="toggle-sidebar-startup" class="sidebar-checkbox" data-setting="sidebarStartup">
+                        </label>
+                    </div>
+
+                    <hr class="sidebar-divider">
+
+                    <!-- Lexicon / Shortcuts Section -->
+                    <div class="sidebar-title">LEXICON &amp; SHORTCUTS</div>
+                    <div class="lexicon-box">
+                        <span class="lexicon-key">Ctrl + F/H</span>: Search/Replace<br>
+                        <span class="lexicon-key">Ctrl + P</span>: Go to pair<br>
+                        <span class="lexicon-key">Ctrl + K</span>: Find next<br>
+                        <span class="lexicon-key">Ctrl+Shift+K</span>: Find Previous<br>
+                        <span class="lexicon-key">Ctrl + D</span>: Delete line<br>
+                        <div class="lexicon-separator"></div>
+                        <span class="lexicon-key">Ctrl + M</span>: Hide/Show selection<br>
+                        <span class="lexicon-key">Alt + 0</span>: Fold others<br>
+                        <span class="lexicon-key">Alt+Shift+0</span>: Unfold all
+                        <div class="lexicon-separator"></div>
+                        <span class="lexicon-key">Click</span>: Open file<br>
+                        <span class="lexicon-key">Ctrl+click</span>: in a new window<br>
+                        <span class="lexicon-key">Ctrl+Shift+click</span>: in a new tab
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Side Drawer Overlay for Plugins/Extensions -->
+            <div id="sidebar-drawer">
+                <div class="sidebar-drawer-header">
+                    <div id="sidebar-drawer-title" class="sidebar-title" style="margin-bottom: 0;">Drawer</div>
+                    <button id="sidebar-drawer-close" class="fold-btn sidebar-chevron-btn" title="Close drawer" aria-label="Close drawer"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg></button>
+                </div>
+                <div id="sidebar-drawer-body" class="sidebar-drawer-body"></div>
+            </div>
+
+            <!-- HIDE BUTTONS: menu, and the drawer when it is open -->
+            <div class="sidebar-hide-row">
+                <button id="btn-hide-sidebar">Hide Menu</button>
+                <button id="btn-hide-drawer" class="sidebar-chevron-btn" title="Close drawer" aria-label="Close drawer"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg></button>
+            </div>
+            <button id="app-version" disabled>Reading version...</button>
+        </div>
+
+        <!-- ﹥ EDITOR AREA -->
+        <div id="editor-wrapper">
+            <!-- EDITOR -->
+            <div id="editor"></div>
+        </div>
+
+        <div id="preview-pane">
+            <div id="preview-content">
+                <div id="preview-render" class="markdown-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NATIVE RENAME DIALOG -->
+    <dialog id="rename-dialog">
+        <form id="rename-form">
+            <div class="sidebar-title">Rename File</div>
+            <input type="text" id="rename-input" autocomplete="off" spellcheck="false">
+            <div class="dialog-buttons">
+                <button type="button" id="rename-cancel">Cancel</button>
+                <button type="submit" class="btn-active">Rename</button>
+            </div>
+        </form>
+    </dialog>
+
+    
+    <!-- ﹥ TOAST CONTAINER -->
+    <div id="toast-msg"></div>
+
+    <!-- Ace Editor Error Handler -->
+    <div id="error-msg">Error: The file "ace.js" is missing. Please check the vendor directory.</div>    <script src="vendor/ace-builds/ace.js" onerror="showError()"></script>
+    <script src="theme-famouskai.js"></script>
+    <script src="plugins/ace-custom/mode-csv.js"></script>
+    <script src="plugins/ace-custom/folding-yaml.js"></script>
+    
+    <!-- ========================================== -->
+    <!-- ﹥ TOOLS LOADING + EXTENSIONS              -->
+    <!-- ========================================== -->
+    <!-- Local idb-keyval for offline PWA storage -->
+    <script src="vendor/idb-keyval/umd.min.js"></script>
+    
+    <!-- Local code formatters -->
+    <script src="vendor/js-beautify/beautify.min.js"></script>
+    <script src="vendor/js-beautify/beautify-html.min.js"></script>
+    <script src="vendor/js-beautify/beautify-css.min.js"></script>
+    <!-- Core & Extension -->
+    <script src="plugins/tools.js"></script>
+    <script src="plugins/ext-sidebar.js"></script>
+    <script src="plugins/ext-famous-core.js"></script>
+    <script src="plugins/ext-outline.js"></script>
+    <script src="plugins/ext-snippets.js"></script>
+    <script src="plugins/ext-export-html.js"></script>
+    <script src="plugins/ext-preview-code.js"></script>
+    <!-- Tools -->
+    <script src="plugins/tool-diffskai.js"></script>
+    <script src="plugins/tool-bold2h4.js"></script>
+    <script src="plugins/tool-cleanup.js"></script>
+    <script src="plugins/tool-cleanup-text.js"></script>
+    <script src="plugins/tool-extract-mk-table.js"></script>
+    <script src="plugins/tool-remove-duplicates.js"></script>
+    <script src="plugins/tool-sort-lines.js"></script>
+    <script src="plugins/tool-beautify.js"></script>
+    <script src="plugins/tool-workspace.js"></script>
+
+    
+    <!-- ========================================== -->
+    <!-- ﹥ MAIN SCRIPT                             -->
+    <!-- ========================================== -->
+    <script>
+        // ﹥ CONTEXT & LAYOUT HELPERS
+        /**
+         * Determines if the current application instance is running in a popup/standalone window
+         * or in a standard browser tab.
+         * @returns {boolean} True if running in a popup window, false if in a browser tab.
+         */
+        function isPopupWindow() {
+            // 1. Explicit URL parameter check (?mode=popup)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'popup') return true;
+
+            // 2. PWA standalone display mode check
+            if (window.matchMedia && (
+                window.matchMedia('(display-mode: standalone)').matches ||
+                window.matchMedia('(display-mode: window-controls-overlay)').matches
+            )) {
+                return true;
+            }
+            if (navigator.standalone) return true;
+
+            // 3. Browser UI bar visibility check (popups do not show menubar/toolbar/locationbar)
+            if (window.menubar && !window.menubar.visible) return true;
+            if (window.toolbar && !window.toolbar.visible) return true;
+            if (window.locationbar && !window.locationbar.visible) return true;
+
+            return false;
+        }
+
+        /**
+         * Returns a clean URL for opening a browser tab (removes popup-specific query params).
+         * @returns {string} Clean URL string.
+         */
+        function getCleanAppUrl() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('mode');
+            url.searchParams.delete('pos');
+            return url.toString();
+        }
+
+        /**
+         * Returns a popup URL with mode=popup and optional positioning parameters.
+         * @param {string} [pos] Position mode ('left', 'right', 'full')
+         * @returns {string} Popup URL string.
+         */
+        function getPopupAppUrl(pos) {
+            const url = new URL(getCleanAppUrl());
+            url.searchParams.set('mode', 'popup');
+            if (pos) {
+                url.searchParams.set('pos', pos);
+            }
+            return url.toString();
+        }
+
+        // ﹥ AUTO WINDOW LAYOUT ON STARTUP
+        (function initWindowLayout() {
+            try {
+                // Do not attempt window positioning/resizing if running inside a browser tab
+                if (!isPopupWindow()) return;
+
+                const screenWidth = window.screen.width;
+                const dpr = window.devicePixelRatio || 1;
+                // Physical screen width or CSS screen width (handles display scaling, e.g. 125%/150% on 2560px displays)
+                const physicalWidth = screenWidth * dpr;
+                const isWide = screenWidth > 2000 || physicalWidth > 2000;
+
+                const screenLeft = window.screen.availLeft || 0;
+                const screenTop = window.screen.availTop || 0;
+                const availWidth = window.screen.availWidth;
+                const availHeight = window.screen.availHeight;
+                const halfWidth = Math.floor(availWidth / 2);
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const pos = urlParams.get('pos');
+
+                if (pos === 'right') {
+                    window.moveTo(screenLeft + halfWidth, screenTop);
+                    window.resizeTo(halfWidth, availHeight);
+                } else if (pos === 'left') {
+                    window.moveTo(screenLeft, screenTop);
+                    window.resizeTo(halfWidth, availHeight);
+                } else if (pos === 'full') {
+                    window.moveTo(screenLeft, screenTop);
+                    window.resizeTo(availWidth, availHeight);
+                } else {
+                    if (isWide) {
+                        window.moveTo(screenLeft, screenTop);
+                        window.resizeTo(halfWidth, availHeight);
+                    } else {
+                        window.moveTo(screenLeft, screenTop);
+                        window.resizeTo(availWidth, availHeight);
+                    }
+                }
+            } catch (err) {
+                console.warn("Window layout initialization failed:", err);
+            }
+        })();
+
+        // ﹥ GLOBAL TOAST FUNCTION
+        window.showToast = function(msg, type) {
+            const toast = document.getElementById('toast-msg');
+            if (!toast) return;
+            toast.textContent = msg;
+            toast.classList.remove('toast-success', 'toast-info', 'toast-warn', 'toast-error');
+            if (type) toast.classList.add('toast-' + type);
+            toast.classList.add('show');
+            // Longer messages stay longer: 1 s plus about 70 ms per character, between 3 and 10 s.
+            const duration = Math.min(10000, Math.max(3000, 1000 + String(msg).length * 70));
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
+        };
+        
+        window.currentWorkspaceHandle = null;
+        
+        // Workspace Search Filter Globals (Hoisted above refreshWorkspaceList)
+        let activeExtFilter = null;
+        let wsSearchInput = null;
+        let wsSearchClear = null;
+
+        function applyWorkspaceFilter() {
+            if (!wsSearchInput) wsSearchInput = document.getElementById("workspace-search");
+            if (!wsSearchClear) wsSearchClear = document.getElementById("workspace-search-clear");
+
+            const filterTerm = wsSearchInput ? wsSearchInput.value.toLowerCase() : "";
+            if (wsSearchClear) wsSearchClear.style.display = filterTerm ? "block" : "none";
+
+            const fileItems = document.querySelectorAll("#workspace-file-list .workspace-file-item");
+            fileItems.forEach(item => {
+                const matchText = item.textContent.toLowerCase().includes(filterTerm);
+                const matchExt = !activeExtFilter || activeExtFilter.includes(item.dataset.ext);
+                item.style.display = (matchText && matchExt) ? "block" : "none";
+            });
+        }
+
+        // --- MULTI-WORKSPACE SELECTOR & RECENT FILES STACK ---
+        const MAX_WORKSPACES = 10;
+        const MAX_RECENT_FILES = 50;
+
+        function isRecentWorkspaceFilterActive() {
+            try {
+                return localStorage.getItem('famouskai_recent_filter_workspace') === '1';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function getSavedWorkspaces() {
+            try {
+                const list = await idbKeyval.get('famouskai_workspaces');
+                return Array.isArray(list) ? list : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        async function saveWorkspaceToStore(handle) {
+            if (!handle) return;
+            try {
+                let workspaces = await getSavedWorkspaces();
+                // Deduplicate by directory name
+                workspaces = workspaces.filter(w => w.name !== handle.name);
+                workspaces.unshift({
+                    id: Date.now().toString(),
+                    name: handle.name,
+                    handle: handle,
+                    lastAccessed: Date.now()
+                });
+                if (workspaces.length > MAX_WORKSPACES) {
+                    workspaces = workspaces.slice(0, MAX_WORKSPACES);
+                }
+                await idbKeyval.set('famouskai_workspaces', workspaces);
+                await idbKeyval.set('default_workspace_handle', handle);
+                window.currentWorkspaceHandle = handle;
+                renderRecentFilesList();
+            } catch (err) {
+                console.error("Failed to save workspace handle:", err);
+            }
+        }
+
+        async function renderWorkspaceSelect() {
+            const selectEl = document.getElementById('workspace-select');
+            if (!selectEl) return;
+
+            const workspaces = await getSavedWorkspaces();
+            selectEl.innerHTML = '';
+
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = workspaces.length > 0 ? '-- Select Workspace --' : '-- No saved workspaces --';
+            selectEl.appendChild(defaultOpt);
+
+            workspaces.forEach((w, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx.toString();
+                opt.textContent = w.name;
+                if (window.currentWorkspaceHandle && window.currentWorkspaceHandle.name === w.name) {
+                    opt.selected = true;
+                }
+                selectEl.appendChild(opt);
+            });
+        }
+
+        async function initWorkspace() {
+            try {
+                const defaultHandle = await idbKeyval.get('default_workspace_handle');
+                if (defaultHandle) {
+                    const permission = await defaultHandle.queryPermission({ mode: 'readwrite' });
+                    if (permission === 'granted') {
+                        window.currentWorkspaceHandle = defaultHandle;
+                    }
+                }
+                await renderWorkspaceSelect();
+                if (window.currentWorkspaceHandle) {
+                    refreshWorkspaceList();
+                }
+            } catch (err) {
+                console.error("Failed to load workspace:", err);
+            }
+            renderRecentFilesList();
+        }
+
+        // --- RECENT FILES STACK ---
+        const recentFilesChannel = new BroadcastChannel('famouskai_recent_files');
+        recentFilesChannel.onmessage = (e) => {
+            if (e.data === 'RECENT_FILES_UPDATED') {
+                renderRecentFilesList();
+            }
+        };
+
+        async function getRecentFiles() {
+            try {
+                const list = await idbKeyval.get('famouskai_recent_files');
+                return Array.isArray(list) ? list : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        async function addRecentFile(handle) {
+            if (!handle || !handle.name) return;
+            try {
+                let recents = await getRecentFiles();
+                let filtered = [];
+                for (const entry of recents) {
+                    let isSame = false;
+                    if (entry && entry.handle && typeof entry.handle.isSameEntry === 'function') {
+                        try {
+                            isSame = await entry.handle.isSameEntry(handle);
+                        } catch (e) {
+                            isSame = (entry.name === handle.name);
+                        }
+                    } else {
+                        isSame = (entry.name === handle.name);
+                    }
+                    if (!isSame) {
+                        filtered.push(entry);
+                    }
+                }
+                filtered.unshift({
+                    name: handle.name,
+                    handle: handle,
+                    lastOpened: Date.now()
+                });
+                if (filtered.length > MAX_RECENT_FILES) {
+                    filtered = filtered.slice(0, MAX_RECENT_FILES);
+                }
+                await idbKeyval.set('famouskai_recent_files', filtered);
+                renderRecentFilesList();
+                recentFilesChannel.postMessage('RECENT_FILES_UPDATED');
+            } catch (err) {
+                console.error("Failed to update recent files stack:", err);
+            }
+        }
+
+        let recentFilesRenderToken = 0;
+
+        async function renderRecentFilesList() {
+            const listEl = document.getElementById('recent-files-list');
+            const filterBtn = document.getElementById('btn-recent-filter-workspace');
+            if (!listEl) return;
+
+            const renderToken = ++recentFilesRenderToken;
+
+            const isWorkspaceOpen = !!window.currentWorkspaceHandle;
+            const isFilterOn = isRecentWorkspaceFilterActive();
+
+            if (filterBtn) {
+                filterBtn.disabled = !isWorkspaceOpen;
+                if (isFilterOn && isWorkspaceOpen) {
+                    filterBtn.classList.add('active-filter');
+                    filterBtn.setAttribute('aria-pressed', 'true');
+                    filterBtn.title = "Showing recent files from the current workspace only (click to show all)";
+                } else {
+                    filterBtn.classList.remove('active-filter');
+                    filterBtn.setAttribute('aria-pressed', 'false');
+                    filterBtn.title = "Show only recent files from the current workspace";
+                }
+            }
+
+            const recents = await getRecentFiles();
+            if (renderToken !== recentFilesRenderToken) return;
+
+            if (recents.length === 0) {
+                listEl.innerHTML = `<div class="workspace-empty-msg">No recent files</div>`;
+                return;
+            }
+
+            let displayItems = [];
+            if (isFilterOn && isWorkspaceOpen) {
+                for (const item of recents) {
+                    let inside = false;
+                    if (item && item.handle && typeof window.currentWorkspaceHandle.resolve === 'function') {
+                        try {
+                            const rel = await window.currentWorkspaceHandle.resolve(item.handle);
+                            if (Array.isArray(rel)) {
+                                inside = true;
+                            }
+                        } catch (e) {
+                            inside = false;
+                        }
+                    }
+                    if (inside) {
+                        displayItems.push(item);
+                    }
+                }
+                if (renderToken !== recentFilesRenderToken) return;
+
+                if (displayItems.length === 0) {
+                    listEl.innerHTML = `<div class="workspace-empty-msg">No recent files in this workspace</div>`;
+                    return;
+                }
+            } else {
+                displayItems = recents;
+            }
+
+            listEl.innerHTML = '';
+            displayItems.forEach(item => {
+                const ext = item.name.split('.').pop().toLowerCase();
+                const div = document.createElement('div');
+                div.className = 'workspace-file-item';
+                div.style.paddingLeft = '8px';
+                div.title = item.name;
+                div.innerHTML = getFileIcon(ext);
+                div.appendChild(document.createTextNode(item.name));
+
+                div.onclick = async (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        try {
+                            const openFileId = Date.now().toString() + "_" + Math.random().toString(36).substring(2, 8);
+                            const key = 'famouskai_open_file_' + openFileId;
+                            await idbKeyval.set(key, item.handle);
+
+                            const targetUrl = new URL(window.location.href);
+                            targetUrl.searchParams.set('open_file_id', openFileId);
+
+                            if (e.shiftKey) {
+                                window.open(targetUrl.toString(), '_blank');
+                            } else {
+                                window.open(targetUrl.toString(), '_blank', 'popup=yes');
+                            }
+                        } catch (err) {
+                            console.error("Error opening recent file in new window/tab:", err);
+                        }
+                        return;
+                    }
+
+                    if (isModified && !confirm("Unsaved changes will be lost. Continue?")) return;
+
+                    try {
+                        const file = await item.handle.getFile();
+                        const text = await file.text();
+
+                        fileHandle = item.handle;
+                        currentFileName = item.name;
+                        lastKnownModifiedTime = file.lastModified;
+                        isInitialLoad = true;
+                        isModified = false;
+
+                        editor.setValue(text, -1);
+                        applyNativeColoration(currentFileName);
+                        emitFileOpen();
+                        updateUI();
+                        addRecentFile(item.handle);
+
+                        setTimeout(() => { editor.focus(); isInitialLoad = false; }, 50);
+                    } catch (err) {
+                        alert("File read error: " + err.message);
+                    }
+                };
+
+                listEl.appendChild(div);
+            });
+        }
+        
+        // Launch initialization on startup
+        initWorkspace();
+        function showError() { document.getElementById('error-msg').style.display = 'block'; }
+
+        let fileHandle = null;
+        let currentFileName = "";
+        let isInitialLoad = false;
+        let isModified = false;
+        let lastKnownModifiedTime = 0; // Stores the timestamp of the last read/written version
+
+        window.FamousPluginCore = window.FamousPluginCore || {};
+        window.FamousPluginCore.getCurrentFile = () => ({
+            handle: fileHandle,
+            name: currentFileName || '',
+            lastModified: lastKnownModifiedTime,
+            ext: (editor && editor.session && editor.session.$modeId) ? editor.session.$modeId.split('/').pop() : ''
+        });
+
+        let editor = null;
+        let autoSaveTimer = null;
+        let isAutoSaveEnabled = false;
+
+        /**
+         * UNIFIED WORKSPACE CONFIGURATION (Single Source of Truth)
+         * Maps functional groups to their filter UI and specific file icons.
+         * This automatically dictates allowed extensions and color inheritance.
+         */
+        const WORKSPACE_FILE_GROUPS = [
+            { filter: 'JS',  className: 'icon-js',   
+                types: { 
+                    js: 'JS', 
+                    ts: { label: 'TS', className: 'icon-ts' }
+                } },
+            { filter: '{}',  className: 'icon-json', types: { json: '{}' } },
+            { filter: '</>', className: 'icon-html', 
+                types: { 
+                    html: '&lt;h&gt;',
+                    xml: { label: '&lt;x&gt;', className: 'icon-xml' },
+                    svg: { label: '&lt;s&gt;', className: 'icon-svg' }
+                    
+                } },
+            { filter: '#',   className: 'icon-css',  types: { css: '#' } },
+            { filter: 'Yᴍʟ', className: 'icon-yml',  types: { yaml: 'Yᴍʟ', yml: 'Yᴍʟ' } },
+            { filter: '±',   className: 'icon-diff', types: { patch: '±', diff: '±' } },
+            { filter: 'M⇣',  className: 'icon-md',   types: { md: 'M⇣' } },
+            { filter: '≣',   className: 'icon-txt',  
+                types: {
+                    txt: 'Txᴛ', 
+                    log: { label: 'Lᴏɢ', className: 'icon-log' },
+                    csv: { label: '▥' , className: 'icon-csv' },
+                    tsv: { label: '▥' , className: 'icon-csv' }
+                    
+                } }
+        ];
+        
+        // ﹥ AUTO-GENERATED RESOURCES (Do not edit directly)
+        
+        // 1. Generate O(1) lookup map for fast file icon rendering
+        const FILE_ICON_MAP = Object.freeze(
+            WORKSPACE_FILE_GROUPS.reduce((acc, group) => {
+                Object.entries(group.types).forEach(([ext, value]) => {
+                    const isObject = typeof value === "object";
+                    acc[ext] = {
+                        label: isObject ? value.label : value,
+                        className: isObject && value.className ? value.className : group.className
+                    };
+                });
+                return acc;
+            }, {})
+        );        
+        
+        // 2. Dynamically extract allowed extensions for the Workspace Explorer
+        const WORKSPACE_ALLOWED_EXT = Object.keys(FILE_ICON_MAP);
+
+        // 3. Workspace Configuration Constants (Keep only the ignored directories)
+        const WORKSPACE_IGNORED_DIRS = ['node_modules', '.git', '.vscode']; // Crash prevention
+
+        // ﹥ CORE UI UPDATE
+        // Overwriting updateUI to natively support inline icons and preview buttons
+        function updateUI() {
+            const titleName = currentFileName || "[New]";
+            const modStar = isModified ? " *" : "";
+            document.title = modStar + titleName + " - Famouskai Editor";
+        
+            const fileNameEl = document.getElementById("file-name");
+            
+            let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+            
+            if (!ext && editor) {
+                const modeId = editor.session.$modeId || "";
+                const modeName = modeId.split('/').pop(); 
+                
+                const modeMap = { 'javascript':'js', 'typescript':'ts', 'html':'html', 'xml':'xml',
+                   'css':'css', 'json':'json', 'markdown':'md', 'yaml':'yml', 'text':'txt',
+                   'csv':'csv', 'svg':'svg', 'diff':'patch', 'patch':'patch'
+                };
+                ext = modeMap[modeName] || 'txt'; 
+            }
+        
+            updateSnippetsUI(ext);
+                        
+            const iconHtml = getFileIcon(ext);
+            
+            // Build modular HTML structure for text and copy button
+            let content = iconHtml + `<span id="file-name-text">${titleName}${modStar}</span>`;
+            
+            if (fileHandle) {
+                // Inline SVG for the copy icon
+                content += `<button id="file-name-copy" class="toolbar-icon-btn" title="Copy file name">
+                                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>`;
+                
+                // Add external link button specifically for HTML files
+                if (ext === 'html' || ext === 'svg')  {
+                    content += `<button id="file-name-open-ext" class="toolbar-icon-btn" title="View in new tab">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                </button>`;
+                }
+            }
+            
+            fileNameEl.innerHTML = content;
+            fileNameEl.title = currentFileName || "[New]";
+            
+            // Re-attach specific event listeners after innerHTML mutation
+            const textEl = document.getElementById("file-name-text");
+            if (textEl) {
+                // Set tooltip securely via DOM property to avoid quote escaping issues
+                textEl.title = `${titleName} - Click to rename`;
+                
+                if (fileHandle) {
+                    textEl.addEventListener("click", renameCurrentFile);
+                }
+            }
+            
+            const copyEl = document.getElementById("file-name-copy");
+            if (copyEl) {
+                copyEl.addEventListener("click", copyFileName);
+            }
+        
+            // Attach event listener for the external link button
+            const openExtEl = document.getElementById("file-name-open-ext");
+            if (openExtEl && fileHandle) {
+                openExtEl.addEventListener("click", openHtmlInNewTab);
+            }
+
+            if (isModified) fileNameEl.classList.add('is-modified');
+            else fileNameEl.classList.remove('is-modified');
+
+            document.getElementById("btn-reload").disabled = !fileHandle;
+            document.getElementById("btn-move").disabled = !fileHandle || isModified;
+
+            const toggleAutoSave = document.getElementById("toggle-autosave");
+            toggleAutoSave.disabled = !fileHandle;
+            if (!fileHandle) {
+                toggleAutoSave.checked = false; 
+                // Do NOT touch isAutoSaveEnabled here, preserve user intent in memory
+            } else {
+                // Restore actual user intent visually when a file is opened
+                toggleAutoSave.checked = isAutoSaveEnabled;
+            }
+            
+            const btnPreview = document.getElementById("btn-preview");
+            const btnExport = document.getElementById("btn-export-html");
+            const btnPreviewTheme = document.getElementById("btn-preview-theme");
+            if (ext === 'md') {
+                btnPreview.style.display = "inline-block";
+                if (isPreviewOpen) {
+                    document.getElementById("btn-print").style.display = "inline-block";
+                    if (btnExport) btnExport.style.display = "inline-block";
+                    if (btnPreviewTheme) btnPreviewTheme.style.display = "inline-block";
+                } else {
+                    if (btnExport) btnExport.style.display = "none";
+                    if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
+                }
+            } else if (ext === 'patch' || ext === 'diff') {
+                btnPreview.style.display = "inline-block";
+                document.getElementById("btn-print").style.display = "none";
+                if (btnExport) btnExport.style.display = "none";
+                if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
+            } else {
+                btnPreview.style.display = "none";
+                document.getElementById("btn-print").style.display = "none";
+                if (btnExport) btnExport.style.display = "none";
+                if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
+                if (isPreviewOpen) togglePreview(); 
+            }
+
+            const toolbarRight = document.getElementById("toolbar-right");
+            const divider = document.getElementById("toolbar-plugins-divider");
+            
+            if (toolbarRight && divider && btnPreview) {
+                const hasTools = toolbarRight.hasAttribute("data-has-tools");
+                const isPreviewVisible = btnPreview.style.display !== "none";
+                
+                if (hasTools && isPreviewVisible) {
+                    divider.style.display = "block";
+                } else {
+                    divider.style.display = "none";
+                }
+            }
+        }
+
+        if (typeof ace !== 'undefined') {
+            ace.config.set('basePath', 'vendor/ace-builds');
+            ace.config.set('modePath', 'vendor/ace-builds');
+            ace.config.set('themePath', 'vendor/ace-builds');
+
+            // Register custom syntax modes explicitly to bypass the default vendor directory
+            ace.config.setModuleUrl("ace/mode/log", "plugins/ace-custom/mode-log.js");
+            
+            editor = ace.edit("editor");
+
+            editor.setTheme("ace/theme/famouskai");
+            editor.session.setMode("ace/mode/text");
+
+            editor.setOptions({
+                fontSize: "18px",
+                fontFamily: "monospace",
+                useSoftTabs: true,
+                tabSize: 4,
+                wrap: true,
+                showGutter: true,
+                enableAutoIndent: true,
+                selectionStyle: "line",
+                highlightActiveLine: true,
+                cursorStyle: "smooth",
+                showPrintMargin: false,
+                displayIndentGuides: true,
+                vScrollBarAlwaysVisible: false,
+                hScrollBarAlwaysVisible: false
+            });
+
+            // ============================================================================
+            // FAMOUS MARK UNIVERSAL FOLDING (U+FE65 "﹥") - STABILIZED PATCH (v8)
+            // ----------------------------------------------------------------------------
+            // Drop-in replacement for the v7 block. Place this single IIFE call right
+            // after editor.session.setMode('ace/mode/text') and editor.setOptions(...),
+            // BEFORE editor.session.setUseWorker(false).
+            //
+            // CHANGES SINCE v7 (v8 - stabilization release):
+            //
+            // 1. YAML EXCLUSION (deliberate scope reduction, not a bug fix):
+            //    All test scenarios are conclusive EXCEPT YAML, which still shows
+            //    intermittent/unstable behavior under real-world usage. To ship a
+            //    reliable v8 now, Famous Mark folding is explicitly DISABLED for any
+            //    session whose current language mode id contains "yaml". Native YAML
+            //    folding is left completely untouched (never patched, never wrapped),
+            //    exactly as if this whole system did not exist for that mode. This is a
+            //    deliberate, explicit early-exit - not a silent failure - and is fully
+            //    reversible by removing the isYamlMode() guard once YAML is revisited.
+            //    See the separate YAML handoff document for the open investigation.
+            //
+            // 2. LOG NOISE REDUCTION: the two highest-frequency trace lines
+            //    ("[FoldPatch] Found on row ..." and "[FoldPatch] Range triggered on
+            //    row ...") fire on almost every keystroke, scroll and redraw and were
+            //    flooding the console during daily use. They are commented out by
+            //    default (search for "UNCOMMENT FOR DEBUG" below to re-enable them) but
+            //    intentionally left in the code, not deleted, so any future
+            //    investigation can turn them back on with a one-line change. All other
+            //    trace logs (patch lifecycle, cache sync, native suppression, mode
+            //    changes, errors) remain active permanently.
+            //
+            // No other logic changed since v7: STEP 5's real session.$setFolding() fix
+            // (fixes brand-new/.txt documents) and the removal of the v6 "safety net"
+            // click handler (fixes the fold-then-instant-unfold race) are both kept as
+            // validated by the latest test round (JS/CSS/HTML/.txt/.log/new documents
+            // all conclusive).
+            // ============================================================================
+            (function initFamousMarkFolding(editor) {
+                if (!editor || editor.session.isFamousFoldPatchInit) {
+                    console.log('[FoldPatch] Already initialized for this session, skipping.');
+                    return;
+                }
+                editor.session.isFamousFoldPatchInit = true;
+            
+                console.log('[FoldPatch] 0. Initializing Famous Mark universal folding system (v8).');
+            
+                const Range = ace.require('ace/range').Range;
+                // U+FE65 "﹥" (Famous Arrow) + U+2022 "•" (Magic Dot) + U+00B0 "°" (Flying Bubble)
+                // Read from the single source of truth (ext-famous-core.js) instead of a local
+                // literal, so ACE folding and Outline bookmarking can never drift apart again.
+                // Defensive fallback preserved in case ext-famous-core.js failed to load
+                // (e.g. offline PWA with a partially corrupted cache).
+                const famousRegex = (window.FamousPluginCore && window.FamousPluginCore.FamousMark)
+                    ? window.FamousPluginCore.FamousMark.regex
+                    : /^\s*[/<*!\-#%;]*\s*[﹥•°]/;
+            
+                // Returns true if the CURRENT session language is YAML. Famous Mark
+                // folding is intentionally disabled for this mode (see header comment).
+                function isYamlMode() {
+                    const modeId = editor.session.getMode() && editor.session.getMode().$id;
+                    return !!modeId && modeId.indexOf('yaml') !== -1;
+                }
+            
+                // ------------------------------------------------------------------------
+                // STEP 1 - Universal Fold Support Extension for modes WITHOUT native
+                // folding (ace/mode/text: .txt files and brand new unsaved documents).
+                // Unaffected by the YAML exclusion: YAML always has its own native
+                // foldingRules already, so this injection never applies to it anyway.
+                // ------------------------------------------------------------------------
+                try {
+                    const BaseFoldMode = ace.require('ace/mode/folding/fold_mode').FoldMode;
+                    const TextMode = ace.require('ace/mode/text').Mode;
+                    if (!TextMode.prototype.foldingRules) {
+                        console.log('[FoldPatch] 1. Injecting base FoldMode into ace/mode/text prototype.');
+                        const fallbackFoldMode = new BaseFoldMode();
+                        // Tells patchFoldMode() to NEVER delegate to the native
+                        // implementation for this instance: it has no real rules
+                        // (foldingStartMarker/foldingStopMarker are null), delegating
+                        // would throw "Cannot read properties of null (reading 'test')".
+                        fallbackFoldMode.isFamousBaseFallback = true;
+                        TextMode.prototype.foldingRules = fallbackFoldMode;
+                    } else {
+                        console.log('[FoldPatch] 1. ace/mode/text already has foldingRules, skipping injection.');
+                    }
+                } catch (e) {
+                    console.log('[FoldPatch] ERROR while injecting text-mode folding support.', e);
+                }
+            
+                // ------------------------------------------------------------------------
+                // STEP 2 - Core patch: wrap getFoldWidget/getFoldWidgetRange of any
+                // foldMode object to recognize the Famous Mark, falling back to the
+                // native implementation for every other line (except on the injected
+                // empty BaseFoldMode, which has no native implementation to fall back to).
+                // NEVER called for YAML foldMode objects (see the $foldMode trap below).
+                // ------------------------------------------------------------------------
+                function patchFoldMode(foldMode) {
+                    if (!foldMode || foldMode.isFamousPatched) {
+                        return;
+                    }
+                    console.log('[FoldPatch] 2. Patching new foldMode instance.');
+                    foldMode.isFamousPatched = true;
+            
+                    const originalGetFoldWidget = foldMode.getFoldWidget;
+                    const originalGetFoldWidgetRange = foldMode.getFoldWidgetRange;
+                    const canDelegate = !foldMode.isFamousBaseFallback;
+            
+                    // Does the native fold range for this row swallow a Famous Mark row?
+                    // Anti-recursion: some native modes call "this.getFoldWidget(...)"
+                    // from inside their own getFoldWidgetRange. We temporarily restore
+                    // the native getFoldWidget during the probe so any such internal
+                    // call never re-enters our patched version.
+                    function nativeRangeOverlapsMarker(session, foldStyle, row) {
+                        if (!canDelegate || !originalGetFoldWidgetRange) {
+                            return false;
+                        }
+                        const patchedGetFoldWidget = foldMode.getFoldWidget;
+                        foldMode.getFoldWidget = originalGetFoldWidget;
+                        try {
+                            const nativeRange = originalGetFoldWidgetRange.call(foldMode, session, foldStyle, row);
+                            if (!nativeRange) {
+                                return false;
+                            }
+                            for (let r = nativeRange.start.row; r <= nativeRange.end.row; r++) {
+                                const l = session.getLine(r);
+                                if (l && famousRegex.test(l)) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        } catch (e) {
+                            console.log('[FoldPatch] Error probing native range overlap, ignoring.', e);
+                            return false;
+                        } finally {
+                            foldMode.getFoldWidget = patchedGetFoldWidget;
+                        }
+                    }
+            
+                    foldMode.getFoldWidget = function(session, foldStyle, row) {
+                        const line = session.getLine(row);
+                        if (line && famousRegex.test(line)) {
+                            // UNCOMMENT FOR DEBUG - very high frequency (fires on nearly
+                            // every redraw/keystroke), kept disabled by default since v8.
+                            // console.log('[FoldPatch] Found on row ' + row);
+                            return 'start';
+                        }
+                        if (canDelegate && originalGetFoldWidget) {
+                            try {
+                                const widget = originalGetFoldWidget.call(this, session, foldStyle, row);
+                                if (widget === 'start' && nativeRangeOverlapsMarker(session, foldStyle, row)) {
+                                    console.log('[FoldPatch] Suppressing native fold widget on row ' + row + ' (overlaps a Famous Mark line).');
+                                    return '';
+                                }
+                                return widget;
+                            } catch (e) {
+                                console.log('[FoldPatch] originalGetFoldWidget threw, ignoring.', e);
+                                return '';
+                            }
+                        }
+                        return '';
+                    };
+            
+                    foldMode.getFoldWidgetRange = function(session, foldStyle, row) {
+                        const line = session.getLine(row);
+                        if (line && famousRegex.test(line)) {
+                            // UNCOMMENT FOR DEBUG - very high frequency (fires on nearly
+                            // every redraw/keystroke), kept disabled by default since v8.
+                            // console.log('[FoldPatch] Range triggered on row ' + row);
+                            const startRow = row;
+                            const startColumn = line.length;
+                            const maxRow = session.getLength();
+                            let endRow = startRow;
+                            for (let i = startRow + 1; i < maxRow; i++) {
+                                if (famousRegex.test(session.getLine(i))) {
+                                    break;
+                                }
+                                endRow = i;
+                            }
+                            if (endRow > startRow) {
+                                const endColumn = session.getLine(endRow).length;
+                                return new Range(startRow, startColumn, endRow, endColumn);
+                            }
+                            return null;
+                        }
+                        if (canDelegate && originalGetFoldWidgetRange) {
+                            try {
+                                if (nativeRangeOverlapsMarker(session, foldStyle, row)) {
+                                    console.log('[FoldPatch] Suppressing native fold range on row ' + row + ' (overlaps a Famous Mark line).');
+                                    return null;
+                                }
+                                return originalGetFoldWidgetRange.call(this, session, foldStyle, row);
+                            } catch (e) {
+                                console.log('[FoldPatch] originalGetFoldWidgetRange threw, ignoring.', e);
+                                return null;
+                            }
+                        }
+                        return null;
+                    };
+                }
+            
+                // ------------------------------------------------------------------------
+                // STEP 3 - Synchronously repopulate session.foldWidgets for every Famous
+                // Mark row so Ace's native gutterclick gate always passes:
+                //   session.foldWidgets && session.foldWidgets[row] && onFoldWidgetClick()
+                // Never called for YAML sessions (see the $foldMode trap below).
+                // ------------------------------------------------------------------------
+                function syncFoldWidgetCache(session) {
+                    if (!session || typeof session.getFoldWidget !== 'function') {
+                        console.log('[FoldPatch] syncFoldWidgetCache: session.getFoldWidget not wired yet, skipping.');
+                        return;
+                    }
+                    if (!session.foldWidgets) {
+                        session.foldWidgets = [];
+                    }
+                    const len = session.getLength();
+                    let synced = 0;
+                    for (let row = 0; row < len; row++) {
+                        const line = session.getLine(row);
+                        if (line && famousRegex.test(line)) {
+                            try {
+                                session.foldWidgets[row] = session.getFoldWidget(row);
+                                synced++;
+                            } catch (e) {
+                                console.log('[FoldPatch] Error syncing foldWidgets cache for row ' + row, e);
+                            }
+                        }
+                    }
+                    if (synced > 0) {
+                        console.log('[FoldPatch] 5. foldWidgets cache synced for ' + synced + ' Famous Mark row(s).');
+                    }
+                }
+            
+                // ------------------------------------------------------------------------
+                // STEP 4 - Trap session.$foldMode so every foldMode Ace assigns (now or
+                // later, for any language, including redundant reassignments) is patched
+                // and the widget cache is resynced immediately and synchronously.
+                //
+                // YAML EXCLUSION: if the mode being assigned is YAML, we deliberately
+                // skip patchFoldMode() and syncFoldWidgetCache() entirely. The native
+                // foldMode object is stored as-is and left 100% untouched, so YAML
+                // folding behaves exactly as stock Ace - Famous Mark folding simply does
+                // not exist for this language for now.
+                // ------------------------------------------------------------------------
+                let internalFoldMode = editor.session.$foldMode;
+                if (internalFoldMode && !isYamlMode()) {
+                    patchFoldMode(internalFoldMode);
+                }
+                let lastLanguageModeId = editor.session.getMode() && editor.session.getMode().$id;
+            
+                Object.defineProperty(editor.session, '$foldMode', {
+                    get: function() {
+                        return internalFoldMode;
+                    },
+                    set: function(newMode) {
+                        internalFoldMode = newMode;
+            
+                        const currentLanguageModeId = editor.session.getMode() && editor.session.getMode().$id;
+                        const isYaml = currentLanguageModeId && currentLanguageModeId.indexOf('yaml') !== -1;
+                        const isRedundantReassignment = currentLanguageModeId && currentLanguageModeId === lastLanguageModeId;
+                        lastLanguageModeId = currentLanguageModeId;
+            
+                        if (isYaml) {
+                            console.log('[FoldPatch] YAML mode detected - skipping Famous Mark folding entirely, native YAML folding only.');
+                            return;
+                        }
+            
+                        console.log('[FoldPatch] 3. Ace assigned a new $foldMode. Intercepting.');
+                        if (newMode) {
+                            patchFoldMode(newMode);
+                        }
+            
+                        // Ace's own $setFolding() just reset session.foldWidgets = []
+                        // for this new object instance, REGARDLESS of whether the
+                        // language actually changed. Resync our rows synchronously,
+                        // right now, so clicks never race the cache.
+                        syncFoldWidgetCache(editor.session);
+            
+                        if (isRedundantReassignment) {
+                            console.log('[FoldPatch] Redundant $foldMode reassignment for ' + currentLanguageModeId + ', skipping disruptive tokenizer restart.');
+                            return;
+                        }
+            
+                        // Real language change: let the tokenizer redraw normally, then
+                        // resync again once it settles (defensive double-check).
+                        setTimeout(function() {
+                            try {
+                                editor.session.bgTokenizer.start(0);
+                            } catch (e) {
+                                console.log('[FoldPatch] bgTokenizer restart failed, ignoring.', e);
+                            }
+                            setTimeout(function() {
+                                syncFoldWidgetCache(editor.session);
+                            }, 20);
+                        }, 10);
+                    }
+                });
+            
+                // Keep the cache fresh as the user types (adds/removes Famous Marks).
+                // No-ops harmlessly for YAML sessions since syncFoldWidgetCache only
+                // touches Famous Mark rows, and those rows were never patched for YAML
+                // in the first place (session.getFoldWidget still points to the
+                // untouched native YAML implementation).
+                let changeSyncTimer = null;
+                editor.session.on('change', function() {
+                    if (isYamlMode()) {
+                        return;
+                    }
+                    clearTimeout(changeSyncTimer);
+                    changeSyncTimer = setTimeout(function() {
+                        syncFoldWidgetCache(editor.session);
+                    }, 150);
+                });
+            
+                // ------------------------------------------------------------------------
+                // STEP 5 - Force the currently active session to pick up folding right
+                // now (covers a blank new document loaded in text mode BEFORE our patch
+                // to TextMode.prototype.foldingRules ran). Skipped entirely for YAML.
+                //
+                // Preference order:
+                //   1. session.setFolding(rules)   - public API, if present.
+                //   2. session.$setFolding(rules)  - REAL internal API used by Ace's own
+                //      setMode()/$onChangeMode() pipeline. Performs the full wiring:
+                //      resets foldWidgets, and (re)binds session.getFoldWidget /
+                //      session.getFoldWidgetRange to the new foldMode. Present in every
+                //      Ace build, including this one (setFolding without "$" is the one
+                //      missing here).
+                //   3. Last-resort manual replication, only if neither API exists.
+                // ------------------------------------------------------------------------
+                try {
+                    if (isYamlMode()) {
+                        console.log('[FoldPatch] 4. Initial mode is YAML, skipping forced fold re-application.');
+                    } else {
+                        const currentMode = editor.session.getMode();
+                        if (currentMode && currentMode.foldingRules) {
+                            console.log('[FoldPatch] 4. Forcing session to re-apply folding for the currently active mode.');
+                            if (typeof editor.session.setFolding === 'function') {
+                                editor.session.setFolding(currentMode.foldingRules);
+                            } else if (typeof editor.session.$setFolding === 'function') {
+                                console.log('[FoldPatch] 4b. Using internal session.$setFolding (real Ace wiring) instead of the missing public setFolding().');
+                                editor.session.$setFolding(currentMode.foldingRules);
+                            } else {
+                                console.log('[FoldPatch] 4c. Neither setFolding nor $setFolding available, falling back to manual wiring.');
+                                editor.session.$foldMode = currentMode.foldingRules;
+                                const foldStyle = editor.session.$foldStyle || 'markbegin';
+                                editor.session.foldWidgets = [];
+                                editor.session.getFoldWidget = function(row) {
+                                    return currentMode.foldingRules.getFoldWidget(editor.session, foldStyle, row);
+                                };
+                                editor.session.getFoldWidgetRange = function(row) {
+                                    return currentMode.foldingRules.getFoldWidgetRange(editor.session, foldStyle, row);
+                                };
+                            }
+                            if (editor.session.bgTokenizer) {
+                                editor.session.bgTokenizer.start(0);
+                            }
+                            setTimeout(function() {
+                                syncFoldWidgetCache(editor.session);
+                                if (editor.renderer) {
+                                    editor.renderer.updateFull(true);
+                                }
+                            }, 30);
+                        }
+                    }
+                } catch (e) {
+                    console.log('[FoldPatch] ERROR while forcing initial fold support.', e);
+                }
+            
+                console.log('[FoldPatch] 6. Famous Mark universal folding system ready (YAML excluded by design).');
+            })(editor);
+            // ------------------------------------------------------------------------
+            
+            editor.session.setUseWorker(false);
+
+            editor.session.on('change', function() {
+                if (!isInitialLoad && !isModified) {
+                    isModified = true;
+                    updateUI();
+                }
+            });
+
+            // --- LocalStorage Cursor Position Management & LRU Cleanup ---
+            const MAX_CURSOR_ENTRIES = 50;
+
+            function cleanupCursorLocalStorage(maxAllowed = MAX_CURSOR_ENTRIES) {
+                try {
+                    const cursorKeys = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('cursor_')) {
+                            let updatedAt = 0;
+                            try {
+                                const val = JSON.parse(localStorage.getItem(key));
+                                if (val && typeof val.updatedAt === 'number') {
+                                    updatedAt = val.updatedAt;
+                                }
+                            } catch (e) {
+                                // Ignore parse errors, treat as oldest
+                            }
+                            cursorKeys.push({ key, updatedAt });
+                        }
+                    }
+
+                    if (cursorKeys.length > maxAllowed) {
+                        // Sort ascending by updatedAt: oldest (0 or lower) first
+                        cursorKeys.sort((a, b) => a.updatedAt - b.updatedAt);
+                        const entriesToRemove = cursorKeys.length - maxAllowed;
+                        for (let i = 0; i < entriesToRemove; i++) {
+                            localStorage.removeItem(cursorKeys[i].key);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Failed to cleanup cursor position LocalStorage entries:", e);
+                }
+            }
+
+            // Expose for startup and testing
+            window.cleanupCursorLocalStorage = cleanupCursorLocalStorage;
+
+            editor.selection.on('changeCursor', function() {
+                if (!isInitialLoad && currentFileName) {
+                    const cursor = editor.getCursorPosition();
+                    const cursorData = {
+                        row: cursor.row,
+                        column: cursor.column,
+                        updatedAt: Date.now()
+                    };
+                    localStorage.setItem(`cursor_${currentFileName}`, JSON.stringify(cursorData));
+                    cleanupCursorLocalStorage(MAX_CURSOR_ENTRIES);
+                }
+            });
+            
+        } else {
+            showError();
+        }
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initial LRU cleanup of cursor positions in LocalStorage
+            if (typeof window.cleanupCursorLocalStorage === 'function') {
+                window.cleanupCursorLocalStorage(50);
+            }
+
+            // Workspace Select & Add Bindings
+            const wksSelect = document.getElementById('workspace-select');
+            if (wksSelect) {
+                wksSelect.addEventListener('change', async (e) => {
+                    const idx = e.target.value;
+                    if (idx === '') return;
+                    const list = await getSavedWorkspaces();
+                    const selected = list[parseInt(idx)];
+                    if (selected && selected.handle) {
+                        try {
+                            const perm = await selected.handle.queryPermission({ mode: 'readwrite' });
+                            if (perm !== 'granted') {
+                                const req = await selected.handle.requestPermission({ mode: 'readwrite' });
+                                if (req !== 'granted') return;
+                            }
+                            window.currentWorkspaceHandle = selected.handle;
+                            await idbKeyval.set('default_workspace_handle', selected.handle);
+                            refreshWorkspaceList();
+                            renderRecentFilesList();
+                        } catch (err) {
+                            console.error("Failed to activate workspace:", err);
+                        }
+                    }
+                });
+            }
+
+            const btnAddWks = document.getElementById('btn-add-workspace');
+            if (btnAddWks) {
+                btnAddWks.addEventListener('click', async () => {
+                    if (window.FamousPluginCore && window.FamousPluginCore.Manager) {
+                        const tool = window.FamousPluginCore.Manager.registry.find(t => t.name === "Set Default Workspace");
+                        if (tool) {
+                            tool.action(editor);
+                        }
+                    }
+                });
+            }
+
+            // --- SCREEN LAYOUT CONTROLS ---
+            const layoutControls = document.getElementById('window-layout-controls');
+            if (layoutControls) {
+                // Hide layout control buttons if running in normal browser window mode
+                if (typeof isPopupWindow === 'function' && !isPopupWindow()) {
+                    layoutControls.style.display = 'none';
+                }
+            }
+
+            const btnTileLeft = document.getElementById('btn-layout-tile-left');
+            const btnTileRight = document.getElementById('btn-layout-tile-right');
+            const btnFullscreen = document.getElementById('btn-layout-fullscreen');
+
+            function applyScreenLayout(pos) {
+                try {
+                    const screenLeft = window.screen.availLeft || 0;
+                    const screenTop = window.screen.availTop || 0;
+                    const availWidth = window.screen.availWidth;
+                    const availHeight = window.screen.availHeight;
+                    const halfWidth = Math.floor(availWidth / 2);
+
+                    if (pos === 'left') {
+                        window.moveTo(screenLeft, screenTop);
+                        window.resizeTo(halfWidth, availHeight);
+                    } else if (pos === 'right') {
+                        window.moveTo(screenLeft + halfWidth, screenTop);
+                        window.resizeTo(halfWidth, availHeight);
+                    } else if (pos === 'full') {
+                        window.moveTo(screenLeft, screenTop);
+                        window.resizeTo(availWidth, availHeight);
+                    }
+                    if (window.showToast) window.showToast("Layout set to " + pos, "success");
+                } catch (err) {
+                    console.warn("Screen layout error:", err);
+                }
+            }
+
+            if (btnTileLeft) btnTileLeft.addEventListener('click', () => applyScreenLayout('left'));
+            if (btnTileRight) btnTileRight.addEventListener('click', () => applyScreenLayout('right'));
+            if (btnFullscreen) btnFullscreen.addEventListener('click', () => applyScreenLayout('full'));
+
+            // --- ACTIVE WINDOWS TRACKER (BROADCASTCHANNEL HEARTBEAT) ---
+            const windowInstanceId = Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6);
+            window.name = 'famouskai_win_' + windowInstanceId;
+            const activeInstances = new Map();
+            const winTrackerChannel = new BroadcastChannel('famouskai_window_tracker');
+            let lastWindowsSignature = '';
+
+            function getWindowsSignature() {
+                let sig = 'self:' + windowInstanceId + ':' + (currentFileName || '[New]') + ';';
+                const sortedKeys = Array.from(activeInstances.keys()).sort();
+                for (const key of sortedKeys) {
+                    if (key === windowInstanceId) continue;
+                    const data = activeInstances.get(key);
+                    sig += key + ':' + (data ? data.title : '') + ';';
+                }
+                return sig;
+            }
+
+            function sendWindowHeartbeat() {
+                const titleName = currentFileName || "[New]";
+                winTrackerChannel.postMessage({
+                    type: 'HEARTBEAT',
+                    id: windowInstanceId,
+                    title: titleName + " - Famouskai",
+                    timestamp: Date.now()
+                });
+            }
+
+            function renderActiveWindowsList() {
+                const listContainer = document.getElementById('active-windows-list');
+                if (!listContainer) return;
+
+                const now = Date.now();
+                // Prune inactive windows (> 5000ms stale)
+                for (const [id, data] of activeInstances.entries()) {
+                    if (now - data.timestamp > 5000) {
+                        activeInstances.delete(id);
+                    }
+                }
+
+                const currentSig = getWindowsSignature();
+                if (currentSig === lastWindowsSignature && listContainer.children.length > 0) {
+                    return;
+                }
+                lastWindowsSignature = currentSig;
+
+                if (activeInstances.size === 0) {
+                    listContainer.innerHTML = `<div class="workspace-empty-msg">1 active instance (this window)</div>`;
+                    return;
+                }
+
+                listContainer.innerHTML = '';
+                // Add current window item first
+                const currentDiv = document.createElement('div');
+                currentDiv.className = 'workspace-file-item';
+                currentDiv.style.paddingLeft = '8px';
+                currentDiv.title = "Current active window";
+                currentDiv.innerHTML = `<span class="file-icon-badge icon-js">●</span> <strong>This Window</strong> (${currentFileName || '[New]'})`;
+                currentDiv.onclick = () => {
+                    window.focus();
+                    if (window.editor && typeof window.editor.focus === 'function') {
+                        window.editor.focus();
+                    }
+                };
+                listContainer.appendChild(currentDiv);
+
+                activeInstances.forEach((data, id) => {
+                    if (id === windowInstanceId) return;
+                    const div = document.createElement('div');
+                    div.className = 'workspace-file-item';
+                    div.style.paddingLeft = '8px';
+                    div.title = "Click to focus this window";
+                    div.innerHTML = `<span class="file-icon-badge icon-html">○</span> ${data.title}`;
+                    div.onclick = () => {
+                        let raised = false;
+                        try {
+                            const targetWinName = 'famouskai_win_' + id;
+                            const ref = window.open('', targetWinName);
+                            if (ref) {
+                                let isBlank = false;
+                                try {
+                                    if (!ref.location || ref.location.href === 'about:blank' || ref.location.pathname === '/about:blank') {
+                                        isBlank = true;
+                                    }
+                                } catch (e) {
+                                    // Cross-origin or restricted
+                                }
+                                if (isBlank) {
+                                    ref.close();
+                                } else {
+                                    ref.focus();
+                                    raised = true;
+                                }
+                            }
+                        } catch (err) {
+                            // Ignore open/focus failure
+                        }
+
+                        winTrackerChannel.postMessage({
+                            type: 'FOCUS_REQUEST',
+                            targetId: id
+                        });
+
+                        if (!raised && window.showToast) {
+                            window.showToast("Switch to this window with Alt+Tab", "info");
+                        }
+                    };
+                    listContainer.appendChild(div);
+                });
+            }
+
+            winTrackerChannel.onmessage = (event) => {
+                const msg = event.data;
+                if (!msg || typeof msg !== 'object') return;
+
+                if (msg.type === 'HEARTBEAT' && msg.id) {
+                    activeInstances.set(msg.id, {
+                        title: msg.title,
+                        timestamp: msg.timestamp
+                    });
+                    renderActiveWindowsList();
+                } else if (msg.type === 'FOCUS_REQUEST' && msg.targetId === windowInstanceId) {
+                    window.focus();
+                    if (window.editor && typeof window.editor.focus === 'function') {
+                        window.editor.focus();
+                    }
+                }
+            };
+
+            // Start periodic heartbeat and prune check
+            setInterval(() => {
+                sendWindowHeartbeat();
+                renderActiveWindowsList();
+            }, 2000);
+            sendWindowHeartbeat();
+
+            if (window.FamousPluginCore && window.FamousPluginCore.Sidebar) {
+                window.FamousPluginCore.Sidebar.init();
+            }
+            if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
+                window.FamousPluginCore.Outline.init();
+            }
+            if (window.FamousPluginCore && window.FamousPluginCore.SnippetManager) {
+                window.FamousPluginCore.SnippetManager.init();
+            }
+            
+            // Secure bindings without HTML onclick attributes
+            document.getElementById("btn-refresh-workspace").addEventListener("click", refreshWorkspaceList);
+
+            const btnRecentFilterWks = document.getElementById("btn-recent-filter-workspace");
+            if (btnRecentFilterWks) {
+                btnRecentFilterWks.addEventListener("click", () => {
+                    try {
+                        const current = localStorage.getItem('famouskai_recent_filter_workspace');
+                        const next = current === '1' ? '0' : '1';
+                        localStorage.setItem('famouskai_recent_filter_workspace', next);
+                    } catch (e) {
+                        console.warn("Failed to update famouskai_recent_filter_workspace preference:", e);
+                    }
+                    renderRecentFilesList();
+                });
+            }
+            
+            document.getElementById("btn-unfold-all").addEventListener("click", () => {
+                if(editor) editor.session.unfold();
+            });
+            
+            document.querySelectorAll("[data-fold-level]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const level = parseInt(e.target.dataset.foldLevel);
+                    if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
+                        window.FamousPluginCore.Outline.foldToLevel(level, editor);
+                    }
+                });
+            });
+        });
+
+        window.addEventListener('workspace-updated', async () => {
+            // Reset extension filters to default state on workspace change
+            if (typeof activeExtFilter !== 'undefined') {
+                activeExtFilter = null;
+                document.querySelectorAll('#workspace-ext-filters .fold-btn').forEach(btn => {
+                    btn.classList.remove('active-filter');
+                });
+            }
+            // Reset text search filter to present all files
+            const searchInput = document.getElementById("workspace-search");
+            const searchClear = document.getElementById("workspace-search-clear");
+            if (searchInput && searchClear) {
+                searchInput.value = "";
+                searchClear.style.display = "none";
+            }
+            await renderWorkspaceSelect();
+            refreshWorkspaceList();
+            renderRecentFilesList();
+        });
+
+        function applyNativeColoration(filename) {
+            if (!editor) return;
+            
+            if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
+                // Purge any leftover filter from the previous file 
+                window.FamousPluginCore.Outline.resetFilter();
+        
+                // Render the TOC immediately on file load instead of
+                // waiting for the 800ms typing-debounce timer. That timer exists
+                // to avoid re-parsing on every keystroke, but editor.setValue()
+                // (called right before this function on every file-open path)
+                // also fires a session "change" event and was incorrectly
+                // falling into the same debounce, leaving the PREVIOUS file's
+                // TOC on screen for ~800ms after opening a new one.
+                clearTimeout(window.tocTimer);
+                window.FamousPluginCore.Outline.update(editor);
+            }
+           
+            const ext = filename.split('.').pop().toLowerCase();
+        
+            // Inject the extension as a data attribute on the editor's root container
+            // This allows CSS to scope syntax highlighting variables per language
+            editor.container.setAttribute('data-lang', ext);
+
+            if (ext === 'css') editor.session.setMode("ace/mode/css");
+            else if (ext === 'csv' || ext === 'tsv') editor.session.setMode({ path: "ace/mode/csv", splitter: ext === 'tsv' ? '\t' : window.FamousPluginCore.CsvMode.detectSeparator(editor.getValue()) });
+            else if (ext === "patch" || ext === "diff") editor.session.setMode("ace/mode/diff");
+            else if (ext === 'html') editor.session.setMode("ace/mode/html");
+            else if (ext === 'js' || ext === 'ts') editor.session.setMode("ace/mode/javascript");
+            else if (ext === 'json') editor.session.setMode("ace/mode/json");
+            else if (ext === 'md') editor.session.setMode("ace/mode/markdown");
+            else if (ext === 'svg') editor.session.setMode("ace/mode/svg");
+            else if (ext === 'xml') editor.session.setMode("ace/mode/xml");
+            else if (ext === 'yml' || ext === 'yaml') editor.session.setMode("ace/mode/yaml", () => window.FamousPluginCore.YamlFolding.apply(editor.session));
+            else if (ext === 'log') editor.session.setMode("ace/mode/log"); /* Famous custom */
+            else editor.session.setMode("ace/mode/text"); 
+        
+            const foldButtons = document.getElementById("markdown-fold-buttons");
+            if (foldButtons) foldButtons.style.display = (ext === 'md') ? "flex" : "none";
+        
+            if (window.FamousPluginCore && window.FamousPluginCore.Manager) {
+                window.FamousPluginCore.Manager.renderTools(editor, filename);
+            }
+        }
+
+        // Runs the onFileOpen tool triggers (e.g. "Auto-cleanup on Open") and makes
+        // any change they make visible: the file is flagged as modified and a toast explains why.
+        // Returns true when a trigger changed the content.
+        function emitFileOpen() {
+            if (!editor || !window.FamousPluginCore || !window.FamousPluginCore.Manager) return false;
+            const before = editor.getValue();
+            window.FamousPluginCore.Manager.emit('onFileOpen', editor, { filename: currentFileName });
+            if (editor.getValue() !== before) {
+                isModified = true;
+                if (window.showToast) window.showToast("Auto-cleanup tidied this file on open. Save to keep the changes.", "info");
+                return true;
+            }
+            return false;
+        }
+
+        function newFile() {
+            if (!editor) return;
+            if (isModified && !confirm("Unsaved changes will be lost. Continue?")) return;
+
+            isInitialLoad = true;
+            fileHandle = null;
+            currentFileName = "";
+            isModified = false;
+
+            editor.setValue("", -1);
+            editor.session.setMode("ace/mode/text");
+
+            // The magic call that puts everything in "blank text" mode (hides buttons, empties tools, etc.)
+            applyNativeColoration(currentFileName);
+
+            updateUI();
+
+            setTimeout(() => { editor.focus();
+                isInitialLoad = false; }, 50);
+        }
+
+        async function openFile() {
+            if (!editor) return;
+            if (isModified && !confirm("Unsaved changes will be lost. Continue?")) return;
+
+            try {
+                const pickerOptions = {
+                    id: "editeur-chromeos-text-clone",
+                    types: [{ description: 'Famous files', accept: { 'text/*': WORKSPACE_ALLOWED_EXT.map(ext => "." + ext) } }]
+                };
+                
+                if (fileHandle) {
+                    pickerOptions.startIn = fileHandle;
+                } else if (window.currentWorkspaceHandle) {
+                    // Rights check just before opening if revoked by the system
+                    if (await window.currentWorkspaceHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                        await window.currentWorkspaceHandle.requestPermission({ mode: 'readwrite' });
+                    }
+                    pickerOptions.startIn = window.currentWorkspaceHandle;
+                }
+                
+                const [handle] = await window.showOpenFilePicker(pickerOptions);
+                fileHandle = handle;
+                currentFileName = handle.name;
+
+                const file = await fileHandle.getFile();
+                const text = await file.text();
+                
+                lastKnownModifiedTime = file.lastModified;
+
+                isInitialLoad = true;
+                isModified = false;
+                editor.setValue(text, -1);
+
+                applyNativeColoration(currentFileName);
+                addRecentFile(handle);
+                emitFileOpen();
+                updateUI();
+
+                const savedCursor = JSON.parse(localStorage.getItem(`cursor_${currentFileName}`));
+                if (savedCursor) {
+                    editor.moveCursorTo(savedCursor.row, savedCursor.column);
+                    editor.clearSelection();
+                }
+
+                setTimeout(() => { editor.focus();
+                    isInitialLoad = false; }, 50);
+            } catch (err) {
+                if (err.name !== 'AbortError') alert("Error: " + err.message);
+            }
+        }
+
+        async function saveAsFile() {
+            if (!editor) return;
+            try {
+                const pickerOptions = {
+                    id: "editeur-chromeos-text-clone",
+                    suggestedName: currentFileName || "famous-untitled.txt",
+                    types: [{ description: 'Famous files', accept: { 'text/*': WORKSPACE_ALLOWED_EXT.map(ext => "." + ext) } }]
+                };
+                
+                if (fileHandle) {
+                    pickerOptions.startIn = fileHandle;
+                } else if (window.currentWorkspaceHandle) {
+                    // Rights check just before opening if revoked by the system
+                    if (await window.currentWorkspaceHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                        await window.currentWorkspaceHandle.requestPermission({ mode: 'readwrite' });
+                    }
+                    pickerOptions.startIn = window.currentWorkspaceHandle;
+                }
+
+                const handle = await window.showSaveFilePicker(pickerOptions);
+                fileHandle = handle;
+                currentFileName = handle.name;
+
+                // Dispatch onBeforeSave trigger event to active tools (e.g. Auto-cleanup on Save)
+                if (window.FamousPluginCore && window.FamousPluginCore.Manager) {
+                    window.FamousPluginCore.Manager.emit('onBeforeSave', editor, { filename: currentFileName });
+                }
+
+                const writable = await fileHandle.createWritable();
+                await writable.write(editor.getValue());
+                await writable.close();
+                
+                lastKnownModifiedTime = (await fileHandle.getFile()).lastModified;
+
+                isModified = false;
+                applyNativeColoration(currentFileName);
+                addRecentFile(handle);
+                updateUI();
+
+                afficherSucces("btn-save-as");
+            } catch (err) {
+                if (err.name !== 'AbortError') alert("Save error: " + err.message);
+            }
+        }
+
+        async function saveFile() {
+            if (!editor) return;
+            if (!fileHandle) return saveAsFile();
+
+            try {
+                // Dispatch onBeforeSave trigger event to active tools
+                if (window.FamousPluginCore && window.FamousPluginCore.Manager) {
+                    window.FamousPluginCore.Manager.emit('onBeforeSave', editor, { filename: currentFileName });
+                }
+
+                // 1. CONFLICT CHECK BEFORE WRITING
+                const currentFileOnDisk = await fileHandle.getFile();
+                if (currentFileOnDisk.lastModified > lastKnownModifiedTime) {
+                    
+                    // ﹥ ASYNCHRONOUS PREPARATION BEFORE CONFIRM (Bypass Popup Blocker)
+                    const diskText = await currentFileOnDisk.text();
+                    const conflictId = await window.FamousPluginCore.Diffskai.prepareSession({
+                        mode: 'conflict',
+                        buffer: editor.getValue(),
+                        diskText,
+                        baseline: currentFileOnDisk.lastModified
+                    });
+                    
+                    /// ﹥ USER INTERACTION IMMEDIATELY FOLLOWED BY WINDOW.OPEN
+                    if (confirm("EDITING CONFLICT\nThe file has been modified on disk. Do you want to open the comparison tool?")) {
+                        window.FamousPluginCore.Diffskai.openSession(conflictId);
+                    } else {
+                        // If the user cancels, we clean up the prepared data
+                        if (typeof idbKeyval !== 'undefined') {
+                            await idbKeyval.del('diffskai_session_' + conflictId);
+                        }
+                    }
+                    return; // Intercept current save in all cases
+                }
+                
+                // 3. NORMAL SAVE IF NO CONFLICT
+                const writable = await fileHandle.createWritable();
+                await writable.write(editor.getValue());
+                await writable.close();
+
+                // 4. TIMESTAMP UPDATE AFTER WRITING
+                const updatedFile = await fileHandle.getFile();
+                lastKnownModifiedTime = updatedFile.lastModified;
+
+                isModified = false;
+                updateUI();
+                afficherSucces("btn-save");
+            } catch (err) {
+                alert("Save error: " + err.message);
+            }
+        }
+
+        async function reloadFile() {
+            if (!editor || !fileHandle) return;
+            if (isModified && !confirm("Do you really want to overwrite your current changes by reloading the file from disk?")) return;
+
+            try {
+                const file = await fileHandle.getFile();
+                const text = await file.text();
+                
+                lastKnownModifiedTime = file.lastModified;
+
+                isInitialLoad = true;
+                const cursor = editor.getCursorPosition();
+
+                editor.setValue(text, -1);
+
+                editor.moveCursorToPosition(cursor);
+                editor.clearSelection();
+
+                isModified = false;
+                applyNativeColoration(currentFileName);
+                emitFileOpen();
+                updateUI();
+
+                setTimeout(() => { editor.focus(); isInitialLoad = false; }, 50);
+            } catch (err) {
+                alert("Reload error: " + err.message);
+            }
+        }
+
+        function afficherSucces(btnId) {
+            const btn = document.getElementById(btnId);
+            const originalText = btn.textContent;
+            btn.textContent = "Saved";
+            btn.classList.add('btn-success');
+            setTimeout(() => { btn.textContent = originalText; btn.classList.remove('btn-success'); }, 1500);
+        }
+
+        function toggleSearch() { if (editor) editor.execCommand("replace"); }
+
+        let currentWorkspaceRenderToken = 0;
+        async function refreshWorkspaceList() {
+            const listContainer = document.getElementById("workspace-file-list");
+            const title = document.getElementById("workspace-name");
+            
+            if (!window.currentWorkspaceHandle) {
+                title.textContent = "Not set";
+                listContainer.innerHTML = `<div class="workspace-empty-msg">No folder selected</div>`;
+                return;
+            }
+        
+            const renderToken = ++currentWorkspaceRenderToken;
+            try {
+                title.textContent = window.currentWorkspaceHandle.name;
+                listContainer.innerHTML = ""; 
+                
+                // Launch recursive tree generation
+                await renderDirectoryTree(window.currentWorkspaceHandle, listContainer, renderToken);
+        
+                if (renderToken !== currentWorkspaceRenderToken) return;
+
+                // Re-apply filters safely after DOM regeneration (avoids startup TDZ crash)
+                if (typeof applyWorkspaceFilter === 'function' && document.getElementById("workspace-search")) {
+                    applyWorkspaceFilter();
+                }
+
+            } catch (error) {
+                console.error("Workspace read error:", error);
+                if (renderToken === currentWorkspaceRenderToken) {
+                    listContainer.innerHTML = `<div class="workspace-empty-msg is-error">Access error. Please reset the folder.</div>`;
+                }
+            }
+        }
+        
+        /**
+         * Lightweight badge generator.
+         * Fetches data directly from the unified FILE_ICON_MAP.
+         */
+        function getFileIcon(ext) {
+            const ico = FILE_ICON_MAP[ext] || { label: '⛘', className: 'icon-default' };
+            return `<span class="file-icon-badge ${ico.className}">${ico.label}</span>`;
+        }
+        
+        /**
+         * Recursive function with Lazy Loading to generate the tree.
+         */
+        async function renderDirectoryTree(dirHandle, container, renderToken) {
+            let hasItems = false;
+            const entries = [];
+        
+            for await (const entry of dirHandle.values()) {
+                if (renderToken !== undefined && renderToken !== currentWorkspaceRenderToken) return;
+                entries.push(entry);
+            }
+
+            if (renderToken !== undefined && renderToken !== currentWorkspaceRenderToken) return;
+        
+            entries.sort((a, b) => {
+                if (a.kind === b.kind) return a.name.localeCompare(b.name);
+                return a.kind === 'directory' ? -1 : 1;
+            });
+        
+            for (const entry of entries) {
+                if (renderToken !== undefined && renderToken !== currentWorkspaceRenderToken) return;
+                if (entry.kind === 'directory') {
+                    if (WORKSPACE_IGNORED_DIRS.includes(entry.name) || entry.name.startsWith('.')) continue;
+                    hasItems = true;
+                    
+                    const details = document.createElement("details");
+                    details.classList.add("workspace-folder"); // CSS class for chevrons
+                    details.style.paddingLeft = "8px"; 
+                    
+                    const summary = document.createElement("summary");
+                    summary.textContent = entry.name; // Folder emoji removed
+                    summary.style.cursor = "pointer";
+                    summary.style.color = "#8ab4f8";
+                    summary.style.userSelect = "none";
+                    summary.style.fontSize = "13px";
+                    summary.style.padding = "4px 0";
+                    
+                    details.appendChild(summary);
+                    
+                    let isLoaded = false;
+                    summary.addEventListener('click', async (e) => {
+                        if (!isLoaded) {
+                            const subContainer = document.createElement("div");
+                            await renderDirectoryTree(entry, subContainer);
+                            details.appendChild(subContainer);
+                            isLoaded = true;
+                            // Apply active filters to the newly loaded files
+                            if (typeof applyWorkspaceFilter === 'function') {
+                                applyWorkspaceFilter();
+                            }
+                        }
+                    });
+                    
+                    container.appendChild(details);
+                    
+                } else if (entry.kind === 'file') {
+                    const ext = entry.name.split('.').pop().toLowerCase();
+                    if (!WORKSPACE_ALLOWED_EXT.includes(ext)) continue;
+                    hasItems = true;
+                    
+                    const div = document.createElement("div");
+                    div.classList.add("workspace-file-item");
+                    div.style.paddingLeft = "28px"; // Alignment under folder text (14px icon + margins)
+
+                    // Add tooltip for hover
+                    div.title = entry.name; 
+                    // Store the extension in the DOM for filtering
+                    div.dataset.ext = ext;
+                    
+                    // Inject colored icon via innerHTML
+                    div.innerHTML = getFileIcon(ext) + entry.name; 
+                    
+                    div.onclick = async (e) => {
+                        if (e.ctrlKey || e.metaKey) {
+                            // CTRL+SHIFT+click (or CMD+SHIFT+click): open file in a new browser tab
+                            // CTRL+click (or CMD+click): open file in a new popup window
+                            try {
+                                const openFileId = Date.now().toString() + "_" + Math.random().toString(36).substring(2, 8);
+                                const key = 'famouskai_open_file_' + openFileId;
+                                await idbKeyval.set(key, entry);
+
+                                const targetUrl = new URL(window.location.href);
+                                targetUrl.searchParams.set('open_file_id', openFileId);
+
+                                if (e.shiftKey) {
+                                    // Open in a new tab
+                                    window.open(targetUrl.toString(), '_blank');
+                                } else {
+                                    // Open in a popup window
+                                    window.open(targetUrl.toString(), '_blank', 'popup=yes');
+                                }
+                            } catch (err) {
+                                console.error("Error opening file in new window/tab:", err);
+                                alert("File open error: " + err.message);
+                            }
+                            return;
+                        }
+
+                        if (isModified && !confirm("Unsaved changes will be lost. Continue?")) return;
+                        
+                        try {
+                            const file = await entry.getFile();
+                            const text = await file.text();
+                            
+                            lastKnownModifiedTime = file.lastModified;
+        
+                            fileHandle = entry;
+                            currentFileName = entry.name;
+                            isInitialLoad = true;
+                            isModified = false;
+                            
+                            editor.setValue(text, -1);
+                            applyNativeColoration(currentFileName);
+                            emitFileOpen();
+                            updateUI();
+                            addRecentFile(entry);
+                            
+                            setTimeout(() => { editor.focus(); isInitialLoad = false; }, 50);
+                        } catch (err) {
+                            alert("File read error: " + err.message);
+                        }
+                    };
+                    container.appendChild(div);
+                }
+            }
+            
+            if (!hasItems) {
+                container.insertAdjacentHTML('beforeend', `<div class="workspace-empty-msg is-padded">No supported files</div>`);
+            }
+        }
+        
+        // ﹥ SIDE MENU MANAGEMENT
+        const sidebar = document.getElementById("sidebar-left");
+
+        document.getElementById("btn-menu").addEventListener("click", () => {
+            sidebar.style.display = (sidebar.style.display === "none" || sidebar.style.display === "") ? "flex" : "none";
+            if (sidebar.style.display === "flex") {
+                if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
+                    window.FamousPluginCore.Outline.update(editor);
+                }
+            }
+            editor.resize(); // Prevents text from being cut when window shrinks
+        });
+
+        document.getElementById("btn-hide-sidebar").addEventListener("click", () => {
+            sidebar.style.display = "none";
+            editor.resize();
+        });
+
+        // ﹥ SETTINGS & PREFERENCES MANAGEMENT
+        const defaultPrefs = { wrap: true, autosave: false, links: false, sidebarStartup: false, settingsStartup: true, fullPreviewStartup: false, previewDark: false };
+        let isPreviewDark = false;
+
+        const SVG_MOON = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+        const SVG_SUN = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+
+        function updatePreviewThemeUI() {
+            const previewRender = document.getElementById("preview-render");
+            const btnTheme = document.getElementById("btn-preview-theme");
+            if (previewRender) {
+                if (isPreviewDark) {
+                    previewRender.classList.add("preview-dark");
+                } else {
+                    previewRender.classList.remove("preview-dark");
+                }
+            }
+            if (btnTheme) {
+                if (isPreviewDark) {
+                    btnTheme.innerHTML = SVG_SUN;
+                    btnTheme.title = "Light preview";
+                    btnTheme.setAttribute("aria-label", "Switch preview to light theme");
+                    btnTheme.setAttribute("aria-pressed", "true");
+                } else {
+                    btnTheme.innerHTML = SVG_MOON;
+                    btnTheme.title = "Dark preview";
+                    btnTheme.setAttribute("aria-label", "Switch preview to dark theme");
+                    btnTheme.removeAttribute("aria-pressed");
+                }
+            }
+        }
+        
+        function loadPreferences() {
+            let prefs = defaultPrefs;
+            try {
+                const stored = localStorage.getItem('famouskai_prefs');
+                if (stored) {
+                    prefs = Object.assign({}, defaultPrefs, JSON.parse(stored));
+                }
+            } catch (e) { console.warn("Failed to parse famouskai_prefs preference from localStorage:", e); }
+            
+            // Restore UI state safely
+            const toggleWrap = document.getElementById("toggle-wrap");
+            if (toggleWrap) toggleWrap.checked = prefs.wrap;
+
+            const toggleLinks = document.getElementById("toggle-links");
+            if (toggleLinks) toggleLinks.checked = prefs.links;
+
+            const toggleSidebarStartup = document.getElementById("toggle-sidebar-startup");
+            if (toggleSidebarStartup) toggleSidebarStartup.checked = prefs.sidebarStartup;
+
+            const toggleFullPreviewStartup = document.getElementById("toggle-full-preview-startup");
+            if (toggleFullPreviewStartup) toggleFullPreviewStartup.checked = prefs.fullPreviewStartup;
+
+            // Render dynamic tool settings into settings panel
+            if (window.FamousPluginCore && window.FamousPluginCore.Manager) {
+                const settingsContainer = document.getElementById("settings-container");
+                if (settingsContainer) {
+                    window.FamousPluginCore.Manager.renderSettings(settingsContainer);
+                }
+            }
+            
+            // Autosave internal state restoration (visual state is handled by updateUI)
+            isAutoSaveEnabled = prefs.autosave;
+            isPreviewDark = !!prefs.previewDark;
+            updatePreviewThemeUI();
+            
+            // Apply editor settings
+            if (editor) editor.session.setUseWrapMode(prefs.wrap);
+            
+            // Apply Sidebar state safely
+            if (prefs.sidebarStartup) {
+                const sidebar = document.getElementById("sidebar-left");
+                if (sidebar) sidebar.style.display = "flex";
+                setTimeout(() => { if (editor) editor.resize(); }, 50);
+            }
+        }
+
+        function savePreferences() {
+            const prefs = {
+                wrap: document.getElementById("toggle-wrap") ? document.getElementById("toggle-wrap").checked : true,
+                autosave: isAutoSaveEnabled,
+                links: document.getElementById("toggle-links") ? document.getElementById("toggle-links").checked : false,
+                sidebarStartup: document.getElementById("toggle-sidebar-startup") ? document.getElementById("toggle-sidebar-startup").checked : false,
+                fullPreviewStartup: document.getElementById("toggle-full-preview-startup") ? document.getElementById("toggle-full-preview-startup").checked : false,
+                previewDark: isPreviewDark
+            };
+            localStorage.setItem('famouskai_prefs', JSON.stringify(prefs));
+        }
+
+        // Apply preferences when DOM is ready
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPreferences();
+        });
+
+        // Universal listener for all settings checkboxes
+        document.querySelectorAll('#settings-container .sidebar-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const setting = e.target.dataset.setting;
+                
+                // Specific logic trigger per setting
+                if (setting === 'wrap' && editor) {
+                    editor.session.setUseWrapMode(e.target.checked);
+                } else if (setting === 'autosave') {
+                    isAutoSaveEnabled = e.target.checked;
+                    if (isAutoSaveEnabled && isModified && fileHandle) saveFile();
+                }
+                
+                // Save globally on any modification
+                savePreferences();
+            });
+        });
+
+
+        // ﹥ CLICKABLE INTERNET LINKS
+        if (editor) {
+            editor.on("click", function(e) {
+                // Bloque si la case n'est pas cochée
+                if (!document.getElementById("toggle-links").checked) return;
+                
+                const pos = e.getDocumentPosition();
+                const token = editor.session.getTokenAt(pos.row, pos.column);
+                if (token && /http/.test(token.value)) {
+                    const match = token.value.match(/https?:\/\/[^\s)\]'"]+/);
+                    if (match) window.open(match[0], "_blank");
+                }
+            });
+
+            editor.on("mousemove", function(e) {
+                // Désactive le pointeur si la case n'est pas cochée
+                if (!document.getElementById("toggle-links").checked) {
+                    editor.renderer.content.style.cursor = "text";
+                    return;
+                }
+                
+                const pos = e.getDocumentPosition();
+                const token = editor.session.getTokenAt(pos.row, pos.column);
+                if (token && /http/.test(token.value)) {
+                    editor.renderer.content.style.cursor = "pointer";
+                } else {
+                    editor.renderer.content.style.cursor = "text";
+                }
+            });
+        }
+
+        // ﹥ AUTOSAVE & OUTLINE REFRESH
+        if (editor) {
+            editor.session.on('change', () => {
+                clearTimeout(window.tocTimer);
+                // Call the external module update
+                if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
+                    window.tocTimer = setTimeout(() => window.FamousPluginCore.Outline.update(editor), 800);
+                }
+        
+                if (!isInitialLoad && isAutoSaveEnabled && fileHandle) {
+                    clearTimeout(autoSaveTimer);
+                    autoSaveTimer = setTimeout(() => {
+                        if (isModified) saveFile(); 
+                    }, 1500);
+                }
+                
+                if (isPreviewOpen) {
+                    clearTimeout(previewTimer);
+                    previewTimer = setTimeout(updatePreviewContent, 300);
+                }
+            });
+        }
+        
+        document.getElementById("btn-new").addEventListener("click", newFile);
+        document.getElementById("btn-open").addEventListener("click", openFile);
+        document.getElementById("btn-save").addEventListener("click", saveFile);
+        document.getElementById("btn-save-as").addEventListener("click", saveAsFile);
+        document.getElementById("btn-move").addEventListener("click", moveFile);
+        document.getElementById("btn-reload").addEventListener("click", reloadFile);
+        
+        window.addEventListener("keydown", (e) => {
+            // Listen for Control key (Windows/ChromeOS) or Meta (Mac)
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === "s") { e.preventDefault();
+                    saveFile(); }
+                if (e.key === "f" || e.key === "h") { e.preventDefault();
+                    toggleSearch(); }
+                if (e.key === "o") { e.preventDefault();
+                    openFile(); }
+                if (e.key === "n") { e.preventDefault();
+                    newFile(); }
+            }
+        });
+        
+        // Colorize new file after pasting (fast detection)
+        if (editor) {
+            editor.on("paste", function(e) {
+                if (currentFileName === "" || currentFileName === "[New]") {
+                    const text = e.text.trim();
+                    let newMode = "ace/mode/text"; // Fallback par défaut
+        
+                    // 1. Diff/patch — signature quasi-infaillible, à tester en premier
+                    if (/^--- .+\n\+\+\+ .+/m.test(text) || /^@@ .+@@/m.test(text)) {
+                        newMode = 'ace/mode/diff';
+                    
+                    // 2. SVG — retiré de la branche HTML existante, testé avant elle
+                    } else if (/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text)) {
+                        newMode = 'ace/mode/svg';
+                    
+                    // 3. HTML — inchangé, MOINS les tests <svg et <?xml (déplacés ci-dessus/dessous)
+                    } else if (text.startsWith('<html') || text.startsWith('<!DOCTYPE') || text.startsWith('<body') ||
+                             text.startsWith('<script') || text.startsWith('<head') || text.startsWith('<style') ||
+                             text.startsWith('<div')) {
+                        newMode = 'ace/mode/html';
+                    
+                    // 4. XML générique (ex: <?xml sans balise <svg>)
+                    } else if (text.startsWith('<?xml')) {
+                        newMode = 'ace/mode/xml';
+                    
+                    // JavaScript — mots-clés en limite de mot, testé en dernier recours
+                    } else if (/\b(function|const|let|var|=>)\b/.test(text)) {
+                        newMode = 'ace/mode/javascript';
+
+                    // JSON — sur la FORME, pas sur la validité stricte (tolère les fragments copiés)
+                    } else if (/["'][\w-]+["']\s*:\s*("|\[|\{|-?\d|true|false|null)/.test(text) && /[{}]/.test(text)) {
+                        newMode = 'ace/mode/json';
+                    
+                    // CSS — exige un vrai bloc "sélecteur { propriété: valeur }", pas juste un # isolé
+                    } else if (/[.#]?[\w-]+\s*\{[^{}]*:[^{}]*\}/.test(text)) {
+                        newMode = 'ace/mode/css';
+                    
+                    // Markdown — titre ancré en début de ligne avec espace obligatoire (plus de faux positif CSS)
+                    } else if (/^#{1,6}\s+\S/m.test(text) || /^[-*]\s+\S/m.test(text)) {
+                        newMode = 'ace/mode/markdown';
+                    
+                    // 5. CSV — confiance faible, donc testé en tout dernier avant le fallback texte
+                    } else {
+                        const sample = text.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 5);
+                        if (sample.length >= 2) {
+                            for (const delim of [',', ';']) {
+                                const counts = sample.map(l => l.split(delim).length - 1);
+                                if (counts[0] > 0 && counts.every(c => c === counts[0])) {
+                                    newMode = 'ace/mode/csv';
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (editor.session.$modeId !== newMode) {
+                        editor.session.setMode(newMode);
+                        if (editor.session.bgTokenizer) editor.session.bgTokenizer.start(0);
+                        if (editor.renderer) editor.renderer.updateFull(true);
+                        setTimeout(updateUI, 10);
+                    }        
+                }
+            });
+        }
+
+        // ﹥ CUSTOM KEYBOARD SHORTCUTS (POWER USER)
+        if (editor) {
+
+            // 1. Expand / Collapse (Ctrl + M / Ctrl + Shift + M)
+            editor.commands.addCommand({
+                name: "foldCustom",
+                bindKey: { win: "Ctrl-M", mac: "Command-M" },
+                exec: function(editor) {
+                    console.log("ctrl+M fold");
+                    editor.execCommand("fold"); // Hide
+                }
+            });
+
+            editor.commands.addCommand({
+                name: "unfoldCustom",
+                bindKey: { win: "Ctrl-Shift-M", mac: "Command-Shift-M" },
+                exec: function(editor) {
+                    editor.execCommand("unfold"); // Show
+                }
+            });
+        }
+
+        // 3. Magic Snippets (Triggered by '/' + keyword + Tab)
+        editor.commands.addCommand({
+            name: "magicSnippets",
+            bindKey: { win: "Tab", mac: "Tab" },
+            exec: function(editor) {
+                const ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+                
+                const pos = editor.getCursorPosition();
+                const Range = ace.require('ace/range').Range;
+                const line = editor.session.getLine(pos.row);
+                
+                const textBefore = line.substring(0, pos.column);
+                const match = textBefore.match(/\/([a-zA-Z0-9_-]+)$/);
+                const coreSnippets = window.FamousPluginCore ? window.FamousPluginCore.Snippets : null;
+
+                if (match && coreSnippets) {
+                    const word = match[1].toLowerCase();
+                    const triggerLength = word.length + 1; // Word + '/'
+                    
+                    // FEATURE: The /help command (Filtered by extension)
+                    if (word === "help") {
+                        let helpMsg = `MAGIC SNIPPETS FOR .${ext.toUpperCase()}:\n\n`;
+                        for (const [key, data] of Object.entries(coreSnippets)) {
+                            if (!data.extensions || data.extensions.length === 0 || data.extensions.includes(ext)) {
+                                helpMsg += `/${key} ➔ ${data.help}\n`;
+                            }
+                        }
+                        alert(helpMsg); 
+                        editor.session.replace(new Range(pos.row, pos.column - triggerLength, pos.row, pos.column), "");
+                        return;
+                    }
+                    
+                    // STANDARD SNIPPET EXPANSION
+                    const snipData = coreSnippets[word];
+
+                    if (snipData && (!snipData.extensions || snipData.extensions.length === 0 || snipData.extensions.includes(ext))) {
+                        let rawSnippet = snipData.snippet;
+                        const selection = editor.getSelectedText ? editor.getSelectedText() : "";
+
+                        // Process dynamic variables if SnippetManager is available
+                        let snippet = rawSnippet;
+                        if (window.FamousPluginCore && window.FamousPluginCore.SnippetManager) {
+                            snippet = window.FamousPluginCore.SnippetManager.parseDynamicVariables(rawSnippet, {
+                                filename: currentFileName,
+                                selection: selection
+                            });
+                        }
+
+                        const lines = snippet.split('\n');
+                        
+                        let markerRow = -1;
+                        let markerCol = -1;
+
+                        for (let i = 0; i < lines.length; i++) {
+                            const col = lines[i].indexOf("$1");
+                            if (col !== -1) {
+                                markerRow = i;
+                                markerCol = col;
+                                lines[i] = lines[i].replace("$1", "");
+                                break;
+                            }
+                        }
+
+                        const finalSnippet = lines.join('\n');
+                        editor.session.replace(new Range(pos.row, pos.column - triggerLength, pos.row, pos.column), finalSnippet);
+                        
+                        if (markerRow !== -1) {
+                            const targetRow = pos.row + markerRow;
+                            const targetCol = (markerRow === 0) ? (pos.column - triggerLength + markerCol) : markerCol;
+                            editor.gotoLine(targetRow + 1, targetCol);
+                        }
+                        return; 
+                    }
+                }
+                // Fallback to standard indentation if no magic snippet matched
+                editor.execCommand("indent");
+            }
+        });
+
+        function checkAndPatchSearchBox() {
+            let optionsDiv = document.querySelector('.ace_search_options');
+            if (!optionsDiv) return;
+
+            let counter = document.querySelector('.ace_search_counter');
+            if (!counter) {
+                counter = document.createElement('span');
+                counter.className = 'ace_search_counter';
+                optionsDiv.insertBefore(counter, optionsDiv.firstChild);
+            }
+
+            if (editor && editor.searchBox && editor.searchBox.searchInput) {
+                let searchInput = editor.searchBox.searchInput;
+
+                if (!searchInput.dataset.counterPatched) {
+                    function updateCounter() {
+                        let term = searchInput.value;
+                        let displaySpan = document.querySelector('.ace_search_counter');
+
+                        if (!term || !displaySpan) {
+                            if (displaySpan) displaySpan.textContent = "";
+                            return;
+                        }
+
+                        let searchBoxDOM = document.querySelector('.ace_search');
+                        let isRegExp = searchBoxDOM.querySelector('[action="toggleRegexpMode"]')?.classList.contains('checked') || false;
+                        let isCase = searchBoxDOM.querySelector('[action="toggleCaseSensitive"]')?.classList.contains('checked') || false;
+                        let isWord = searchBoxDOM.querySelector('[action="toggleWholeWords"]')?.classList.contains('checked') || false;
+
+                        editor.$search.set({ needle: term, regExp: isRegExp, caseSensitive: isCase, wholeWord: isWord });
+                        let ranges = editor.$search.findAll(editor.session);
+                        let total = ranges.length;
+
+                        if (total === 0) {
+                            displaySpan.textContent = "0 of 0";
+                            return;
+                        }
+
+                        let cursor = editor.selection.getCursor();
+                        let currentIndex = 1;
+
+                        for (let i = 0; i < total; i++) {
+                            if (ranges[i].end.row < cursor.row ||
+                                (ranges[i].end.row === cursor.row && ranges[i].end.column <= cursor.column)) {
+                                currentIndex = i + 1;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        displaySpan.textContent = currentIndex + " of " + total;
+                    }
+
+                    searchInput.addEventListener("input", updateCounter);
+                    editor.selection.on("changeCursor", () => setTimeout(updateCounter, 10));
+                    optionsDiv.addEventListener("click", () => setTimeout(updateCounter, 50));
+
+                    searchInput.dataset.counterPatched = "true";
+                    updateCounter();
+                }
+            }
+        }
+
+        const observer = new MutationObserver(checkAndPatchSearchBox);
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // ﹥ BROWSER SUPPORT BANNER (FILE SYSTEM ACCESS API FEATURE DETECTION)
+        (function initBrowserSupportBanner() {
+            if ('showOpenFilePicker' in window) return;
+
+            try {
+                if (sessionStorage.getItem('famouskai_browser_banner_dismissed') === '1') {
+                    return;
+                }
+            } catch (err) {
+                console.warn("SessionStorage access failed:", err);
+            }
+
+            const banner = document.createElement('div');
+            banner.id = 'browser-support-banner';
+            banner.setAttribute('role', 'status');
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = "Famouskai needs the File System Access API to open and save files on your disk. It is available in desktop Chromium browsers such as Chrome and Edge. In this browser you can type and preview text, but not open or save files.";
+            banner.appendChild(textSpan);
+
+            const closeBtn = document.createElement('button');
+            closeBtn.setAttribute('aria-label', 'Close');
+            closeBtn.textContent = "×";
+            closeBtn.addEventListener('click', () => {
+                banner.remove();
+                try {
+                    sessionStorage.setItem('famouskai_browser_banner_dismissed', '1');
+                } catch (err) {
+                    console.warn("SessionStorage setItem failed:", err);
+                }
+            });
+            banner.appendChild(closeBtn);
+
+            if (document.body.firstChild) {
+                document.body.insertBefore(banner, document.body.firstChild);
+            } else {
+                document.body.appendChild(banner);
+            }
+        })();
+
+        // ﹥ PWA AND FILE HANDLING API
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered!'))
+                    .catch(err => console.log('Service Worker Error:', err));
+            });
+        }
+
+        if ('launchQueue' in window) {
+            window.launchQueue.setConsumer(async (launchParams) => {
+                if (launchParams.files && launchParams.files.length > 0) {
+                    if (isModified && !confirm("Unsaved changes will be lost. Open the new file?")) return;
+
+                    try {
+                        const handle = launchParams.files[0];
+                        fileHandle = handle;
+                        currentFileName = handle.name;
+
+                        const file = await fileHandle.getFile();
+                        const text = await file.text();
+                        
+                        lastKnownModifiedTime = file.lastModified;
+
+                        isInitialLoad = true;
+                        isModified = false;
+                        editor.setValue(text, -1);
+
+                        applyNativeColoration(currentFileName);
+                        emitFileOpen();
+                        updateUI();
+                        addRecentFile(handle);
+
+                        setTimeout(() => { editor.focus();
+                            isInitialLoad = false; }, 50);
+                    } catch (err) {
+                        alert("System opening error: " + err.message);
+                    }
+                }
+            });
+        }
+
+        // ﹥ VERSION READING FROM SERVICE WORKER
+        fetch('sw.js')
+            .then(response => response.text())
+            .then(text => {
+                const match = text.match(/CACHE_NAME\s*=\s*['"]([^'"]+)['"]/);
+                const versionBtn = document.getElementById('app-version');
+                if (match && versionBtn) {
+                    const versionStr = match[1];
+                    versionBtn.textContent = versionStr;
+                    versionBtn.disabled = false;
+                    versionBtn.addEventListener('click', async () => {
+                        try {
+                            await navigator.clipboard.writeText(versionStr);
+                            if (window.showToast) window.showToast("Version " + versionStr + " copied!", "success");
+                        } catch (err) {
+                            console.error("Failed to copy version:", err);
+                        }
+                    });
+                } else if (versionBtn) {
+                    versionBtn.textContent = 'Unknown version';
+                    versionBtn.disabled = true;
+                }
+            })
+            .catch(() => {
+                const versionBtn = document.getElementById('app-version');
+                if (versionBtn) {
+                    versionBtn.textContent = 'Local Mode';
+                    versionBtn.disabled = true;
+                }
+            });
+
+        // ﹥ SECURITY AGAINST ACCIDENTAL CLOSURE / RELOAD
+        window.addEventListener('beforeunload', (e) => {
+            if (isModified) {
+                // Cancel default action
+                e.preventDefault();
+                // Required by Chrome/ChromeOS to display native warning popup
+                e.returnValue = '';
+            }
+        });
+
+        // ﹥ INTERACTIVITY: WKS TITLE
+        document.getElementById("workspace-name").addEventListener("click", () => {
+            if (window.FamousPluginCore && window.FamousPluginCore.Manager) {
+                // Strict search for tool by exact name
+                const tool = window.FamousPluginCore.Manager.registry.find(t => t.name === "Set Default Workspace");
+                if (tool) {
+                    tool.action(editor);
+                } else {
+                    console.warn("Tool 'Set Default Workspace' not registered.");
+                }
+            }
+        });
+        
+        // ﹥ INTERACTIVITY: WKS FILE FILTER
+        wsSearchInput = document.getElementById("workspace-search");
+        wsSearchClear = document.getElementById("workspace-search-clear");
+        
+        if (wsSearchInput && wsSearchClear) {
+            wsSearchInput.addEventListener("input", applyWorkspaceFilter);
+            
+            wsSearchClear.addEventListener("click", () => {
+                wsSearchInput.value = "";
+                applyWorkspaceFilter();
+                wsSearchInput.focus();
+            });
+        }
+        
+        /**
+         * Builds the compact extension filter badges based on WORKSPACE_FILE_GROUPS.
+         * Reuses the semantic CSS classes for UI color consistency.
+         */
+        function initExtFilters() {
+            const container = document.getElementById('workspace-ext-filters');
+            if (!container) return;
+            
+            WORKSPACE_FILE_GROUPS.forEach(group => {
+                const btn = document.createElement('button');
+                
+                // Combine base button style with the group's specific color class
+                btn.className = `fold-btn ${group.className}`;
+                btn.textContent = group.filter;
+                
+                const groupExts = Object.keys(group.types);
+                btn.title = "Filter: " + groupExts.join(', ').toUpperCase();
+                
+                btn.onclick = () => {
+                    if (activeExtFilter === groupExts) {
+                        // Toggle off
+                        activeExtFilter = null; 
+                        btn.classList.remove('active-filter');
+                    } else {
+                        // Toggle on: reset others and activate current
+                        document.querySelectorAll('#workspace-ext-filters .fold-btn').forEach(b => b.classList.remove('active-filter'));
+                        activeExtFilter = groupExts; 
+                        btn.classList.add('active-filter');
+                    }
+                    if (typeof applyWorkspaceFilter === 'function') applyWorkspaceFilter();
+                };
+                
+                container.appendChild(btn);
+            });
+        }
+        
+        // Initialize filters on load
+        initExtFilters();   
+        
+        // ﹥ RENAME LOGIC
+        async function renameCurrentFile() {
+            if (!fileHandle) return;
+            
+            // Protection against I/O conflicts
+            if (isModified) {
+                if (window.showToast) window.showToast("Save changes before renaming.", "warn");
+                return;
+            }
+
+            const dialog = document.getElementById('rename-dialog');
+            const input = document.getElementById('rename-input');
+            const cancelBtn = document.getElementById('rename-cancel');
+            const form = document.getElementById('rename-form');
+
+            // Initialize input with current name
+            input.value = currentFileName;
+
+            // Create a Promise to handle the async dialog flow
+            return new Promise((resolve) => {
+                const cleanUp = () => {
+                    form.removeEventListener('submit', onSubmit);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    dialog.close();
+                };
+
+                const onCancel = () => {
+                    cleanUp();
+                    resolve(null);
+                };
+
+                const onSubmit = async (e) => {
+                    e.preventDefault(); 
+                    const enteredName = input.value.trim();
+                    
+                    if (!enteredName || enteredName === currentFileName) {
+                        cleanUp();
+                        resolve(null);
+                        return;
+                    }
+
+                    // Extract original extension if present
+                    const lastDot = currentFileName.lastIndexOf('.');
+                    const origExt = lastDot > 0 ? currentFileName.substring(lastDot + 1) : "";
+
+                    let finalName = enteredName;
+
+                    if (enteredName.endsWith('.')) {
+                        if (origExt !== "") {
+                            finalName = enteredName.slice(0, -1) + '.' + origExt;
+                        } else {
+                            if (!confirm("Warning: You are creating a file without an extension. Do you want to proceed?")) {
+                                return;
+                            }
+                        }
+                    } else if (enteredName.lastIndexOf('.') === 0) {
+                        if (!confirm("Warning: You are creating a hidden file or file without a standard name/extension. Do you want to proceed?")) {
+                            return;
+                        }
+                    } else if (enteredName.lastIndexOf('.') === -1) {
+                        if (origExt !== "") {
+                            finalName = enteredName + '.' + origExt;
+                        } else {
+                            if (!confirm("Warning: You are creating a file without an extension. Do you want to proceed?")) {
+                                return;
+                            }
+                        }
+                    }
+
+                    if (finalName === currentFileName) {
+                        cleanUp();
+                        resolve(null);
+                        return;
+                    }
+
+                    cleanUp();
+
+                    try {
+                        // CRITICAL: Ensure native history-preserving move API exists
+                        if (typeof fileHandle.move !== 'function') {
+                            throw new Error("Browser lacks native move API support.");
+                        }
+                        
+                        // The 'submit' button click provides the FRESH User Activation context required by the OS!
+                        await fileHandle.move(finalName);
+                        
+                        // Update internal state
+                        currentFileName = finalName;
+                        applyNativeColoration(currentFileName);
+                        updateUI();
+                        
+                        if (window.currentWorkspaceHandle) refreshWorkspaceList();
+                        if (window.showToast) window.showToast("Renamed to " + finalName, "success");
+                        
+                        resolve(true);
+                    } catch (err) {
+                        // If it fails here, ChromeOS DriveFS physically rejected the specific rename operation
+                        alert("Rename failed: " + err.message);
+                        resolve(false);
+                    }
+                };
+
+                form.addEventListener('submit', onSubmit);
+                cancelBtn.addEventListener('click', onCancel);
+                
+                // Show native modal
+                dialog.showModal();
+                
+                // UX: Pre-select the file name without its extension
+                const dotIndex = currentFileName.lastIndexOf('.');
+                if (dotIndex > 0) {
+                    input.setSelectionRange(0, dotIndex);
+                } else {
+                    input.select();
+                }
+            });
+        }
+
+        // ﹥ MOVE & COPY LOGIC
+        async function copyFileName(e) {
+            e.stopPropagation(); // Prevent triggering other listeners
+            if (!currentFileName || currentFileName === "[New]") return;
+            try {
+                await navigator.clipboard.writeText(currentFileName);
+                if (window.showToast) window.showToast("Name copied", "success");
+            } catch (err) {
+                console.error("Clipboard access error:", err);
+            }
+        }
+
+        async function moveFile() {
+            if (!editor || !fileHandle) return;
+            
+            // Failsafe in case UI state is bypassed
+            if (isModified) {
+                if (window.showToast) window.showToast("Save changes before moving.", "warn");
+                return;
+            }
+
+            try {
+                // FIX: Request write permission on the source file FIRST, 
+                // while we still have the user activation from the button click.
+                if (await fileHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                    const perm = await fileHandle.requestPermission({ mode: 'readwrite' });
+                    if (perm !== 'granted') return; // User aborted the permission prompt
+                }
+
+                // Ask user for the destination directory with readwrite mode
+                const dirHandle = await window.showDirectoryPicker({
+                    id: "famouskai-move-dir",
+                    mode: "readwrite"
+                });
+
+                // Ensure native move API is available
+                if (typeof fileHandle.move !== 'function') {
+                    throw new Error("Browser lacks native move API support.");
+                }
+
+                // Move the file to the new directory (keeps currentFileName)
+                await fileHandle.move(dirHandle);
+
+                // Refresh Workspace UI if open
+                if (window.currentWorkspaceHandle) refreshWorkspaceList();
+                if (window.showToast) window.showToast("Moved to " + dirHandle.name, "success");
+                
+            } catch (err) {
+                if (err.name !== 'AbortError') alert("Move failed: " + err.message);
+            }
+        }
+        
+        // Open HTML content in a new browser tab by injecting editor value
+        async function openHtmlInNewTab(e) {
+            e.stopPropagation(); // Prevent triggering other listeners
+            if (!editor) return;
+            
+            try {
+                // Retrieve current content directly from the editor (includes unsaved changes)
+                const content = editor.getValue();
+                
+                // Open a blank new tab
+                const newWindow = window.open('', '_blank');
+                
+                if (newWindow) {
+                    // Inject the HTML content directly into the new document
+                    newWindow.document.open();
+                    newWindow.document.write(content);
+                    newWindow.document.close();
+                    
+                    if (window.showToast) window.showToast("Opened in new tab", "success");
+                } else {
+                    // Fallback if popup blocker intercepts the action
+                    alert("Erreur : Le navigateur a bloqué l'ouverture du nouvel onglet.");
+                }
+            } catch (err) {
+                console.error("Failed to open HTML in new tab:", err);
+            }
+        }
+
+        // ﹥ POST-MERGE & EXTERNAL SAVE SYNCHRONIZATION
+        const syncChannel = new BroadcastChannel('famouskai_sync');
+        
+        syncChannel.onmessage = async (event) => {
+            // Messages are { type, sessionId, handle }. A bare string comes from an older Diffskai window: treat it as untargeted.
+            const msg = (typeof event.data === 'string') ? { type: event.data } : (event.data || {});
+            if ((msg.type === 'MERGE_COMPLETE' || msg.type === 'DIFFSKAI_SAVED') && fileHandle) {
+                try {
+                    // ISOLATION: only the window(s) showing the file Diffskai wrote may react.
+                    if (msg.handle && !(await fileHandle.isSameEntry(msg.handle))) return;
+
+                    // A silent reload is allowed only for this window's own merge, and only if the editor
+                    // still holds exactly the text it sent to Diffskai. Every other case asks first.
+                    const ownSessions = (window.FamousPluginCore && window.FamousPluginCore.Diffskai) ? window.FamousPluginCore.Diffskai.ownSessions : null;
+                    const isOwnMerge = msg.type === 'MERGE_COMPLETE' && !!msg.handle && !!ownSessions
+                        && ownSessions.has(msg.sessionId) && ownSessions.get(msg.sessionId) === editor.getValue();
+
+                    const diskFile = await fileHandle.getFile();
+                    
+                    if (diskFile.lastModified > lastKnownModifiedTime) {
+                        
+                        if (isModified && !isOwnMerge) {
+                            if (!confirm("This file was just updated by Diffskai. Reload and lose your current unsaved changes?")) {
+                                return;
+                            }
+                        }
+                        if (isOwnMerge) ownSessions.delete(msg.sessionId);
+                        
+                        const text = await diskFile.text();
+                        
+                        isInitialLoad = true; // Bloque les événements de frappe
+                        const cursor = editor.getCursorPosition();
+                        
+                        editor.setValue(text, -1);
+                        editor.moveCursorToPosition(cursor);
+                        editor.clearSelection();
+                        
+                        // Update state with new timestamp
+                        lastKnownModifiedTime = diskFile.lastModified;
+                        isModified = false;
+                        
+                        // 1. Release the change listener block safely to allow future edits
+                        setTimeout(() => { 
+                            isInitialLoad = false; 
+                            if (editor) editor.focus();
+                        }, 50);
+                        
+                        // 2. Inject message safely via innerHTML without hardcoded styles
+                        const successMsg = msg.type === 'MERGE_COMPLETE' ? "Merge done" : "Auto-Synced";
+                        const titleEl = document.getElementById("file-name");
+                        titleEl.innerHTML = `<span class="sync-success-msg">${successMsg}</span>`;
+                        
+                        // 3. Restore original UI state asynchronously
+                        setTimeout(() => { 
+                            updateUI(); 
+                        }, 2000);
+                    }
+                } catch (error) {
+                    console.error("External sync error:", error);
+                }
+            }
+        };
+
+        // ﹥ LIVE PREVIEW (MARKDOWN & HTML)
+        let isPreviewOpen = false;
+        let isPreviewFull = false;
+        let previewTimer = null;
+        let wasSidebarOpen = false; // Tracks sidebar state for Full View
+
+        function togglePreview() {
+            isPreviewOpen = !isPreviewOpen;
+            const pane = document.getElementById("preview-pane");
+            const mainArea = document.getElementById("main-area");
+            const btn = document.getElementById("btn-preview");
+            const btnFull = document.getElementById("btn-preview-full");
+            const btnPrint = document.getElementById("btn-print");
+            
+            let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+            if (!ext && editor) {
+                const modeId = editor.session.$modeId || "";
+                if (modeId.includes("markdown")) { 
+                    ext = "md";
+                    
+                } else if (modeId.includes('diff')) {
+                    ext = 'patch'; // pasted/unsaved diff content
+                }
+            }
+            
+            if (isPreviewOpen) {
+                pane.style.display = "flex";
+                mainArea.classList.add("preview-active");
+                
+                btn.classList.add("btn-active");
+                btn.textContent = "Close Preview";
+                btnFull.style.display = "inline-block";
+
+                if (ext === 'md') {
+                    btnPrint.style.display = "inline-block";
+                    const btnExport = document.getElementById("btn-export-html");
+                    if (btnExport) btnExport.style.display = "inline-block";
+                    const btnPreviewTheme = document.getElementById("btn-preview-theme");
+                    if (btnPreviewTheme) btnPreviewTheme.style.display = "inline-block";
+                }
+                
+                updatePreviewContent();
+
+                // Apply default full preview if the setting is checked and not already active
+                const isFullPref = document.getElementById("toggle-full-preview-startup").checked;
+                if (isFullPref && !isPreviewFull) {
+                    toggleFullPreview();
+                }
+            } else {
+                pane.style.display = "none";
+                mainArea.classList.remove("preview-active", "preview-full");
+                isPreviewFull = false; // Safe manual state reset
+                
+                btn.classList.remove("btn-active");
+                btn.textContent = "Preview";
+                btnFull.style.display = "none";
+                btnFull.classList.remove("btn-active");
+                btnPrint.style.display = "none";
+                const btnExport = document.getElementById("btn-export-html");
+                if (btnExport) btnExport.style.display = "none";
+                const btnPreviewTheme = document.getElementById("btn-preview-theme");
+                if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
+                
+                // Restore sidebar if it was hidden by Full View
+                if (wasSidebarOpen) document.getElementById("sidebar-left").style.display = "flex";
+            }
+            if (editor) editor.resize();
+        }
+
+        function toggleFullPreview() {
+            if (!isPreviewOpen) return;
+            isPreviewFull = !isPreviewFull;
+            const mainArea = document.getElementById("main-area");
+            const btnFull = document.getElementById("btn-preview-full");
+            const sidebar = document.getElementById("sidebar-left");
+            
+            if (isPreviewFull) {
+                mainArea.classList.add("preview-full");
+                btnFull.classList.add("btn-active");
+                
+                // Hide sidebar and remember its state
+                wasSidebarOpen = (sidebar.style.display === "flex");
+                if (wasSidebarOpen) sidebar.style.display = "none";
+            } else {
+                mainArea.classList.remove("preview-full");
+                btnFull.classList.remove("btn-active");
+                
+                // Restore sidebar
+                if (wasSidebarOpen) sidebar.style.display = "flex";
+            }
+            if (editor) editor.resize();
+            // NEW: re-render only for patch/diff files, so the layout switches
+            // (stacked <-> side-by-side) immediately. No-op for Markdown and any
+            // other format, since their rendering never depended on isPreviewFull.
+            let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+            if (!ext && editor) {
+                const modeId = editor.session.modeId;
+                if (modeId.includes('diff')) ext = 'patch';
+            }
+            if (ext === 'patch' || ext === 'diff') updatePreviewContent();            
+        }
+
+        function updatePreviewContent() {
+            if (!isPreviewOpen || !editor) return;
+            
+            const content = editor.getValue();
+            let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+            
+            if (!ext) {
+                const modeId = editor.session.$modeId || "";
+                if (modeId.includes("markdown")) ext = "md";
+            }
+            
+            if (ext === 'md') {
+                const previewEl = document.getElementById('preview-render');
+                previewEl.classList.remove('d2h-body');
+                previewEl.classList.add('markdown-body');
+                previewEl.style.display = 'block';
+                if (typeof DOMPurify !== 'undefined') {
+                    previewEl.innerHTML = DOMPurify.sanitize(marked.parse(content));
+                } else {
+                    previewEl.textContent = content;
+                    console.warn("DOMPurify is undefined, falling back to textContent for Markdown preview");
+                }
+                if (window.FamousPluginCore && window.FamousPluginCore.FamousUp) {
+                    window.FamousPluginCore.FamousUp.process(previewEl);
+                }
+                if (window.FamousPluginCore && window.FamousPluginCore.PreviewCode) {
+                    window.FamousPluginCore.PreviewCode.process(previewEl);
+                }
+                
+            } else if (ext === 'patch' || ext === 'diff') {
+                const previewEl = document.getElementById('preview-render');
+                previewEl.classList.remove('markdown-body');
+                previewEl.classList.add('d2h-body');
+                previewEl.style.display = 'block';
+            
+                const MAX_PRETTY_DIFF_SIZE = 2 * 1024 * 1024;
+                if (content.length > MAX_PRETTY_DIFF_SIZE) {
+                    previewEl.textContent = content;
+                    return;
+                }
+            
+                try {
+                    if (typeof Diff2Html === 'undefined') throw new Error('diff2html library not loaded');
+                    const renderer = Diff2Html.html || Diff2Html.getPrettyHtml;
+                    previewEl.innerHTML = renderer.call(Diff2Html, content, {
+                        drawFileList: true,
+                        matching: 'lines',
+                        outputFormat: isPreviewFull ? 'side-by-side' : 'line-by-line',
+                        colorScheme: 'dark'
+                    });
+                } catch (e) {
+                    console.warn('Diff2Html rendering failed, falling back to raw text:', e);
+                    previewEl.textContent = content;
+                }
+            }
+        }
+
+        // Single unified click handler
+        document.getElementById("btn-print").onclick = () => {
+            setTimeout(() => window.print(), 100);
+        };
+
+        const btnExportHTML = document.getElementById("btn-export-html");
+        if (btnExportHTML) {
+            btnExportHTML.onclick = () => {
+                if (window.FamousPluginCore && window.FamousPluginCore.ExportHTML) {
+                    window.FamousPluginCore.ExportHTML.exportMarkdownToHTML(editor);
+                }
+            };
+        }
+        
+        document.getElementById("btn-preview").addEventListener("click", togglePreview);
+        document.getElementById("btn-preview-full").addEventListener("click", toggleFullPreview);
+        const btnPreviewTheme = document.getElementById("btn-preview-theme");
+        if (btnPreviewTheme) {
+            btnPreviewTheme.addEventListener("click", () => {
+                isPreviewDark = !isPreviewDark;
+                updatePreviewThemeUI();
+                savePreferences();
+            });
+        }
+
+        const newWinBtn = document.getElementById("btn-new-window");
+        if (newWinBtn) {
+            newWinBtn.title = isPopupWindow() ? "Open new window" : "Open new tab";
+            newWinBtn.addEventListener("click", () => {
+                if (isPopupWindow()) {
+                    // Popup mode context: open a new popup window
+                    const screenWidth = window.screen.width;
+                    const dpr = window.devicePixelRatio || 1;
+                    const physicalWidth = screenWidth * dpr;
+                    const isWide = screenWidth > 2000 || physicalWidth > 2000;
+
+                    const screenLeft = window.screen.availLeft || 0;
+                    const screenTop = window.screen.availTop || 0;
+                    const availWidth = window.screen.availWidth;
+                    const availHeight = window.screen.availHeight;
+                    const halfWidth = Math.floor(availWidth / 2);
+
+                    let targetPos = 'full';
+                    let targetLeft = screenLeft;
+                    let targetTop = screenTop;
+                    let targetWidth = availWidth;
+                    let targetHeight = availHeight;
+
+                    if (isWide) {
+                        const currentLeft = window.screenX !== undefined ? window.screenX : window.screenLeft;
+                        // Determine if current initial window is positioned on the left side of the screen
+                        const isPositionedLeft = (currentLeft - screenLeft) < (halfWidth / 2);
+
+                        if (isPositionedLeft) {
+                            targetPos = 'right';
+                            targetLeft = screenLeft + halfWidth;
+                            targetWidth = halfWidth;
+                        } else {
+                            targetPos = 'left';
+                            targetLeft = screenLeft;
+                            targetWidth = halfWidth;
+                        }
+                    }
+
+                    const popupUrl = getPopupAppUrl(targetPos);
+                    const popupFeatures = `popup=yes,left=${targetLeft},top=${targetTop},width=${targetWidth},height=${targetHeight}`;
+                    window.open(popupUrl, '_blank', popupFeatures);
+                } else {
+                    // Tab mode context: open a new browser tab
+                    window.open(getCleanAppUrl(), '_blank');
+                }
+            });
+        }
+
+        // ﹥ DYNAMIC SNIPPETS UI & ONCLICK INSERTION
+        let activeSidebarSnippetFilter = null; // null | 'custom' | 'default'
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+      
+        function insertSnippetByKey(snipKey) {
+            if (!window.editor) return;
+
+            const coreSnippets = window.FamousPluginCore ? window.FamousPluginCore.Snippets : null;
+            const ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+
+            if (snipKey === 'help') {
+                if (coreSnippets) {
+                    let helpMsg = `MAGIC SNIPPETS FOR .${ext.toUpperCase()}:\n\n`;
+                    for (const [key, data] of Object.entries(coreSnippets)) {
+                        if (!data.extensions || data.extensions.length === 0 || data.extensions.includes(ext)) {
+                            helpMsg += `/${key} ➔ ${data.help}\n`;
+                        }
+                    }
+                    alert(helpMsg);
+                }
+                window.editor.focus();
+                return;
+            }
+
+            if (!coreSnippets || !coreSnippets[snipKey]) return;
+
+            const snipData = coreSnippets[snipKey];
+            let rawSnippet = snipData.snippet || '';
+            const selection = window.editor.getSelectedText ? window.editor.getSelectedText() : '';
+
+            let snippet = rawSnippet;
+            if (window.FamousPluginCore && window.FamousPluginCore.SnippetManager) {
+                snippet = window.FamousPluginCore.SnippetManager.parseDynamicVariables(rawSnippet, {
+                    filename: currentFileName,
+                    selection: selection
+                });
+            }
+
+            const lines = snippet.split('\n');
+            let markerRow = -1;
+            let markerCol = -1;
+
+            for (let i = 0; i < lines.length; i++) {
+                const col = lines[i].indexOf("$1");
+                if (col !== -1) {
+                    markerRow = i;
+                    markerCol = col;
+                    lines[i] = lines[i].replace("$1", "");
+                    break;
+                }
+            }
+
+            const finalSnippet = lines.join('\n');
+            const selectionRange = window.editor.getSelectionRange();
+            const startPos = selectionRange ? selectionRange.start : window.editor.getCursorPosition();
+
+            window.editor.insert(finalSnippet);
+
+            if (markerRow !== -1) {
+                const targetRow = startPos.row + markerRow;
+                const targetCol = (markerRow === 0) ? (startPos.column + markerCol) : markerCol;
+                window.editor.gotoLine(targetRow + 1, targetCol);
+            }
+
+            window.editor.focus();
+        }
+
+        function updateSnippetsUI(currentExt) {
+            const container = document.getElementById('snippets-lexicon');
+            const coreSnippets = window.FamousPluginCore ? window.FamousPluginCore.Snippets : null;
+            if (!container || !coreSnippets) return;
+
+            const searchInput = document.getElementById('snippet-search');
+            const clearBtn = document.getElementById('snippet-search-clear');
+            const filterTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            if (clearBtn) clearBtn.style.display = filterTerm ? 'block' : 'none';
+            
+            let html = `<div class="snippet-lexicon-row" data-snip-key="help"><span class="ext-snippets-key">/help</span>: Show alert list</div>`;
+            let count = 0;
+            
+            for (const [key, data] of Object.entries(coreSnippets)) {
+                if (!data.extensions || data.extensions.length === 0 || data.extensions.includes(currentExt)) {
+                    if (activeSidebarSnippetFilter === 'custom' && !data.isCustom) continue;
+                    if (activeSidebarSnippetFilter === 'default' && data.isCustom) continue;
+
+                    if (!filterTerm || key.toLowerCase().includes(filterTerm) || (data.help && data.help.toLowerCase().includes(filterTerm))) {
+                        const keyClass = data.isCustom ? 'ext-snippets-key key-custom' : 'ext-snippets-key';
+                        const escapedHelp = escapeHtml(data.help);
+                        html += `<div class="snippet-lexicon-row" data-snip-key="${key}"><span class="${keyClass}">/${key}</span>: ${escapedHelp}</div>`;
+                        count++;
+                    }
+                }
+            }
+            if (count === 0) html += `<span class="ext-snippets-empty">No matching snippets for .${currentExt || 'txt'}</span><br>`;
+            
+            html += `<div class="ext-snippets-separator"></div><i>Type keyword then press <b>Tab</b></i>`;
+            container.innerHTML = html;
+
+            container.querySelectorAll('.snippet-lexicon-row').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const snipKey = row.getAttribute('data-snip-key');
+                    if (snipKey) {
+                        insertSnippetByKey(snipKey);
+                    }
+                });
+            });
+        }
+
+        const snipSearchInput = document.getElementById('snippet-search');
+        const snipSearchClear = document.getElementById('snippet-search-clear');
+        const btnSnipFilterCustom = document.getElementById('btn-snip-filter-custom');
+        const btnSnipFilterDefault = document.getElementById('btn-snip-filter-default');
+
+        if (snipSearchInput) {
+            snipSearchInput.addEventListener('input', () => {
+                const ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+                updateSnippetsUI(ext);
+            });
+        }
+
+        if (snipSearchClear) {
+            snipSearchClear.addEventListener('click', () => {
+                if (snipSearchInput) snipSearchInput.value = '';
+                const ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+                updateSnippetsUI(ext);
+            });
+        }
+
+        if (btnSnipFilterCustom && btnSnipFilterDefault) {
+            btnSnipFilterCustom.addEventListener('click', () => {
+                if (activeSidebarSnippetFilter === 'custom') {
+                    activeSidebarSnippetFilter = null;
+                    btnSnipFilterCustom.classList.remove('active-filter');
+                } else {
+                    activeSidebarSnippetFilter = 'custom';
+                    btnSnipFilterCustom.classList.add('active-filter');
+                    btnSnipFilterDefault.classList.remove('active-filter');
+                }
+                const ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+                updateSnippetsUI(ext);
+            });
+
+            btnSnipFilterDefault.addEventListener('click', () => {
+                if (activeSidebarSnippetFilter === 'default') {
+                    activeSidebarSnippetFilter = null;
+                    btnSnipFilterDefault.classList.remove('active-filter');
+                } else {
+                    activeSidebarSnippetFilter = 'default';
+                    btnSnipFilterDefault.classList.add('active-filter');
+                    btnSnipFilterCustom.classList.remove('active-filter');
+                }
+                const ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
+                updateSnippetsUI(ext);
+            });
+        }
+
+        updateSnippetsUI('');
+
+        // ﹥ HANDLE OPEN FILE IN NEW WINDOW (URL QUERY PARAM)
+        async function checkOpenFileInNewWindow() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const openFileId = urlParams.get('open_file_id');
+            if (!openFileId) return;
+
+            try {
+                const key = 'famouskai_open_file_' + openFileId;
+                const handle = await idbKeyval.get(key);
+                if (handle) {
+                    await idbKeyval.del(key);
+
+                    // Check and request permission if needed
+                    if (await handle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                        await handle.requestPermission({ mode: 'readwrite' });
+                    }
+
+                    const file = await handle.getFile();
+                    const text = await file.text();
+
+                    fileHandle = handle;
+                    currentFileName = handle.name;
+                    lastKnownModifiedTime = file.lastModified;
+                    isInitialLoad = true;
+                    isModified = false;
+
+                    let changedOnOpen = false;
+                    if (editor) {
+                        editor.setValue(text, -1);
+                        applyNativeColoration(currentFileName);
+                        changedOnOpen = emitFileOpen();
+                        updateUI();
+                        addRecentFile(handle);
+                        setTimeout(() => {
+                            editor.focus();
+                            isInitialLoad = false;
+                        }, 50);
+                    }
+                    // Keep the Auto-cleanup warning visible instead of replacing it.
+                    if (!changedOnOpen && window.showToast) window.showToast("File opened in new window", "success");
+                }
+            } catch (err) {
+                console.error("Error opening file in new window:", err);
+            } finally {
+                // Clean up query param from URL
+                const url = new URL(window.location.href);
+                url.searchParams.delete('open_file_id');
+                window.history.replaceState({}, document.title, url.pathname + url.search);
+            }
+        }
+
+        // Trigger check shortly after UI and Ace editor are initialized
+        setTimeout(checkOpenFileInNewWindow, 250);
+
+        // ﹥ SHARE TARGET API HANDLING (ANDROID INTENT)
+        async function checkSharedContent() {
+            // Exit early if the URL doesn't contain the flag set by the Service Worker
+            if (!window.location.search.includes('shared=true')) return;
+
+            try {
+                const sharedFile = await idbKeyval.get('famouskai_shared_file');
+                const sharedText = await idbKeyval.get('famouskai_shared_text');
+
+                if (sharedFile || sharedText) {
+                    // Prevent accidental overwriting of unsaved work
+                    if (isModified && !confirm("Unsaved changes will be lost. Load the shared content?")) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        return;
+                    }
+                    
+                    isInitialLoad = true;
+                    fileHandle = null; // Forces "Save As" since we don't have FileSystemAccess rights on shared Android intents
+                    isModified = false;
+
+                    if (sharedFile) {
+                        currentFileName = sharedFile.name;
+                        const text = await sharedFile.text();
+                        editor.setValue(text, -1);
+                        await idbKeyval.del('famouskai_shared_file'); // Cleanup
+                        if (window.showToast) window.showToast("Shared file loaded", "success");
+                    } else if (sharedText) {
+                        currentFileName = "shared_snippet.txt";
+                        editor.setValue(sharedText, -1);
+                        await idbKeyval.del('famouskai_shared_text'); // Cleanup
+                        if (window.showToast) window.showToast("Shared text loaded", "success");
+                    }
+
+                    applyNativeColoration(currentFileName);
+                    emitFileOpen();
+                    updateUI();
+                    
+                    setTimeout(() => { 
+                        if (editor) editor.focus(); 
+                        isInitialLoad = false; 
+                    }, 50);
+                }
+                
+                // Clean the URL to prevent reloading the same shared file upon manual page refresh
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+            } catch (err) {
+                console.error("Error reading shared content from IDB:", err);
+            }
+        }
+        
+        // Trigger the check shortly after the UI and Ace editor are initialized
+        setTimeout(checkSharedContent, 300);
+        
+        updateUI();
+        
+        // FORCE TOOL RENDERING AND AUTO-FOCUS AT STARTUP FOR "[New]" FILE
+        // Use currentFileName, not "": a file opened from the OS file manager
+        // (launchQueue) can already be loaded when this timer fires, and
+        // resetting to "" would drop its syntax coloring until a manual reload.
+        setTimeout(() => { 
+            applyNativeColoration(currentFileName); 
+            if (editor) editor.focus(); 
+        }, 100);
+    </script>
+</body>
+
+</html>

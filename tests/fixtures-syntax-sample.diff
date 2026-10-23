@@ -1,0 +1,121 @@
+Famouskai syntax sample: diff (ace/mode/diff)
+The same small project, the Word Count tool, compared in four diff formats.
+The Preview button renders the two unified sections side by side; it does not show the other two formats.
+Lines before the first header are ignored by patch tools, so they can explain the change.
+Every hunk below was produced by git or GNU diff, then checked with "git apply --check" or "patch --dry-run" (the binary line has no content to apply).
+
+﹥ 1. Unified format, Subversion style (Index line, revisions instead of a/ and b/)
+Index: README.md
+===================================================================
+--- README.md	(revision 41)
++++ README.md	(working copy)
+@@ -1,7 +1,10 @@
+ # Word Count tool
+ 
+-A Famouskai tool that counts the words of the open file.
++A Famouskai tool that counts the words of the open file, in any language.
+ 
+ ## Install
+ 
+-Copy `plugins/tool-word-count.js` into your Famouskai `plugins/` folder.
++1. Copy `plugins/tool-word-count.js` into your Famouskai `plugins/` folder.
++2. Add it to the list of files in `sw.js`, so it works offline.
++
++See [the guide](docs/guide.md).
+
+﹥ 2. Unified format, as written by git diff; a binary file is only named, never shown
+diff --git a/plugins/tool-word-count.js b/plugins/tool-word-count.js
+index 7bcf9c0..7c101a9 100644
+--- a/plugins/tool-word-count.js
++++ b/plugins/tool-word-count.js
+@@ -2,8 +2,12 @@
+ (function () {
+     'use strict';
+ 
++    // A word is a run of letters, digits, apostrophes or hyphens, in any script.
++    var WORD = /[\p{L}\p{N}'’-]+/gu;
++
+     function countWords(text) {
+-        return text.split(' ').length;
++        var matches = text.match(WORD);
++        return matches === null ? 0 : matches.length;
+     }
+ 
+     window.FamousPluginCore.Manager.register({
+@@ -11,7 +15,7 @@
+         extensions: ['md', 'txt'],
+         action: function (editor) {
+             var total = countWords(editor.getValue());
+-            alert(total + ' words');
++            window.showToast(total + ' words', 'info');
+         }
+     });
+ })();
+diff --git a/assets/icon.png b/assets/icon.png
+index 4c2b6d3..f07aedd 100644
+Binary files a/assets/icon.png and b/assets/icon.png differ
+
+﹥ 3. Context format (diff -c): *** for the old file, --- for the new one, ! for a changed line
+*** plugins/tool-word-count.js	Tue Oct 20 10:00:00 2026
+--- plugins/tool-word-count.js	Wed Oct 21 10:05:00 2026
+***************
+*** 2,9 ****
+  (function () {
+      'use strict';
+  
+      function countWords(text) {
+!         return text.split(' ').length;
+      }
+  
+      window.FamousPluginCore.Manager.register({
+--- 2,13 ----
+  (function () {
+      'use strict';
+  
++     // A word is a run of letters, digits, apostrophes or hyphens, in any script.
++     var WORD = /[\p{L}\p{N}'’-]+/gu;
++ 
+      function countWords(text) {
+!         var matches = text.match(WORD);
+!         return matches === null ? 0 : matches.length;
+      }
+  
+      window.FamousPluginCore.Manager.register({
+***************
+*** 11,17 ****
+          extensions: ['md', 'txt'],
+          action: function (editor) {
+              var total = countWords(editor.getValue());
+!             alert(total + ' words');
+          }
+      });
+  })();
+--- 15,21 ----
+          extensions: ['md', 'txt'],
+          action: function (editor) {
+              var total = countWords(editor.getValue());
+!             window.showToast(total + ' words', 'info');
+          }
+      });
+  })();
+
+﹥ 4. Normal format (plain diff): line numbers with a for add, c for change, d for delete
+diff old/README.md new/README.md
+3c3
+< A Famouskai tool that counts the words of the open file.
+---
+> A Famouskai tool that counts the words of the open file, in any language.
+7c7,10
+< Copy `plugins/tool-word-count.js` into your Famouskai `plugins/` folder.
+---
+> 1. Copy `plugins/tool-word-count.js` into your Famouskai `plugins/` folder.
+> 2. Add it to the list of files in `sw.js`, so it works offline.
+> 
+> See [the guide](docs/guide.md).
+diff old/docs/old-guide.md new/docs/guide.md
+4a5
+> Words are counted in any language: "café" and "東京" count as one word each.
+diff old/legacy/word-count-v0.js /dev/null
+1,2d0
+< // Old version, kept for reference.
+< function wc(t) { return t.length; }

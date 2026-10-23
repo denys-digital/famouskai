@@ -1,0 +1,1750 @@
+/*
+ * Famouskai Editor - Local-First PWA IDE
+ * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * -------------------------------------------------------------------------
+ * COMMERCIAL LICENSE
+ * For commercial integration without the AGPLv3 strict open-source
+ * restrictions, please contact the author to acquire a commercial license.
+ * -------------------------------------------------------------------------
+ */
+
+/* ==========================================================================
+   FAMOUSKAI CSS ARCHITECTURE (ITCSS-Inspired)
+
+   This stylesheet is strictly organized from generic/technical layers
+   down to highly specific/functional layers to prevent CSS specificity wars.
+
+   LAYER 1: SETTINGS (Global Variables)
+    - 1.a. DESIGN TOKENS (THEME)
+
+   LAYER 2: LAYOUT & STRUCTURE (Skeleton)
+    - 2.a. Global Layout & Foundations
+    - 2.b. Toolbar
+    - 2.c. Sidebar & Settings
+
+   LAYER 3: CORE UI COMPONENTS (The Design System)
+    - 3.a. Buttons (Flat Design UI)
+    - 3.b. Native Dialogs
+    - 3.c. Toast & Alert Notifications
+    - 3.d. Accessibility: Reduced Motion
+    - 3.e. Generic Boxes
+
+   LAYER 4: FUNCTIONAL DOMAINS (Core App Features)
+    - 4.a. Workspace
+    - 4.b. Live Preview
+    - 4.c. Print-to-PDF Engine
+
+   LAYER 5: PLUGINS & EXTENSIONS (Strictly Namespaced)
+    - 5.a. Plugin Manager & Core Extensions
+      - Tool Manager
+      - ext-Outline
+      - ext-Snippets
+   ========================================================================== */
+
+/*
+   ﹥LAYER 1: SETTINGS (Global Variables)
+*/
+/* ==========================================================================
+   ﹥ 1.a. Design Tokens (Theme)
+   The whole color palette lives here. To ship a new theme, only this
+   block needs to change. Tokens are named by USAGE, not by hue: renaming
+   "how Markdown is represented" should never read like "pick the pink one".
+   ========================================================================== */
+:root {
+    /* --- Neutrals & Bases --- */
+    --fm-dark: #202124; /* Very dark gray (Google Dark type) */
+    --fm-light: #F8F8F2; /* Off-white (Famouskai Foreground type) */
+    --fm-gray: #75715E; /* Warm gray (Famouskai Comment type) */
+    --fm-gray-light: #9AA0A6; /* Light gray (UI) */
+    /* --- Famouskai Colors --- */
+    --fm-magenta: #F92672; /* Bright pink / Magenta */
+    --fm-yellow: #E6DB74; /* Pale yellow */
+    --fm-sky: #8AB4F8; /* Pastel light blue */
+    /* --- Primary Colors --- */
+    --fm-orange: #FD971F; /* Bright orange */
+    --fm-green: #A6E22E; /* Bright green */
+    --fm-red: #F95B56; /* Coral red */
+    --fm-purple: #AE81FF; /* Purple */
+    /* --- Secondary Colors --- */
+    --fm-pink: #FF87B4; /* Light pink */
+    --fm-brown: #B87A34; /* Brown / Bronze */
+    --fm-lime: #C6FF77; /* Light lime green */
+    --fm-cyan: #66D9EF; /* Cyan blue */
+    --fm-blue: #569CD6; /* Classic blue */
+    /* --- Editor Colors (syntax highlighting palette) --- */
+    --fm-emerald: #60D673; /* Emerald green (strings) */
+    --fm-gold: #FFDB0F; /* Bright gold (functions, classes) */
+    --fm-carnation: #FF96DA; /* Pink carnation (numbers, constants) */
+
+    /* --- Surfaces --- */
+    --color-bg-app: var(--fm-dark); /* Editor, panels, inputs background */
+    --color-bg-panel: #2f3033; /* Toolbar, sidebar, panel headers */
+    --color-bg-hover: #3c4043; /* Hover background for buttons/rows */
+
+    /* --- Borders & separators --- */
+    --color-border: #3c4043; /* Standard border */
+    --color-border-subtle: #5f6368; /* Dividers, scrollbars, placeholders */
+
+    /* --- Text --- */
+    --color-text-primary: var(--fm-light); /* Main text */
+    --color-text-secondary: #9aa0a6; /* Secondary text / labels */
+    --color-text-disabled: #5f6368; /* Disabled text, empty-state messages */
+    --color-text-on-accent: var(--fm-dark); /* Text drawn on top of an accent surface */
+    --color-white: #ffffff; /* Pure white (final hover state, print) */
+
+    /* --- Primary interactive accent (buttons, focus, active states) --- */
+    --color-accent: var(--fm-sky);
+
+    /* --- Status colors (what happened, not what it looks like) --- */
+    --color-status-error: var(--fm-red); /* Errors */
+    --color-status-warn: var(--fm-orange); /* Warning */
+    --color-status-modified: var(--fm-yellow); /* Unsaved / modified file */
+    --color-status-success: var(--fm-green); /* Sync succeeded */
+
+    /* --- File type identity (explorer badges) ---
+       One token per file extension. Change a single line here to
+       re-skin how a given file type is recognized at a glance. */
+    --color-filetype-css: var(--fm-sky);
+    --color-filetype-csv: var(--fm-lime);
+    --color-filetype-diff: var(--fm-green);
+    --color-filetype-html: var(--fm-orange);
+    --color-filetype-js: var(--fm-yellow);
+    --color-filetype-json: var(--fm-purple);
+    --color-filetype-log: var(--fm-light);
+    --color-filetype-md: var(--fm-magenta);
+    --color-filetype-svg: var(--fm-cyan);
+    --color-filetype-ts: var(--fm-blue);
+    --color-filetype-txt: var(--fm-light);
+    --color-filetype-xml: var(--fm-brown);
+    --color-filetype-yaml: var(--fm-red);
+    --color-filetype-default: var(--fm-gray-light);
+
+    /* ﹥ --- Outline / Table of Contents representation ---
+       Independent from the file-type badges above: this is about how an
+       entry is *displayed in the outline*, not what file it belongs to.
+       You can restyle "how Markdown looks in the outline" here without
+       touching the JSON/HTML/YAML badge colors, and vice versa. Some
+       values intentionally match another token's hex today (e.g. JS mark
+       vs. JS file badge) — that's a coincidence of the current theme, not
+       a coupling: each token can diverge independently later. */
+    --color-toc-markdown: var(--fm-sky);
+    --color-toc-markdown-hover: var(--fm-purple);
+    --color-toc-xml: var(--fm-magenta);
+    --color-toc-xml-hover: var(--fm-purple);
+    --color-toc-js: var(--fm-yellow); /* JS bookmark entries */
+    --color-toc-js-hover: var(--fm-purple);
+    --color-toc-todo: var(--fm-orange); /* TODO markers */
+    --color-toc-at: var(--fm-purple); /* "@" mention markers */
+    --color-toc-end: var(--fm-brown); /* End-of-file marker */
+    --color-toc-end-hover: var(--color-text-primary);
+    --color-toc-bookmark: var(--fm-lime); /* Famous Marks custom bookmark */
+    --color-toc-bookmark-hover: var(--color-text-primary);
+
+    /* ﹥ --- Snippet Tokens --- */
+    --color-snip-custom-dark: var(--fm-dark);
+    --color-snip-custom-light: var(--fm-orange);
+    --color-snip-default-dark: var(--fm-dark);
+    --color-snip-default-light: var(--fm-light);
+    --color-snip-default-key: var(--fm-sky);
+    --color-snip-content: var(--fm-green);
+
+    /* ﹥ --- Sidebar tabs: one color per tab (button on hover/selected, line on top of the panel) --- */
+    --color-tab-explorer: var(--fm-sky);
+    --color-tab-outline: var(--fm-green);
+    --color-tab-tools: var(--fm-orange);
+    --color-tab-settings: var(--fm-purple);
+    --sidebar-tab-line: 3px; /* Thickness of the line on top of the open panel */
+
+    /* ﹥ --- Diffskai / Table of Contents representation --- */
+    --color-status-conflict: var(--fm-magenta); /* Diffskai: merge/overwrite action */
+    --color-status-readonly: var(--fm-purple); /* Diffskai: disk / non-editable content */
+    --color-diffskai-inserted-text: #54d24d44; /* Diffskai: added characters (Monaco theme) */
+    --color-diffskai-inserted-line: #54d24d1a; /* Diffskai: added line background */
+    --color-diffskai-removed-text: #ea433544; /* Diffskai: removed characters */
+    --color-diffskai-removed-line: #ea43351a; /* Diffskai: removed line background */
+
+    /* --- Typography ---
+       Kept as-is from the original stylesheet: generic keywords only,
+       no font stack was in the source, so none is invented here. */
+    --font-mono: monospace;
+    --font-ui: sans-serif;
+
+    /* --- Radii, shadows, transitions --- */
+    --radius-sm: 3px;
+    --radius-md: 4px;
+    --radius-lg: 5px;
+    --shadow-toast: 0 2px 5px rgba(0, 0, 0, 0.3);
+    --transition-fast: 0.2s ease;
+
+    /* --- Centralized z-index scale --- */
+    --z-error: 9999;
+    --z-toast: 10000;
+}
+
+/* ==========================================================================
+   ﹥ 1.b. Global styling
+   ========================================================================== */
+.fmk-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    outline: none;
+    padding: 4px 0;
+    width: 100%;
+}
+.fmk-search-input::placeholder { color: var(--color-text-disabled); }
+
+.fmk-search-input:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+.fmk-search-clear {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    margin-left: 9px;
+    display: none;
+}
+.fmk-search-clear:hover {
+    color: var(--color-text-primary);
+}
+
+/*
+   ﹥LAYER 2: LAYOUT & STRUCTURE (Skeleton)
+*/
+/* ==========================================================================
+   ﹥ 2.a. Global Layout & Foundations
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg-app);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#main-area {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 40px);
+    overflow: hidden;
+}
+
+#editor {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-bg-app);
+}
+
+/* ==========================================================================
+   ﹥ 2.b. Toolbar
+   ========================================================================== */
+#toolbar {
+    display: flex;
+    align-items: center;
+    background: var(--color-bg-panel);
+    padding: 5px 15px;
+    height: 40px;
+    border-bottom: 1px solid var(--color-border);
+    border-top: 2px dashed var(--color-border);
+    gap: 5px;
+    user-select: none;
+}
+
+#sidebar-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.sidebar-tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-tab-btn:hover,
+.sidebar-tab-btn.is-active {
+    color: var(--color-text-on-accent) !important;
+    background: var(--sidebar-tab-color, var(--color-accent)) !important;
+}
+
+#btn-menu {
+    font-size: 16px;
+    padding: 4px 10px 0 10px;
+}
+
+.divider {
+    width: 1px;
+    height: 20px;
+    background: var(--color-border-subtle);
+    margin: 0 5px;
+}
+
+/* --- Refined Toolbar File Name Layout --- */
+#file-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-left: 10px;
+    max-width: 300px;
+    overflow: hidden;
+    white-space: nowrap;
+    cursor: default; /* Reset container cursor */
+}
+
+#file-name-text {
+    cursor: pointer;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    transition: color var(--transition-fast);
+}
+#file-name-text:hover { color: var(--color-white); }
+
+.toolbar-icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.toolbar-icon-btn:hover {
+    color: var(--color-accent);
+    background: var(--color-bg-hover);
+}
+
+.is-modified {
+    color: var(--color-status-modified) !important;
+    font-weight: bold;
+}
+
+/* Sync feedback state */
+.sync-success-msg {
+    background: var(--color-status-success);
+    color: var(--color-text-on-accent);
+    font-weight: bold;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: var(--radius-md);
+}
+
+/* Toolbar right-hand section */
+#toolbar-right {
+    margin-left: auto;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+/* ==========================================================================
+   ﹥ 2.c. Sidebar & Settings
+   ========================================================================== */
+#sidebar-left {
+    width: 260px;
+    background: var(--color-bg-panel);
+    border-right: 1px solid var(--color-border);
+    border-top: var(--sidebar-tab-line) solid var(--sidebar-active-color, var(--color-accent));
+    display: none;
+    flex-direction: column;
+    position: relative;
+}
+
+.sidebar-panel {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.sidebar-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 15px;
+    /* Firefox fallback: ::-webkit-* pseudo-elements are ignored outside Chromium */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-subtle) transparent;
+}
+
+#panel-explorer {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+#panel-tools {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+#panel-tools #snippets-lexicon {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+}
+
+/* Side Drawer Overlay (Extensible Framework) */
+#sidebar-drawer {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    width: 300px;
+    height: 100%;
+    background: var(--color-bg-panel);
+    border-right: 1px solid var(--color-border);
+    box-shadow: 4px 0 10px rgba(0,0,0,0.3);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+}
+
+#sidebar-drawer.is-open {
+    display: flex;
+}
+
+.sidebar-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-app);
+}
+
+.sidebar-drawer-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.sidebar-drawer-body > .snippet-modal-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.sidebar-inner::-webkit-scrollbar { width: 6px; }
+.sidebar-inner::-webkit-scrollbar-thumb {
+    background: var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.sidebar-title {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-family: var(--font-ui);
+    margin-bottom: 12px;
+}
+.sidebar-header .sidebar-title { margin-bottom: 0; } /* Reset for the Outline header */
+
+.sidebar-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.sidebar-divider {
+    border: 0;
+    border-top: 1px solid var(--color-border-subtle);
+    margin: 25px 0 20px 0;
+}
+
+.sidebar-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    margin-bottom: 4px;
+    padding-top: 3px;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+/* Text turns fully readable again only on hover */
+.sidebar-label:hover { color: var(--color-text-primary); }
+
+.sidebar-checkbox {
+    accent-color: var(--color-accent);
+    width: 16px;
+    height: 16px;
+}
+
+.sidebar-hide-row {
+    display: flex;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-app);
+}
+
+#btn-hide-sidebar {
+    border-radius: 0;
+    background: var(--color-bg-app);
+    padding: 12px;
+    flex: 1;
+    text-align: center;
+}
+#btn-hide-sidebar:hover { background: var(--color-bg-hover); }
+
+/* Double-chevron buttons that close the drawer (header and next to "Hide Menu") */
+.sidebar-chevron-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#btn-hide-drawer {
+    display: none;
+    border-radius: 0;
+    border-left: 1px solid var(--color-border);
+    padding: 12px 14px;
+}
+
+#sidebar-left.sidebar-drawer-open #btn-hide-drawer {
+    display: flex;
+}
+
+/* Settings section collapsible chevron */
+.settings-chevron {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.settings-chevron::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    background-color: var(--color-text-secondary);
+    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>');
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>');
+    mask-position: center;
+    mask-repeat: no-repeat;
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
+    transform: rotate(90deg); /* Expanded state by default */
+}
+.settings-chevron:hover::before { background-color: var(--color-accent); }
+.settings-chevron.is-collapsed::before { transform: rotate(0deg); }
+
+#app-version {
+    background: var(--color-bg-app);
+    color: var(--color-text-disabled);
+    text-align: center;
+    font-size: 10px;
+    padding: 4px;
+    font-family: var(--font-ui);
+    width: 100%;
+    border-radius: 0;
+}
+#app-version:hover:not(:disabled) {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+/*
+   ﹥LAYER 3: CORE UI COMPONENTS (The Design System)
+*/
+/* ==========================================================================
+   ﹥ 3.a. Buttons (Flat Design UI)
+   ========================================================================== */
+button, .fold-btn {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: none;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.fold-btn {
+    font-size: 11px;
+    padding: 3px 6px;
+    font-weight: bold;
+}
+
+/* Active state for compact filters */
+.fold-btn.active-filter {
+    background: var(--color-bg-hover);
+    box-shadow: inset 0 -2px 0 0 currentColor; /* Clean bottom highlight */
+}
+
+button:hover:not(:disabled), .fold-btn:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Keyboard accessibility: visible focus ring on interactive controls */
+button:focus-visible, .fold-btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+/* Active / pressed button state */
+.btn-active {
+    background: var(--color-accent) !important;
+    color: var(--color-text-on-accent) !important;
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   ﹥ 3.b. Native Dialogs
+   ========================================================================== */
+dialog {
+    background: var(--color-bg-panel);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-toast);
+    padding: 20px;
+    width: 320px;
+}
+
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+#rename-input {
+    width: 100%;
+    margin: 10px 0 20px 0;
+    background: var(--color-bg-app);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 8px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    outline: none;
+}
+
+#rename-input:focus {
+    border-color: var(--color-accent);
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* ==========================================================================
+   ﹥ 3.c. Toast & Alert Notifications
+   ========================================================================== */
+#toast-msg {
+    position: fixed;
+    bottom: -50px;
+    right: 20px;
+    background: var(--color-accent);
+    color: var(--color-text-on-accent);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    box-shadow: var(--shadow-toast);
+    transition: bottom 0.3s ease;
+    z-index: var(--z-toast);
+    pointer-events: none;
+}
+#toast-msg.show { bottom: 20px; }
+#toast-msg.toast-success {
+    background: var(--color-status-success);
+    color: var(--color-text-on-accent);
+}
+
+#toast-msg.toast-info {
+    background: var(--color-accent);
+    color: var(--color-text-on-accent);
+}
+
+#toast-msg.toast-warn {
+    background: var(--color-status-warn);
+    color: var(--color-text-on-accent);
+}
+
+#toast-msg.toast-error {
+    background: var(--color-status-error);
+    color: var(--color-text-on-accent);
+}
+
+/* Success state for action buttons (Saved / Copied...) */
+.btn-success {
+    background: var(--color-status-success) !important;
+    color: var(--color-text-on-accent) !important;
+}
+
+/* Fatal Error Overlay */
+#error-msg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--color-status-error);
+    color: var(--color-white);
+    padding: 15px;
+    border-radius: var(--radius-lg);
+    font-family: var(--font-ui);
+    display: none;
+    z-index: var(--z-error);
+}
+
+/* ==========================================================================
+   ﹥ 3.d. Accessibility: Reduced Motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition-duration: 0.001ms !important;
+        animation-duration: 0.001ms !important;
+    }
+}
+
+/* ==========================================================================
+   ﹥ 3.e. Generic Boxes
+   ========================================================================== */
+.lexicon-box {
+    color: var(--color-text-primary);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    line-height: 2;
+    background: var(--color-bg-app);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.lexicon-key {
+    color: var(--color-accent);
+    font-weight: bold;
+}
+
+.lexicon-separator {
+    border-top: 1px dashed var(--color-border-subtle);
+    margin: 6px 0;
+}
+
+.lexicon-empty-msg {
+    color: var(--color-text-disabled);
+    font-style: italic;
+}
+
+/*
+   ﹥LAYER 4: FUNCTIONAL DOMAINS (Core App Features)
+*/
+/* ==========================================================================
+   ﹥ 4.a. Workspace
+   All classes related strictly to the file explorer logic and layout.
+   ========================================================================== */
+.workspace-name-display {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.toc-item.is-dragging {
+    opacity: 0.4;
+    background: var(--color-bg-hover);
+}
+
+.toc-item.drag-over {
+    border-top: 2px solid var(--color-accent);
+    background: rgba(138, 180, 248, 0.15);
+}
+.workspace-name-display:hover { color: var(--color-white); }
+
+#btn-refresh-workspace { rotate: 100deg; }
+
+.workspace-search-box {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    background: var(--color-bg-app);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 2px 6px;
+}
+
+#workspace-search {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    outline: none;
+    padding: 4px 0;
+    width: 100%;
+}
+#workspace-search::placeholder { color: var(--color-text-disabled); }
+
+#workspace-search:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+#workspace-search-clear {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    margin-left: 9px;
+    display: none;
+}
+#workspace-search-clear:hover {
+    color: var(--color-text-primary);
+}
+
+/* Workspace extension filters bar */
+#workspace-ext-filters {
+    justify-content: flex-start;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--color-border);
+}
+
+.file-icon-badge {
+    display: inline-block;
+    width: 18px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: bold;
+    margin-right: 6px;
+}
+/* ﹥ 4.a.1. File-type icon colors: one token per extension, see ﹥ 0. */
+.icon-css { color: var(--color-filetype-css); }
+.icon-csv { color: var(--color-filetype-csv); }
+.icon-diff { color: var(--color-filetype-diff); }
+.icon-html { color: var(--color-filetype-html); }
+.icon-js { color: var(--color-filetype-js); }
+.icon-json { color: var(--color-filetype-json); }
+.icon-log { color: var(--color-filetype-log); }
+.icon-md { color: var(--color-filetype-md); }
+.icon-svg { color: var(--color-filetype-svg); }
+.icon-ts { color: var(--color-filetype-ts); }
+.icon-txt { color: var(--color-filetype-txt); }
+.icon-xml { color: var(--color-filetype-xml); }
+.icon-yml { color: var(--color-filetype-yaml); }
+.icon-default { color: var(--color-filetype-default); }
+
+.workspace-list-box {
+    background: var(--color-bg-app);
+    padding: 5px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    overflow-y: auto;
+}
+
+#workspace-file-list {
+    flex: 1 1 auto;
+    min-height: 210px;
+    max-height: none;
+    overflow-y: auto;
+    padding: 5px;
+    /* Firefox fallback */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-subtle) transparent;
+}
+
+#recent-files-list {
+    flex: 0 1 auto;
+    max-height: 260px;
+    min-height: 60px;
+    overflow-y: auto;
+}
+#workspace-file-list::-webkit-scrollbar { width: 6px; }
+#workspace-file-list::-webkit-scrollbar-thumb {
+    background: var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+}
+
+/* Custom chevrons for folders: a single neutral SVG reused for both
+   open/closed states and both colors, recolored with currentColor via
+   a CSS mask instead of shipping 4 near-identical baked-in data-URIs. */
+.workspace-folder > summary { list-style: none; }
+.workspace-folder > summary::-webkit-details-marker { display: none; }
+.workspace-folder > summary::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    vertical-align: middle;
+    background-color: var(--color-text-secondary);
+    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>');
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>');
+    mask-position: center;
+    mask-repeat: no-repeat;
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
+}
+.workspace-folder[open] > summary::before { transform: rotate(90deg); }
+.workspace-folder > summary:hover::before,
+.workspace-folder[open] > summary:hover::before {
+    background-color: var(--color-accent);
+}
+
+.workspace-file-item {
+    cursor: pointer;
+    padding: 4px 6px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: var(--radius-sm);
+}
+.workspace-file-item:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-accent);
+}
+
+.workspace-empty-msg {
+    color: var(--color-text-disabled);
+    font-style: italic;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 12px;
+}
+.workspace-empty-msg.is-error { color: var(--color-status-error); }
+.workspace-empty-msg.is-padded { padding-left: 28px; }
+
+/* ==========================================================================
+   ﹥ 4.b. Live Preview
+   ========================================================================== */
+#editor-wrapper {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    min-width: 0;
+}
+
+#preview-pane {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    width: 50%; /* Split-screen mode by default on large screens */
+    border-left: 1px solid var(--color-border);
+    background: var(--color-bg-app);
+    height: 100%;
+}
+
+#preview-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 15px;
+    background: var(--color-bg-panel);
+    border-bottom: 1px solid var(--color-border);
+    height: 40px;
+}
+
+#preview-title {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    font-weight: bold;
+}
+
+#preview-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    position: relative;
+}
+
+#preview-html {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+    background: var(--color-white);
+    border-radius: var(--radius-md);
+}
+
+/* Full-width toggle (Full View) */
+#main-area.preview-full #editor-wrapper { display: none !important; }
+#main-area.preview-full #preview-pane {
+    width: 100% !important;
+    border-left: none !important;
+}
+
+/* Responsive: below 900px, switch to toggle mode (full-screen preview) */
+@media (max-width: 900px) {
+    #preview-pane {
+        width: 100%;
+        border-left: none;
+    }
+
+    /* Hide editor when preview is active */
+    #main-area.preview-active #editor-wrapper { display: none !important; }
+
+    /* Hide sidebar automatically when preview is active, to maximize reading space */
+    #main-area.preview-active #sidebar-left { display: none !important; }
+
+    /* The 'Full View' button becomes obsolete and confusing on small screens */
+    #btn-preview-full { display: none !important; }
+}
+
+/* ==========================================================================
+   ﹥ 4.c. Print-to-PDF Engine
+   ========================================================================== */
+@media print {
+    /* Hide the whole IDE chrome and any overlay elements (toasts, dialogs, error overlays, filter panels) */
+    #toolbar, #sidebar-left, #editor-wrapper, #preview-toolbar, #btn-hide-sidebar, #toast-msg, #error-msg, dialog, .famous-up-filter-panel {
+        display: none !important;
+    }
+
+    /* Force the preview to take the full printed page */
+    #main-area {
+        height: auto !important;
+        overflow: visible !important;
+    }
+    #preview-pane {
+        display: block !important;
+        width: 100% !important;
+        border: none !important;
+        background: var(--color-white) !important; /* White page background for print */
+        color: #000 !important; /* Text must stay readable on a white page */
+    }
+    #preview-content {
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+}
+
+/*
+   ﹥LAYER 5: PLUGINS & EXTENSIONS (Strictly Namespaced)
+*/
+/* ==========================================================================
+   ﹥ 5.a. Plugin Manager & Core Extensions
+   ========================================================================== */
+
+#toolbar-plugins .toolbar-tool-btn {
+    padding: 6px 13px;
+    font-weight: bold;
+}
+
+#toolbar-plugins .toolbar-tool-btn:hover {
+    color: var(--color-text-on-accent);
+    background-color: var(--tool-hover-bgcolor);
+}
+
+/* ==========================================================================
+    ﹥ ext. - Tool-item
+   ========================================================================== */
+.tool-item {
+    cursor: pointer;
+    padding: 6px 10px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-md);
+    margin-bottom: 2px;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.tool-item:hover {
+    background-color: var(--tool-hover-bgcolor, var(--color-bg-hover));
+    color: var(--tool-hover-color, var(--color-text-primary));
+}
+
+/* Keyboard accessibility: visible focus ring on interactive controls */
+.tool-item:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+/* ==========================================================================
+    ﹥ tool - DiffsKai (Compare Tool)
+   ========================================================================== */
+/* Every rule is scoped to body.diffskai (plugins/tool-diffskai.html), which loads
+   this same file: nothing here changes the main Famouskai window. */
+.diffskai #main-area {
+    flex-direction: column;
+}
+
+/* Toolbar at the bottom of the Diffskai window */
+.diffskai #toolbar {
+    justify-content: center;
+    border-bottom: none;
+    border-top: 1px solid var(--color-border);
+}
+
+.diffskai-toolbar-label {
+    margin-bottom: 0;
+}
+
+/* Conflict banner, shown only in conflict mode */
+.diffskai-banner {
+    display: none;
+    background: var(--color-bg-app);
+    border-bottom: 1px solid var(--color-status-conflict);
+    color: var(--color-text-primary);
+    text-align: center;
+    padding: 8px 15px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+}
+
+.diffskai-banner-title {
+    color: var(--color-status-conflict);
+    font-weight: bold;
+}
+
+/* Conflict mode: banner visible; Open, left Save and Swap hidden */
+.diffskai-conflict-mode .diffskai-banner {
+    display: block;
+}
+
+.diffskai-conflict-mode #btn-open-left,
+.diffskai-conflict-mode #btn-open-right,
+.diffskai-conflict-mode #btn-save-left,
+.diffskai-conflict-mode #btn-swap,
+.diffskai-conflict-mode #div-left {
+    display: none;
+}
+
+/* Panel headers above the two editors */
+.diffskai .split-headers {
+    display: flex;
+    width: 100%;
+    background: var(--color-bg-app);
+    border-bottom: 1px solid var(--color-border);
+    padding: 5px 15px;
+    align-items: center;
+}
+
+.diffskai .header-panel {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 5px;
+}
+
+.diffskai .header-panel.left {
+    border-right: 1px solid var(--color-border);
+    padding-right: 10px;
+}
+
+.diffskai .header-panel.right {
+    padding-left: 10px;
+}
+
+.diffskai .file-name-display {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-left: 10px;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.diffskai-label-readonly {
+    color: var(--color-status-readonly);
+}
+
+.diffskai-label-editable {
+    color: var(--color-status-conflict);
+}
+
+.diffskai-label-source {
+    color: var(--color-text-secondary);
+}
+
+.diffskai-label-modified-star {
+    color: var(--color-status-modified);
+    font-weight: bold;
+}
+
+.diffskai-btn-conflict {
+    transition: all var(--transition-fast);
+}
+
+.diffskai-btn-conflict:hover:not(:disabled) {
+    background-color: var(--color-status-conflict);
+    color: var(--color-text-on-accent);
+    border-color: var(--color-status-conflict);
+}
+
+.diffskai #diff-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.diffskai #loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--color-accent);
+    font-family: var(--font-ui);
+    z-index: 10;
+}
+
+/* ==========================================================================
+    ﹥ ext. - Outline
+   ========================================================================== */
+.outline-search-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.outline-search-wrapper {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+#outline-search {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    outline: none;
+    padding: 4px 0;
+    width: 100%;
+}
+#outline-search::placeholder { color: var(--color-text-disabled); }
+
+#outline-search:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+#outline-search-clear {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    margin-left: 9px;
+    display: none;
+}
+#outline-search-clear:hover {
+    color: var(--color-text-primary);
+}
+
+#btn-outline-sort { height: 26px; }
+
+.outline-chevron::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    /*margin-right: 6px;*/
+    vertical-align: middle;
+    background-color: var(--color-text-secondary);
+    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>');
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>');
+    mask-position: center;
+    mask-repeat: no-repeat;
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
+    transform: rotate(90deg);
+}
+.outline-chevron:hover::before { background-color: var(--color-accent); }
+.outline-chevron.is-collapsed::before { transform: rotate(0deg); }
+
+/* Table of Contents entries (generated dynamically by JS) */
+#toc-list {
+    padding-bottom: 0;
+    margin-bottom: 15px;
+}
+
+/* Outline Items Base */
+.toc-item {
+    cursor: pointer;
+    padding: 4px 0;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Outline Semantic Types */
+.toc-item-md { color: var(--color-toc-markdown); }
+.toc-item-md:hover { color: var(--color-toc-markdown-hover); }
+
+.toc-item-xml {
+    color: var(--color-toc-xml);
+    padding-left: 0;
+}
+.toc-item-xml:hover { color: var(--color-toc-xml-hover); }
+
+.toc-item-js {
+    color: var(--color-toc-js);
+    transition: color var(--transition-fast);
+}
+.toc-item-js:hover { color: var(--color-toc-js-hover); }
+
+.toc-item-todo,
+.toc-item-at {
+    font-style: italic;
+    padding-left: 6px !important;
+}
+.toc-item-todo {
+    color: var(--color-toc-todo);
+    border-left: 2px solid var(--color-toc-todo);
+}
+.toc-item-at {
+    color: var(--color-toc-at);
+    border-left: 2px solid var(--color-toc-at);
+}
+
+.toc-item-famous {
+    color: var(--color-toc-bookmark);
+    border-left: 2px solid var(--color-toc-bookmark);
+    padding-left: 6px !important; /* Visual indentation for custom marks */
+}
+.toc-item-famous:hover {
+    color: var(--color-white);
+    border-left-color: var(--color-white);
+}
+
+.toc-item-end {
+    color: var(--color-toc-end);
+}
+
+/* ==========================================================================
+    ﹥ ext. - Snippets
+   ========================================================================== */
+.ext-snippets-box {
+    color: var(--color-text-primary);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    line-height: 1.8;
+    background: var(--color-bg-app);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#snippet-search,
+#snippet-modal-search {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    outline: none;
+    padding: 4px 0;
+    width: 100%;
+}
+#snippet-search::placeholder,
+#snippet-modal-search::placeholder { color: var(--color-text-disabled); }
+
+#snippet-search:focus-visible,
+#snippet-modal-search:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+#snippet-search-clear,
+#snippet-modal-search-clear {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 4px;
+    margin-left: 9px;
+    display: none;
+}
+#snippet-search-clear:hover,
+#snippet-modal-search-clear:hover {
+    color: var(--color-text-primary);
+}
+
+.ext-snippets-key {
+    color: var(--color-snip-default-key);
+    font-weight: bold;
+}
+
+.ext-snippets-key.key-custom {
+    color: var(--color-snip-custom-light);
+}
+
+.ext-snippets-separator {
+    border-top: 1px dashed var(--color-border-subtle);
+    margin: 6px 0;
+}
+
+.ext-snippets-empty {
+    color: var(--color-text-disabled);
+    font-style: italic;
+}
+
+.snippet-search-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.snippet-search-wrapper {
+    flex: 1;
+    margin-bottom: 0 !important;
+}
+
+.snippet-type-filters {
+    display: flex;
+    gap: 4px;
+}
+
+#btn-modal-snip-filter-custom,
+#btn-snip-filter-custom { height: 26px; }
+
+#btn-modal-snip-filter-custom.btn-filter-custom.active-filter,
+#btn-snip-filter-custom.btn-filter-custom.active-filter {
+    color: var(--color-snip-custom-light);
+}
+#btn-modal-snip-filter-custom.btn-filter-custom:hover,
+#btn-snip-filter-custom.btn-filter-custom:hover {
+    color: var(--color-snip-custom-light);
+}
+
+#btn-modal-snip-filter-default.btn-filter-default.active-filter,
+#btn-snip-filter-default.btn-filter-default.active-filter {
+    color: var(--color-snip-default-light);
+}
+#btn-modal-snip-filter-default.btn-filter-default:hover,
+#btn-snip-filter-default.btn-filter-default:hover {
+    color: var(--color-snip-default-light);
+}
+
+.snippet-lexicon-row {
+    word-break: break-word;
+    margin-bottom: 2px;
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    box-sizing: border-box;
+    width: 100%;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.snippet-lexicon-row:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-accent);
+}
+
+.snippet-badge-custom {
+    display: inline-block;
+    background: var(--color-snip-custom-light);
+    color: var(--color-snip-custom-dark);
+    font-size: 9px;
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.snippet-badge-default {
+    display: inline-block;
+    background: var(--color-snip-default-dark);
+    color: var(--color-snip-default-light);
+    font-size: 9px;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* Modal Management Styling */
+.snippet-modal {
+    width: 540px;
+    max-width: 90vw;
+    max-height: 85vh;
+    padding: 0;
+    overflow: hidden;
+}
+
+.snippet-modal[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.snippet-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-panel);
+}
+
+#snippet-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0 8px;
+    margin-left: 9px;
+}
+#snippet-modal-close:hover {
+    color: var(--color-text-primary);
+}
+
+.snippet-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.snippet-modal-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.snippet-modal-toolbar-left {
+    display: flex;
+    gap: 8px;
+    padding: 3px;
+    margin: -3px;
+}
+
+.snippet-form-box {
+    background: var(--color-bg-app);
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 14px;
+}
+
+.snippet-form-group {
+    margin-bottom: 10px;
+}
+
+.snippet-form-group label {
+    display: block;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+.snippet-form-group input,
+.snippet-form-group textarea {
+    width: 100%;
+    background: var(--color-bg-panel);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.snippet-form-group input:focus,
+.snippet-form-group textarea:focus {
+    border-color: var(--color-accent);
+}
+
+.snippet-modal-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.snippet-modal-item {
+    background: var(--color-bg-app);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.snippet-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.snippet-item-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.snippet-item-exts {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+}
+
+.snippet-item-desc {
+    font-size: 12px;
+    color: var(--color-text-primary);
+    margin-bottom: 6px;
+}
+
+.snippet-item-preview {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    background: var(--color-bg-panel);
+    border-radius: var(--radius-sm);
+    padding: 6px;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 80px;
+    overflow-y: auto;
+    color: var(--fm-green);
+}
+
+.snippet-item-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* ==========================================================================
+    ﹥ ext. - Browser Support Banner (File System Access API Warning)
+   ========================================================================== */
+#browser-support-banner {
+    background: var(--color-bg-panel);
+    color: var(--color-text-primary);
+    border-bottom: 2px solid var(--color-status-warn);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    line-height: 1.4;
+    z-index: 100;
+}
+
+#browser-support-banner span {
+    flex: 1;
+    margin-right: 12px;
+}
+
+#browser-support-banner button {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+#browser-support-banner button:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+@media print {
+    #browser-support-banner {
+        display: none !important;
+    }
+}
+
+#recent-files-list {
+    max-height: 40vh;
+}

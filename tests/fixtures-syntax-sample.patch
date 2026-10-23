@@ -1,0 +1,112 @@
+From e2c9da10cf7fb29cb86b8d4fcb35d4dfde62293e Mon Sep 17 00:00:00 2001
+From: Ada Example <ada@example.com>
+Date: Wed, 21 Oct 2026 09:30:00 +0900
+Subject: [PATCH 1/2] Count words with a Unicode pattern, not with spaces
+
+Before: "Hello,  world" counted 3 words (two spaces make an empty word),
+and an empty file counted 1. After: 2 and 0. The result shows in a
+toast instead of a blocking alert().
+---
+ plugins/tool-word-count.js | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/plugins/tool-word-count.js b/plugins/tool-word-count.js
+index 7bcf9c0..7c101a9 100644
+--- a/plugins/tool-word-count.js
++++ b/plugins/tool-word-count.js
+@@ -2,8 +2,12 @@
+ (function () {
+     'use strict';
+ 
++    // A word is a run of letters, digits, apostrophes or hyphens, in any script.
++    var WORD = /[\p{L}\p{N}'’-]+/gu;
++
+     function countWords(text) {
+-        return text.split(' ').length;
++        var matches = text.match(WORD);
++        return matches === null ? 0 : matches.length;
+     }
+ 
+     window.FamousPluginCore.Manager.register({
+@@ -11,7 +15,7 @@
+         extensions: ['md', 'txt'],
+         action: function (editor) {
+             var total = countWords(editor.getValue());
+-            alert(total + ' words');
++            window.showToast(total + ' words', 'info');
+         }
+     });
+ })();
+-- 
+2.43.0
+
+From b43541ae011269d81a617bb2af951ba7a3d2d9c3 Mon Sep 17 00:00:00 2001
+From: Ada Example <ada@example.com>
+Date: Wed, 21 Oct 2026 10:05:00 +0900
+Subject: [PATCH 2/2] Rename the guide, refresh the icon, make serve.sh
+ executable
+
+The guide moves to docs/guide.md, the v0 file goes away, and the README
+explains the sw.js step that keeps the tool available offline.
+---
+ README.md                       |   7 +++++--
+ assets/icon.png                 | Bin 73 -> 74 bytes
+ docs/{old-guide.md => guide.md} |   1 +
+ legacy/word-count-v0.js         |   2 --
+ scripts/serve.sh                |   0
+ 5 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/README.md b/README.md
+index 1b9602f..aef92b8 100644
+--- a/README.md
++++ b/README.md
+@@ -1,7 +1,10 @@
+ # Word Count tool
+ 
+-A Famouskai tool that counts the words of the open file.
++A Famouskai tool that counts the words of the open file, in any language.
+ 
+ ## Install
+ 
+-Copy `plugins/tool-word-count.js` into your Famouskai `plugins/` folder.
++1. Copy `plugins/tool-word-count.js` into your Famouskai `plugins/` folder.
++2. Add it to the list of files in `sw.js`, so it works offline.
++
++See [the guide](docs/guide.md).
+diff --git a/assets/icon.png b/assets/icon.png
+index 4c2b6d363d304ff7be0d19e44d91c58290326673..f07aeddf65880e6d11ffcc74bc93b1d84d244fa2 100644
+GIT binary patch
+literal 74
+zcmeAS@N?(olHy`uVBq!ia0vp^EFjFm1SHiab7}%9K~ERQkcv6U5#K!c`y@IZGccT=
+WB%Qb-_h~;+lEKr}&t;ucLK6V|84;5J
+
+literal 73
+zcmeAS@N?(olHy`uVBq!ia0vp^Od!kwBL7~QRScvAJY5_^D&{1=xb=y-Lqb7>!N!i`
+U=JRO@pMY`<p00i_>zopr06)7E8UO$Q
+
+diff --git a/docs/old-guide.md b/docs/guide.md
+similarity index 60%
+rename from docs/old-guide.md
+rename to docs/guide.md
+index dafec13..ded84c8 100644
+--- a/docs/old-guide.md
++++ b/docs/guide.md
+@@ -2,3 +2,4 @@
+ 
+ Open a Markdown or text file, then click Word Count in the Tools tab.
+ The count includes every word of the file.
++Words are counted in any language: "café" and "東京" count as one word each.
+diff --git a/legacy/word-count-v0.js b/legacy/word-count-v0.js
+deleted file mode 100644
+index 943797a..0000000
+--- a/legacy/word-count-v0.js
++++ /dev/null
+@@ -1,2 +0,0 @@
+-// Old version, kept for reference.
+-function wc(t) { return t.length; }
+diff --git a/scripts/serve.sh b/scripts/serve.sh
+old mode 100644
+new mode 100755
+-- 
+2.43.0
+

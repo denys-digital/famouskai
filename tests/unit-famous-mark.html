@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Famous Mark Reference Extension</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="../plugins/ext-famous-core.js"></script>
+</head>
+<body>
+
+    <h1>Famous Mark Reference Unit Tests (ext-famous-core.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test Name</th>
+                <th>Input Line</th>
+                <th>test() Expect / Actual</th>
+                <th>match()[1] Expect / Actual</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        (function () {
+            const FamousMark = window.FamousPluginCore && window.FamousPluginCore.FamousMark;
+
+            if (!FamousMark) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.className = "summary fail";
+                summaryEl.textContent = "FATAL: window.FamousPluginCore.FamousMark is undefined!";
+                console.error("FATAL: window.FamousPluginCore.FamousMark is undefined!");
+                return;
+            }
+
+            const testCases = [
+                // 1. Each mark alone
+                { name: "Famous arrow (U+FE65) alone", line: "\uFE65 Section Title", expectTest: true, expectText: "Section Title" },
+                { name: "Magic dot (U+2022) alone", line: "\u2022 Section Title", expectTest: true, expectText: "Section Title" },
+                { name: "Flying bubble (U+00B0) alone", line: "\u00B0 Section Title", expectTest: true, expectText: "Section Title" },
+
+                // 2. Tolerated comment prefixes
+                { name: "Prefix // with mark", line: "// \uFE65 JS Comment", expectTest: true, expectText: "JS Comment" },
+                { name: "Prefix /* with mark", line: "/* \u2022 C-style Comment", expectTest: true, expectText: "C-style Comment" },
+                { name: "Prefix <!-- with mark", line: "<!-- \u00B0 HTML Comment", expectTest: true, expectText: "HTML Comment" },
+                { name: "Prefix # with mark", line: "# \uFE65 Python Comment", expectTest: true, expectText: "Python Comment" },
+                { name: "Prefix % with mark", line: "% \u2022 TeX Comment", expectTest: true, expectText: "TeX Comment" },
+                { name: "Prefix ; with mark", line: "; \u00B0 INI Comment", expectTest: true, expectText: "INI Comment" },
+                { name: "Prefix - with mark", line: "- \uFE65 List Comment", expectTest: true, expectText: "List Comment" },
+                { name: "Prefix @ with mark", line: "@ \u2022 Annotation Comment", expectTest: true, expectText: "Annotation Comment" },
+
+                // 3. Trailing comment closers stripped
+                { name: "Trailing HTML closer --> stripped", line: "<!-- \uFE65 HTML Bookmark -->", expectTest: true, expectText: "HTML Bookmark" },
+                { name: "Trailing C closer */ stripped", line: "/* \u2022 CSS Bookmark */", expectTest: true, expectText: "CSS Bookmark" },
+
+                // 4. Leading indentation
+                { name: "Leading space indentation", line: "    // \uFE65 Indented Space", expectTest: true, expectText: "Indented Space" },
+                { name: "Leading tab indentation", line: "\t\t/* \u00B0 Indented Tab */", expectTest: true, expectText: "Indented Tab" },
+
+                // 5. Negatives
+                { name: "Negative: Plain text", line: "Just plain text without mark", expectTest: false, expectText: null },
+                { name: "Negative: Mark in middle of line", line: "Text before \uFE65 and text after", expectTest: false, expectText: null },
+                { name: "Negative: Empty line", line: "", expectTest: false, expectText: null },
+                { name: "Negative: Whitespace line", line: "   \t  ", expectTest: false, expectText: null }
+            ];
+
+            let passedCount = 0;
+            const totalCount = testCases.length;
+            const resultsBody = document.getElementById("results");
+
+            testCases.forEach((tc) => {
+                const actualTest = FamousMark.test(tc.line);
+                const matchResult = FamousMark.match(tc.line);
+                const actualText = matchResult ? matchResult[1] : null;
+
+                const testPassed = actualTest === tc.expectTest && actualText === tc.expectText;
+                if (testPassed) {
+                    passedCount++;
+                }
+
+                const tr = document.createElement("tr");
+                tr.className = testPassed ? "pass" : "fail";
+
+                const tdStatus = document.createElement("td");
+                tdStatus.className = "status";
+                tdStatus.textContent = testPassed ? "PASS" : "FAIL";
+
+                const tdName = document.createElement("td");
+                tdName.textContent = tc.name;
+
+                const tdLine = document.createElement("td");
+                const codeLine = document.createElement("code");
+                codeLine.textContent = JSON.stringify(tc.line);
+                tdLine.appendChild(codeLine);
+
+                const tdTest = document.createElement("td");
+                tdTest.textContent = `Expected: ${tc.expectTest} | Actual: ${actualTest}`;
+
+                const tdMatch = document.createElement("td");
+                tdMatch.textContent = `Expected: ${JSON.stringify(tc.expectText)} | Actual: ${JSON.stringify(actualText)}`;
+
+                tr.appendChild(tdStatus);
+                tr.appendChild(tdName);
+                tr.appendChild(tdLine);
+                tr.appendChild(tdTest);
+                tr.appendChild(tdMatch);
+
+                resultsBody.appendChild(tr);
+
+                const consoleMsg = `[${testPassed ? "PASS" : "FAIL"}] ${tc.name} | Input: ${JSON.stringify(tc.line)} | test(): ${actualTest} (exp: ${tc.expectTest}) | match()[1]: ${JSON.stringify(actualText)} (exp: ${JSON.stringify(tc.expectText)})`;
+                if (testPassed) {
+                    console.log(consoleMsg);
+                } else {
+                    console.error(consoleMsg);
+                }
+            });
+
+            const summaryEl = document.getElementById("summary");
+            const finalStatusText = `${passedCount}/${totalCount} passed`;
+            summaryEl.textContent = finalStatusText;
+            summaryEl.className = `summary ${passedCount === totalCount ? "pass" : "fail"}`;
+            console.log(`\nTest Result: ${finalStatusText}`);
+        })();
+    </script>
+</body>
+</html>

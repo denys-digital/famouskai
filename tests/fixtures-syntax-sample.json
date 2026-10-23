@@ -1,0 +1,238 @@
+{
+    "name": "Famouskai palette",
+    "description": "The 16 base colors of Famouskai, as declared in the :root block of style.css. Every other color token points to one of them.",
+    "source": "style.css",
+    "license": "AGPL-3.0-or-later",
+    "background": {
+        "token": "--fm-dark",
+        "usedAs": "--color-bg-app"
+    },
+    "contrastMethod": "WCAG 2.x relative luminance, each color against --fm-dark",
+    "fields": {
+        "uiTokens": "--color-* tokens of style.css that point to this color",
+        "syntaxVariableCount": "number of syntax-themes.css variables that point to this color"
+    },
+    "minimumContrastForText": 4.5,
+    "colorCount": 16,
+    "hasLightTheme": false,
+    "lightTheme": null,
+    "colors": {
+        "--fm-dark": {
+            "hex": "#202124",
+            "rgb": [32, 33, 36],
+            "hsl": [225.0, 5.9, 13.3],
+            "relativeLuminance": 0.0152,
+            "contrastOnBackground": 1.0,
+            "readableAsText": false,
+            "comment": "Very dark gray (Google Dark type)",
+            "uiTokens": [
+                "--color-bg-app",
+                "--color-snip-custom-dark",
+                "--color-snip-default-dark",
+                "--color-text-on-accent"
+            ],
+            "syntaxVariableCount": 2
+        },
+        "--fm-light": {
+            "hex": "#F8F8F2",
+            "rgb": [248, 248, 242],
+            "hsl": [60.0, 30.0, 96.1],
+            "relativeLuminance": 0.935,
+            "contrastOnBackground": 15.1,
+            "readableAsText": true,
+            "comment": "Off-white (Famouskai Foreground type)",
+            "uiTokens": [
+                "--color-filetype-log",
+                "--color-filetype-txt",
+                "--color-snip-default-light",
+                "--color-text-primary"
+            ],
+            "syntaxVariableCount": 20
+        },
+        "--fm-gray": {
+            "hex": "#75715E",
+            "rgb": [117, 113, 94],
+            "hsl": [49.6, 10.9, 41.4],
+            "relativeLuminance": 0.164,
+            "contrastOnBackground": 3.28,
+            "readableAsText": false,
+            "comment": "Warm gray (Famouskai Comment type)",
+            "uiTokens": [],
+            "syntaxVariableCount": 26
+        },
+        "--fm-gray-light": {
+            "hex": "#9AA0A6",
+            "rgb": [154, 160, 166],
+            "hsl": [210.0, 6.3, 62.7],
+            "relativeLuminance": 0.3476,
+            "contrastOnBackground": 6.1,
+            "readableAsText": true,
+            "comment": "Light gray (UI)",
+            "uiTokens": ["--color-filetype-default"],
+            "syntaxVariableCount": 1
+        },
+        "--fm-magenta": {
+            "hex": "#F92672",
+            "rgb": [249, 38, 114],
+            "hsl": [338.4, 94.6, 56.3],
+            "relativeLuminance": 0.2274,
+            "contrastOnBackground": 4.25,
+            "readableAsText": false,
+            "comment": "Bright pink / Magenta",
+            "uiTokens": ["--color-filetype-md", "--color-status-conflict", "--color-toc-xml"],
+            "syntaxVariableCount": 20
+        },
+        "--fm-yellow": {
+            "hex": "#E6DB74",
+            "rgb": [230, 219, 116],
+            "hsl": [54.2, 69.5, 67.8],
+            "relativeLuminance": 0.6875,
+            "contrastOnBackground": 11.31,
+            "readableAsText": true,
+            "comment": "Pale yellow",
+            "uiTokens": ["--color-filetype-js", "--color-status-modified", "--color-toc-js"],
+            "syntaxVariableCount": 16
+        },
+        "--fm-sky": {
+            "hex": "#8AB4F8",
+            "rgb": [138, 180, 248],
+            "hsl": [217.1, 88.7, 75.7],
+            "relativeLuminance": 0.4482,
+            "contrastOnBackground": 7.64,
+            "readableAsText": true,
+            "comment": "Pastel light blue",
+            "uiTokens": [
+                "--color-accent",
+                "--color-filetype-css",
+                "--color-snip-default-key",
+                "--color-tab-explorer",
+                "--color-toc-markdown"
+            ],
+            "syntaxVariableCount": 4
+        },
+        "--fm-orange": {
+            "hex": "#FD971F",
+            "rgb": [253, 151, 31],
+            "hsl": [32.4, 98.2, 55.7],
+            "relativeLuminance": 0.4311,
+            "contrastOnBackground": 7.38,
+            "readableAsText": true,
+            "comment": "Bright orange",
+            "uiTokens": [
+                "--color-filetype-html",
+                "--color-snip-custom-light",
+                "--color-status-warn",
+                "--color-tab-tools",
+                "--color-toc-todo"
+            ],
+            "syntaxVariableCount": 13
+        },
+        "--fm-green": {
+            "hex": "#A6E22E",
+            "rgb": [166, 226, 46],
+            "hsl": [80.0, 75.6, 53.3],
+            "relativeLuminance": 0.627,
+            "contrastOnBackground": 10.38,
+            "readableAsText": true,
+            "comment": "Bright green",
+            "uiTokens": [
+                "--color-filetype-diff",
+                "--color-snip-content",
+                "--color-status-success",
+                "--color-tab-outline"
+            ],
+            "syntaxVariableCount": 8
+        },
+        "--fm-red": {
+            "hex": "#F95B56",
+            "rgb": [249, 91, 86],
+            "hsl": [1.8, 93.1, 65.7],
+            "relativeLuminance": 0.2829,
+            "contrastOnBackground": 5.1,
+            "readableAsText": true,
+            "comment": "Coral red",
+            "uiTokens": ["--color-filetype-yaml", "--color-status-error"],
+            "syntaxVariableCount": 2
+        },
+        "--fm-purple": {
+            "hex": "#AE81FF",
+            "rgb": [174, 129, 255],
+            "hsl": [261.4, 100.0, 75.3],
+            "relativeLuminance": 0.3192,
+            "contrastOnBackground": 5.66,
+            "readableAsText": true,
+            "comment": "Purple",
+            "uiTokens": [
+                "--color-filetype-json",
+                "--color-status-readonly",
+                "--color-tab-settings",
+                "--color-toc-at",
+                "--color-toc-js-hover",
+                "--color-toc-markdown-hover",
+                "--color-toc-xml-hover"
+            ],
+            "syntaxVariableCount": 15
+        },
+        "--fm-pink": {
+            "hex": "#FF87B4",
+            "rgb": [255, 135, 180],
+            "hsl": [337.5, 100.0, 76.5],
+            "relativeLuminance": 0.4188,
+            "contrastOnBackground": 7.19,
+            "readableAsText": true,
+            "comment": "Light pink",
+            "uiTokens": [],
+            "syntaxVariableCount": 8
+        },
+        "--fm-brown": {
+            "hex": "#B87A34",
+            "rgb": [184, 122, 52],
+            "hsl": [31.8, 55.9, 46.3],
+            "relativeLuminance": 0.2436,
+            "contrastOnBackground": 4.5,
+            "readableAsText": true,
+            "comment": "Brown / Bronze",
+            "uiTokens": ["--color-filetype-xml", "--color-toc-end"],
+            "syntaxVariableCount": 3
+        },
+        "--fm-lime": {
+            "hex": "#C6FF77",
+            "rgb": [198, 255, 119],
+            "hsl": [85.1, 100.0, 73.3],
+            "relativeLuminance": 0.8486,
+            "contrastOnBackground": 13.78,
+            "readableAsText": true,
+            "comment": "Light lime green",
+            "uiTokens": ["--color-filetype-csv", "--color-toc-bookmark"],
+            "syntaxVariableCount": 4
+        },
+        "--fm-cyan": {
+            "hex": "#66D9EF",
+            "rgb": [102, 217, 239],
+            "hsl": [189.6, 81.1, 66.9],
+            "relativeLuminance": 0.5868,
+            "contrastOnBackground": 9.76,
+            "readableAsText": true,
+            "comment": "Cyan blue",
+            "uiTokens": ["--color-filetype-svg"],
+            "syntaxVariableCount": 20
+        },
+        "--fm-blue": {
+            "hex": "#569CD6",
+            "rgb": [86, 156, 214],
+            "hsl": [207.2, 61.0, 58.8],
+            "relativeLuminance": 0.3061,
+            "contrastOnBackground": 5.46,
+            "readableAsText": true,
+            "comment": "Classic blue",
+            "uiTokens": ["--color-filetype-ts"],
+            "syntaxVariableCount": 3
+        }
+    },
+    "notes": {
+        "escapes": "JSON strings escape \"quotes\", backslashes \\, tabs \t and line breaks \n; ° is the Flying Bubble, ﹥ the Famous Arrow.",
+        "unicode": "Famous Marks: ﹥ • °. Accents: é, à, ç. Emoji: 🎨",
+        "emptyLists": [],
+        "emptyObject": {}
+    }
+}
