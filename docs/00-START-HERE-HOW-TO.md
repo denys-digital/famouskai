@@ -134,6 +134,17 @@ You should see two remotes: `origin` (your fork) and `upstream` (the original pr
 No install step needed. Open `index.html` directly in your browser (double-click it, or
 `Right-click → Open with → [your browser]`) to test your changes as you make them.
 
+Use a desktop **Chrome or Edge**: Famouskai opens and saves files through the File System Access
+API, which Firefox and Safari do not have (they only show a warning banner).
+
+Opened this way (`file://`), everything you are likely to change works: editing, opening and
+saving files, the sidebar, the Markdown preview, the tools and Diffskai. Only the parts tied to
+the Service Worker need the app to be served over HTTP(S): offline mode, installing the app,
+opening files from your file manager, the version number at the bottom of the sidebar, and the
+`tests/unit-app-integrity.html` page. To check those, run `python3 -m http.server 8080` at the
+repository root (or in a GitHub Codespace) and open `http://localhost:8080`. The full list is in
+[`CONTRIBUTING.md`](https://github.com/denys-digital/famouskai/blob/main/.github/CONTRIBUTING.md#testing-your-change).
+
 *(If a future contribution genuinely introduces build tooling — a bundler, a test runner — this
 section should be updated accordingly via a docs PR. As of now, there is none.)*
 
@@ -215,6 +226,9 @@ described in Part 2 — the steps below are the manual/CLI equivalent.)*
 4. Fill in the PR template that appears — it will prompt you for what the change does, how you
    tested it, and a checklist.
 5. Click **Create pull request**.
+
+The maintainer aims to give a first answer (a question, a review or a decision) within **7 days**.
+If a week passes without any answer, a polite comment on the PR is welcome.
 
 ### 4.1 🔵🟧 Sign the Contributor License Agreement (CLA) (first PR only)
 

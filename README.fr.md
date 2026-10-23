@@ -60,7 +60,7 @@ Famouskai est conçu pour être résilient. Pour garantir une véritable capacit
 
 ## Licence & Utilisation (Double Licence)
 
-Famouskai est développé avec passion sous le modèle de la **Double Licence** pour garantir son évolution libre tout en assurant sa pérennité. 
+Famouskai est développé avec passion sous le modèle de la **Double Licence** pour garantir son évolution libre tout en assurant sa pérennité.
 
 **1. Open Source (AGPLv3)**
 Vous êtes libre d'utiliser, de modifier et de distribuer Famouskai pour vos projets personnels, académiques ou open source, à la stricte condition de partager vos modifications sous la même licence (AGPLv3). L'ouverture appelle l'ouverture. Texte complet : [`LICENSE`](./LICENSE) (en anglais, texte légal officiel).
@@ -70,7 +70,7 @@ Vous souhaitez intégrer Famouskai au cœur de votre produit propriétaire (SaaS
 
 ## Sponsoring & Soutien
 
-Si Famouskai vous fait gagner du temps au quotidien, ou si Diffskai a sauvé vos fichiers d'un écrasement fatal, envisagez de soutenir le projet ! 
+Si Famouskai vous fait gagner du temps au quotidien, ou si Diffskai a sauvé vos fichiers d'un écrasement fatal, envisagez de soutenir le projet !
 
 Toute forme de sponsoring, ponctuelle ou régulière, m'aide directement à maintenir l'outil, à payer l'hébergement des démos, et à développer de nouvelles fonctionnalités sans jamais dépendre de trackers publicitaires ou d'investisseurs externes.
 
@@ -95,6 +95,7 @@ famouskai/
 ├── README.md / README.fr.md
 ├── docs/                                            ← tout ce qu'un humain lit, rien de "magique" pour GitHub
 │   ├── 00-START-HERE-HOW-TO.md                      ← à lire en premier pour contribuer
+│   ├── BRAND-GUIDE.md, brand-*.svg                  ← logo, couleurs et règles visuelles
 │   ├── PLUGIN-ARCHITECTURE.md                       ← comment écrire un outil ou une extension
 │   ├── FAMOUS-MARK.md, SIDEBAR-ARCHITECTURE.md      ← fonctionnement des Famous Marks et du volet
 │   ├── ROADMAP.md                                   ← la suite après 0.1.0
@@ -127,6 +128,7 @@ Les contributions sont les bienvenues ! Qu'il s'agisse de corriger un bug, d'am�
 Avant votre première PR, merci de lire (documents en anglais, langue de référence de l'écosystème
 Open Source) :
 - [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md) : comment se déroulent les contributions ici.
+- [`docs/BRAND-GUIDE.md`](./docs/BRAND-GUIDE.md) : les règles visuelles de tout ce qui est poussé sur ce dépôt (en anglais).
 - [`.github/CODE_OF_CONDUCT.md`](./.github/CODE_OF_CONDUCT.md) : le comportement attendu au sein de cette communauté.
 - [`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md) : un guide complet pas-à-pas (Fork → Pull Request), incluant un parcours 100% navigateur si vous préférez ne rien installer en local.
 
