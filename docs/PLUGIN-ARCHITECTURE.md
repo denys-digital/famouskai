@@ -31,6 +31,8 @@ All custom logic, tools, and extensions are strictly encapsulated in the `/plugi
 
 ## 3. The "How": Creating a New Tool (Clickable Actions)
 
+> **Reference File:** For a production-hardened tool implementation, refer to `plugins/tool-cleanup-text.js` and its zero-build unit test page `tests/unit-cleanup-text.html` as reference files to copy from.
+
 Tools (`tool-*.js`) are user-triggered actions (buttons you click in the sidebar). Want to add a Markdown table generator or a code linter? Here is the exact 5-step process.
 
 ### Step 1: Create the tool file
@@ -134,7 +136,7 @@ window.FamousPluginCore.Manager.register({
     // HERE: Toolbar button configuration
     toolbar: {
         // The displayed letter (If multiple letters are provided, only the 1st is kept and capitalized)
-        icon: "T", 
+        letter: "T",
         // The hover color. ALWAYS use Famouskai palette tokens (see style.css Layer 1)
         color: "var(--fm-magenta)" 
     },
@@ -153,9 +155,91 @@ window.FamousPluginCore.Manager.register({
 * **Color Selection:** You must **never** hardcode a hexadecimal value (e.g., `#ff0000`). Refer to **LAYER 1: SETTINGS (Global Variables)** in the `style.css` file and choose a color from the "Primary Colors" or "Secondary Colors" (e.g., `var(--fm-orange)`, `var(--fm-green)`, `var(--fm-sky)`). This guarantees your button will remain accessible if a global dark/light theme is added in the future.
 * **Contextual Availability:** If your tool defines an array like `extensions: ['md']`, the toolbar button will smartly appear (and disappear) *only* when the user is viewing a Markdown file. The entire lifecycle is managed by the core.
 
+### 3.b Tool Settings and Triggers
+
+Tools can declare user-configurable settings and register background triggers to react automatically to IDE lifecycle events.
+
+#### Declaring Tool Settings
+
+A tool specifies its configurable options in an optional `settings` array passed during registration:
+
+```javascript
+window.FamousPluginCore.Manager.register({
+    name: "Tidy & Sanitize Text",
+    settings: [
+        {
+            id: "cleanup_on_save",
+            label: "Auto-cleanup on Save",
+            type: "checkbox",
+            default: false,
+            tooltip: "Automatically sanitize text formatting when saving a file"
+        },
+        {
+            id: "cleanup_on_open",
+            label: "Auto-cleanup on Open",
+            type: "checkbox",
+            default: false,
+            tooltip: "Automatically sanitize text formatting when opening a file"
+        }
+    ],
+    // ...
+});
+```
+
+##### Schema Fields
+
+- `id` (`string`): Unique setting identifier within the tool.
+- `label` (`string`): Display label rendered in the UI.
+- `type` (`string`): Kept for readability. The code does not read it: in 0.1.0 every setting is rendered as a checkbox and stores `true` or `false`, so write `"checkbox"`.
+- `default` (`boolean`): Value used when no saved preference exists. If omitted, it is `false`.
+- `tooltip` (`string`, optional): Hover text applied as title attribute on the setting label.
+
+##### UI Rendering and Storage Mechanics
+
+- **UI Location:** At startup, `index.html` calls `FamousPluginCore.Manager.renderSettings()` on the `#settings-container` element of the "Windows & Settings" sidebar tab. It adds one labeled checkbox per setting.
+- **LocalStorage Persistence:** User preferences are stored in LocalStorage under key `famouskai_tool_settings` as a JSON object grouped by tool name: `{ "Tool Name": { "setting_id": value } }`.
+- **API Methods:**
+  - `FamousPluginCore.Manager.getToolSettings(toolName)`: Returns key-value setting object for the specified tool.
+  - `FamousPluginCore.Manager.setToolSetting(toolName, settingId, value)`: Updates a specific setting and persists changes to LocalStorage.
+
+#### Lifecycle Event Triggers
+
+Tools can subscribe to background lifecycle events dispatched by the core application via `FamousPluginCore.Manager.emit(eventName, editorInstance, extraArgs)`.
+
+##### Available Event Names & Sources
+
+- `onFileOpen`: Dispatched in `index.html` within `openFile()` (when loading a file via native file picker) and `reloadFile()` (when re-reading active file from disk). Only these two functions emit it: files opened from the Explorer tab, the recent files list, the operating system's file manager, a new window or shared content do not trigger `onFileOpen` in 0.1.0.
+- `onBeforeSave`: Dispatched in `index.html` within `saveFile()` and `saveAsFile()` right before write operations.
+
+##### Handler Signature & Trigger Subscription
+
+Trigger handlers are defined on the `triggers` object of a tool registration. Each handler receives three arguments:
+1. `editor` (`Object`): Active Ace Editor instance.
+2. `settings` (`Object`): Key-value map of current settings for this tool.
+3. `extraArgs` (`Object`): Context object (e.g. `{ filename: currentFileName }`).
+
+```javascript
+    // actionSilently is a method your tool defines itself (see plugins/tool-cleanup-text.js),
+    // not a core API.
+    triggers: {
+        onBeforeSave: function(editor, settings, extraArgs) {
+            if (settings && settings.cleanup_on_save) {
+                this.actionSilently(editor);
+            }
+        },
+        onFileOpen: function(editor, settings, extraArgs) {
+            if (settings && settings.cleanup_on_open) {
+                this.actionSilently(editor);
+            }
+        }
+    }
+```
+
 ---
 
 ## 4. Advanced: Extending Core Logic (Passive Extensions)
+
+> **Reference File:** For a production-hardened extension implementation, refer to `plugins/ext-famous-core.js` and its zero-build unit test page `tests/unit-famous-mark.html` as reference files to copy from.
 
 If you are not building a simple click-to-execute tool, but rather modifying the editor's core behavior (like the Outline generator or keyboard shortcuts), create an `ext-*.js` file.
 
