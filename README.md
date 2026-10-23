@@ -70,7 +70,7 @@ Want to integrate Famouskai into your proprietary product (SaaS, closed CMS, int
 
 ## Sponsorship & Support
 
-If Famouskai saves you time, or if Diffskai has saved your files from a fatal overwrite, please consider supporting the project! 
+If Famouskai saves you time, or if Diffskai has saved your files from a fatal overwrite, please consider supporting the project!
 
 Any form of sponsorship helps me maintain the tool, pay for demo hosting, and build new features without ever relying on ad trackers or external investors.
 
@@ -94,6 +94,7 @@ famouskai/
 ├── README.md / README.fr.md
 ├── docs/                                        ← everything a human reads, not GitHub-"magic"
 │   ├── 00-START-HERE-HOW-TO.md                  ← start here if you want to contribute
+│   ├── BRAND-GUIDE.md, brand-*.svg              ← logo, colors and visual rules
 │   ├── PLUGIN-ARCHITECTURE.md                   ← how to write a tool or an extension
 │   ├── FAMOUS-MARK.md, SIDEBAR-ARCHITECTURE.md  ← how Famous Marks and the sidebar work
 │   ├── ROADMAP.md                               ← what comes after 0.1.0
@@ -122,6 +123,7 @@ Contributions are highly appreciated! Whether it's fixing a bug, improving docum
 
 Before your first PR, please read:
 - [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md): how contributions work here.
+- [`docs/BRAND-GUIDE.md`](./docs/BRAND-GUIDE.md): the visual rules for anything pushed to this repository.
 - [`.github/CODE_OF_CONDUCT.md`](./.github/CODE_OF_CONDUCT.md): expected behavior in this community.
 - [`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md): a complete, beginner-friendly walkthrough (Fork → Pull Request), including a browser-only path if you'd rather not install anything locally.
 
