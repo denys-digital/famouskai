@@ -132,6 +132,8 @@ Famouskai is. These four rules say how we change it:
   to the letter.
 - **Open-source grade.** Readable, commented, no shortcut a maintainer would have to undo.
 
+Visual changes (colors, logo, fonts) pushed to this repository follow the [Brand Guide](https://github.com/denys-digital/famouskai/blob/main/docs/BRAND-GUIDE.md). Locally, theme it as you like.
+
 ## Coding Standards
 
 ### In General
