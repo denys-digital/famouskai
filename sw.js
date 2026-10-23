@@ -23,92 +23,92 @@
  */
 
 // Import IDB Keyval to allow the Service Worker to save shared files locally on Android
-importScripts('/vendor/idb-keyval/umd.min.js');
+importScripts('./vendor/idb-keyval/umd.min.js');
 
-const CACHE_NAME = 'famouskai-0.1.0'; // Always increment this when updating files  to force cache cleanup
+const CACHE_NAME = 'famouskai-0.1.1'; // Always increment this when updating files  to force cache cleanup
 
 const URLS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/sw.js',
-    '/style.css',
-    '/syntax-themes.css',
-    '/preview-themes.css',
-    '/theme-famouskai.js',
-    '/icon.svg',
-    '/manifest.json',
+    './',
+    './index.html',
+    './sw.js',
+    './style.css',
+    './syntax-themes.css',
+    './preview-themes.css',
+    './theme-famouskai.js',
+    './icon.svg',
+    './manifest.json',
 
     // Vendor: Ace Editor
-    '/vendor/ace-builds/ace.js',
-    '/vendor/ace-builds/ext-searchbox.js',
-    '/vendor/ace-builds/mode-css.js',
-    '/vendor/ace-builds/mode-csv.js',
-    '/vendor/ace-builds/mode-diff.js',
-    '/vendor/ace-builds/mode-html.js',
-    '/vendor/ace-builds/mode-javascript.js',
-    '/vendor/ace-builds/mode-json.js',
-    '/vendor/ace-builds/mode-markdown.js',
-    '/vendor/ace-builds/mode-svg.js',
-    '/vendor/ace-builds/mode-text.js',
-    '/vendor/ace-builds/mode-xml.js',
-    '/vendor/ace-builds/mode-yaml.js',
-    '/vendor/ace-builds/worker-css.js',
-    '/vendor/ace-builds/worker-html.js',
-    '/vendor/ace-builds/worker-javascript.js',
-    '/vendor/ace-builds/worker-json.js',
-    '/vendor/ace-builds/worker-xml.js',
-    '/vendor/ace-builds/worker-yaml.js',
+    './vendor/ace-builds/ace.js',
+    './vendor/ace-builds/ext-searchbox.js',
+    './vendor/ace-builds/mode-css.js',
+    './vendor/ace-builds/mode-csv.js',
+    './vendor/ace-builds/mode-diff.js',
+    './vendor/ace-builds/mode-html.js',
+    './vendor/ace-builds/mode-javascript.js',
+    './vendor/ace-builds/mode-json.js',
+    './vendor/ace-builds/mode-markdown.js',
+    './vendor/ace-builds/mode-svg.js',
+    './vendor/ace-builds/mode-text.js',
+    './vendor/ace-builds/mode-xml.js',
+    './vendor/ace-builds/mode-yaml.js',
+    './vendor/ace-builds/worker-css.js',
+    './vendor/ace-builds/worker-html.js',
+    './vendor/ace-builds/worker-javascript.js',
+    './vendor/ace-builds/worker-json.js',
+    './vendor/ace-builds/worker-xml.js',
+    './vendor/ace-builds/worker-yaml.js',
 
     // Vendor: Diff2Html
-    '/vendor/diff2html/css/diff2html.min.css',
-    '/vendor/diff2html/js/diff2html.min.js',
+    './vendor/diff2html/css/diff2html.min.css',
+    './vendor/diff2html/js/diff2html.min.js',
 
     // Vendor: DOMPurify
-    '/vendor/dompurify/purify.min.js',
+    './vendor/dompurify/purify.min.js',
 
     // Vendor: Marked
-    '/vendor/marked/marked.umd.min.js',
+    './vendor/marked/marked.umd.min.js',
 
     // Vendor: idb-keyval
-    '/vendor/idb-keyval/umd.min.js',
+    './vendor/idb-keyval/umd.min.js',
 
     // Vendor: js-beautify
-    '/vendor/js-beautify/beautify.min.js',
-    '/vendor/js-beautify/beautify-css.min.js',
-    '/vendor/js-beautify/beautify-html.min.js',
+    './vendor/js-beautify/beautify.min.js',
+    './vendor/js-beautify/beautify-css.min.js',
+    './vendor/js-beautify/beautify-html.min.js',
 
     // Vendor: Oswald (Fontsource)
-    '/vendor/fontsource-oswald/files/oswald-latin-500-normal.woff2',
-    '/vendor/fontsource-oswald/files/oswald-latin-700-normal.woff2',
-    '/vendor/fontsource-oswald/LICENSE',
+    './vendor/fontsource-oswald/files/oswald-latin-500-normal.woff2',
+    './vendor/fontsource-oswald/files/oswald-latin-700-normal.woff2',
+    './vendor/fontsource-oswald/LICENSE',
 
     // Custom colorization
-    '/plugins/ace-custom/mode-log.js',
-    '/plugins/ace-custom/mode-csv.js',
-    '/plugins/ace-custom/folding-yaml.js',
+    './plugins/ace-custom/mode-log.js',
+    './plugins/ace-custom/mode-csv.js',
+    './plugins/ace-custom/folding-yaml.js',
 
     // Core & Extensions
-    '/plugins/tools.js',
-    '/plugins/ext-sidebar.js',
-    '/plugins/ext-famous-core.js',
-    '/plugins/ext-outline.js',
-    '/plugins/ext-snippets.js',
-    '/plugins/ext-export-html.js',
-    '/plugins/ext-preview-code.js',
+    './plugins/tools.js',
+    './plugins/ext-sidebar.js',
+    './plugins/ext-famous-core.js',
+    './plugins/ext-outline.js',
+    './plugins/ext-snippets.js',
+    './plugins/ext-export-html.js',
+    './plugins/ext-preview-code.js',
 
     // Tools
-    '/plugins/tool-beautify.js',
-    '/plugins/tool-bold2h4.js',
-    '/plugins/tool-cleanup.js',
-    '/plugins/tool-cleanup-text.js',
-    '/plugins/tool-extract-mk-table.js',
-    '/plugins/tool-sort-lines.js',
-    '/plugins/tool-remove-duplicates.js',
-    '/plugins/tool-workspace.js',
+    './plugins/tool-beautify.js',
+    './plugins/tool-bold2h4.js',
+    './plugins/tool-cleanup.js',
+    './plugins/tool-cleanup-text.js',
+    './plugins/tool-extract-mk-table.js',
+    './plugins/tool-sort-lines.js',
+    './plugins/tool-remove-duplicates.js',
+    './plugins/tool-workspace.js',
 
     // Diffskai (Monaco is lazy-loaded, so not pre-cached here to save startup bandwidth)
-    '/plugins/tool-diffskai.js',
-    '/plugins/tool-diffskai.html'
+    './plugins/tool-diffskai.js',
+    './plugins/tool-diffskai.html'
 ];
 
 // Installation with Cloudflare "Response Washing"
@@ -143,10 +143,10 @@ self.addEventListener('install', (event) => {
 
             // Non-blocking Monaco warm-up after mandatory assets succeed
             const monacoWarmupUrls = [
-                '/vendor/monaco-editor/loader.js',
-                '/vendor/monaco-editor/editor/editor.main.js',
-                '/vendor/monaco-editor/editor/editor.main.css',
-                '/vendor/monaco-editor/editor/editor.worker.js'
+                './vendor/monaco-editor/loader.js',
+                './vendor/monaco-editor/editor/editor.main.js',
+                './vendor/monaco-editor/editor/editor.main.css',
+                './vendor/monaco-editor/editor/editor.worker.js'
             ];
 
             await Promise.allSettled(monacoWarmupUrls.map(async (url) => {
@@ -198,7 +198,7 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     // 1. Handle Share Target API POST requests (Android sharing intent)
-    if (url.pathname === '/share-target' && event.request.method === 'POST') {
+    if (url.pathname.endsWith('/share-target') && event.request.method === 'POST') {
         event.respondWith((async () => {
             try {
                 const formData = await event.request.formData();
@@ -213,10 +213,10 @@ self.addEventListener('fetch', (event) => {
                 }
 
                 // Redirect to the app with a flag in the URL
-                return Response.redirect('/?shared=true', 303);
+                return Response.redirect(new URL('./?shared=true', self.location).href, 303);
             } catch (err) {
                 console.error("Share Target processing error:", err);
-                return Response.redirect('/', 303); // Fallback redirection
+                return Response.redirect(new URL('./', self.location).href, 303); // Fallback redirection
             }
         })());
         return;
@@ -236,7 +236,7 @@ self.addEventListener('fetch', (event) => {
             // Runtime caching for same-origin GET requests starting with /vendor/monaco-editor/
             const isSameOrigin = url.origin === self.location.origin;
             const isGetRequest = event.request.method === 'GET';
-            const isMonacoAsset = url.pathname.startsWith('/vendor/monaco-editor/');
+            const isMonacoAsset = url.pathname.includes('/vendor/monaco-editor/');
 
             if (isSameOrigin && isGetRequest && isMonacoAsset && networkResponse.ok) {
                 const cache = await caches.open(CACHE_NAME);
@@ -247,7 +247,7 @@ self.addEventListener('fetch', (event) => {
         } catch (err) {
             // Fall back to cached index.html for navigation requests
             if (event.request.mode === 'navigate') {
-                const cachedIndex = await caches.match('/index.html', { ignoreSearch: true });
+                const cachedIndex = await caches.match('./index.html', { ignoreSearch: true });
                 if (cachedIndex) {
                     return cachedIndex;
                 }
