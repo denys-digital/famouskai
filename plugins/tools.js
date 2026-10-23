@@ -123,8 +123,17 @@ window.FamousPluginCore.Manager = {
     emit: function(eventName, editorInstance, extraArgs = {}) {
         if (!editorInstance) return;
 
+        const filename = extraArgs.filename || extraArgs.fileName || "";
+        const ext = filename && filename.includes(".")
+            ? filename.split(".").pop().toLowerCase()
+            : "";
+
         this.registry.forEach(tool => {
             if (tool.triggers && typeof tool.triggers[eventName] === 'function') {
+                // A tool with an empty extensions list runs on every file; otherwise only its types.
+                if (tool.extensions && tool.extensions.length > 0 && ext && !tool.extensions.includes(ext)) {
+                    return;
+                }
                 const toolSettings = this.getToolSettings(tool.name);
                 try {
                     tool.triggers[eventName].call(tool, editorInstance, toolSettings, extraArgs);
