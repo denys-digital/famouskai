@@ -2626,7 +2626,16 @@
                     // Markdown — titre ancré en début de ligne avec espace obligatoire (plus de faux positif CSS)
                     } else if (/^#{1,6}\s+\S/m.test(text) || /^[-*]\s+\S/m.test(text)) {
                         newMode = 'ace/mode/markdown';
-                    
+
+                    // YAML — several `key: value` lines, or a document start `---`.
+                    // Skip Markdown that begins with front matter (--- ... --- then body).
+                    } else if (
+                        (/^---\s*$/m.test(text) && !/^---\s*$[\s\S]*^---\s*$[\s\S]*\S/m.test(text))
+                        || (text.split('\n').slice(0, 8).filter((l) => /^\s*[\w.-]+:\s*/.test(l)).length >= 2
+                            && !/^#{1,6}\s+\S/m.test(text) && !/^\s*[.#]?[\w-]+\s*\{/.test(text))
+                    ) {
+                        newMode = 'ace/mode/yaml';
+
                     // 5. CSV — confiance faible, donc testé en tout dernier avant le fallback texte
                     } else {
                         const sample = text.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 5);
@@ -2642,7 +2651,11 @@
                     }
                     
                     if (editor.session.$modeId !== newMode) {
-                        editor.session.setMode(newMode);
+                        editor.session.setMode(newMode, () => {
+                            if (newMode === 'ace/mode/yaml' && window.FamousPluginCore?.YamlFolding) {
+                                window.FamousPluginCore.YamlFolding.apply(editor.session);
+                            }
+                        });
                         if (editor.session.bgTokenizer) editor.session.bgTokenizer.start(0);
                         if (editor.renderer) editor.renderer.updateFull(true);
                         setTimeout(updateUI, 10);
