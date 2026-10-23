@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" role="img" aria-label="Famouskai logo">
+  <title>Famouskai</title>
+  <!-- Famouskai logo, text converted to paths (Cousine Bold, SIL OFL 1.1). Source: icon.svg -->
+  <circle cx="250" cy="250" r="250" fill="#202124"/>
+  <path id="logo-lt" fill="#F92672" stroke="#F92672" d="M32.61 270.4V230.23L160.74 181.45V209.89L56.81 250.44L160.74 290.86V319.18Z"/>
+  <path id="logo-f" fill="#E6DB74" stroke="#E6DB74" d="M254.8 223.49V334.77H219.87V223.49H187.93V199.79H219.87V189.43Q219.87 167.73 233.53 156.81Q247.19 145.89 272.52 145.89Q292.35 145.89 313.31 149.39V172.34Q294.6 169.97 278.63 169.97Q266.4 169.97 260.6 175.02Q254.8 180.08 254.8 192.68V199.79H310.07V223.49Z"/>
+  <path id="logo-gt" fill="#8AB4F8" stroke="#8AB4F8" d="M339.26 319.18V290.86L443.06 250.44L339.26 209.89V181.45L467.39 230.23V270.4Z"/>
+</svg>
