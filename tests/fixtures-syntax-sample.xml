@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="feed-to-html.xsl"?>
+<!--
+  Famouskai syntax sample: XML (ace/mode/xml).
+  An Atom feed (RFC 4287) announcing the 0.1.0 release, built from CHANGELOG.md.
+  Coloring checklist: XML declaration, processing instruction, DOCTYPE with an internal
+  subset, comments, namespaces and prefixed names, attributes in double and single quotes,
+  character and entity references, CDATA, self-closing elements.
+-->
+<!DOCTYPE feed [
+    <!ENTITY app "Famouskai">
+    <!ENTITY arrow "&#xFE65;">
+]>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:fk="https://github.com/denys-digital/famouskai/ns/release"
+      xml:lang="en">
+
+    <!-- ﹥ Feed header -->
+    <title type="text">&app; releases</title>
+    <subtitle>Fast. Private. Resilient. A local-first editor that runs in your browser.</subtitle>
+    <id>https://github.com/denys-digital/famouskai/releases</id>
+    <link rel="self" type="application/atom+xml" href="https://github.com/denys-digital/famouskai/releases.atom"/>
+    <link rel="alternate" type="text/html" href='https://github.com/denys-digital/famouskai/releases'/>
+    <updated>2026-10-25T12:00:00+09:00</updated>
+    <author>
+        <name>Denys Poulat</name>
+        <uri>https://github.com/denys-digital</uri>
+    </author>
+    <rights>AGPL-3.0-or-later &amp; commercial license on request</rights>
+    <generator uri="https://github.com/denys-digital/famouskai" version="0.1.0">&app;</generator>
+
+    <!-- ﹥ Release 0.1.0 -->
+    <entry>
+        <title>&app; 0.1.0 (Sankukai)</title>
+        <id>https://github.com/denys-digital/famouskai/releases/tag/v0.1.0</id>
+        <link href="https://github.com/denys-digital/famouskai/releases/tag/v0.1.0"/>
+        <published>2026-10-25T12:00:00+09:00</published>
+        <updated>2026-10-25T12:00:00+09:00</updated>
+        <category term="release" label="Release"/>
+        <fk:version major="0" minor="1" patch="0" codename="Sankukai"/>
+        <fk:requires browser="Chromium" api="File System Access" offline="https-or-localhost"/>
+        <summary type="text">First open source release: editor, live Markdown preview, Diffskai, Famous Marks, offline mode.</summary>
+        <content type="html"><![CDATA[
+            <h2>What's inside</h2>
+            <ul>
+                <li>Syntax coloring for CSS, CSV, Diff/Patch, HTML, JavaScript/TypeScript, JSON, Markdown, SVG, XML, YAML, Log and plain text.</li>
+                <li>Live Markdown preview and single-file HTML export.</li>
+                <li>Diffskai side-by-side comparison & merge, saving straight back to the file on disk.</li>
+                <li>Famous Marks ﹥ • ° for navigation and folding; they stay plain characters in your files.</li>
+            </ul>
+            <p>Text inside CDATA is not parsed: <b>tags</b> and & signs need no escaping here.</p>
+        ]]></content>
+        <fk:limitations>
+            <fk:item>Saving needs a desktop Chromium browser (Chrome, Edge); other browsers show a warning banner.</fk:item>
+            <fk:item>Offline mode needs HTTPS or localhost, not file://.</fk:item>
+            <fk:item>Diffskai uses Monaco Editor, pinned at 0.56.0 for this release.</fk:item>
+        </fk:limitations>
+        <fk:marks>
+            <fk:mark name="arrow" char="&arrow;" codepoint="U+FE65" snippet="/fa"/>
+            <fk:mark name="magic" char="&#8226;" codepoint="U+2022" snippet="/md"/>
+            <fk:mark name="bubble" char="&#176;" codepoint="U+00B0" snippet="/fb"/>
+        </fk:marks>
+    </entry>
+
+    <!-- ﹥ Next release, not published yet: commented out on purpose
+    <entry>
+        <title>&app; 0.2.0</title>
+    </entry>
+    -->
+</feed>

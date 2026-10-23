@@ -1,0 +1,36 @@
+Famouskai syntax sample: plain text (ace/mode/text)
+Plain text has no colors. What Famouskai adds to it is structure: Famous Marks.
+Open the Outline tab: every line below that starts with ﹥, • or ° is listed there.
+Click the arrows in the gutter: each mark folds the text down to the next mark.
+
+﹥ What a Famous Mark is
+A Famous Mark is one of three ordinary Unicode characters at the start of a line.
+The text after the mark becomes the label shown in the Outline tab.
+Nothing is hidden in the file: no metadata, no special format, no lock-in.
+Any other editor, phone or printer shows these lines as plain text.
+
+﹥ How to type one
+Type /fa then Tab for the Famous Arrow ﹥ (U+FE65).
+Type /md then Tab for the Magic Dot • (U+2022).
+Type /fb then Tab for the Flying Bubble ° (U+00B0).
+
+• Where a mark is recognized
+At the very start of a line, or after spaces and comment characters:
+// ﹥ in JavaScript or CSS, # ﹥ in YAML or shell, <!-- ﹥ --> in HTML or Markdown.
+Inside a sentence, like this ﹥ one, a mark is only a character.
+
+° How folding works
+A fold starts on a mark line and ends just before the next mark line, at any level.
+The last section folds down to the end of the file.
+
+   ﹥ An indented mark
+   Leading spaces are allowed, so a mark can sit inside an indented block.
+   This section ends at the next mark, whatever its indent.
+
+• Three marks, one meaning
+The three characters work the same way: pick one per kind of section, or mix them.
+The Outline tab can filter its list by mark, with the ﹥ • ° badges.
+
+° Last section
+This block runs to the end of the file, so its fold has no next mark to stop at.
+Fold it, then unfold it: the text comes back untouched.

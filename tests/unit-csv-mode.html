@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - CSV Mode & Separator Detection</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="../vendor/ace-builds/ace.js"></script>
+    <script src="../plugins/ace-custom/mode-csv.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - CSV Mode &amp; Separator Detection</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+
+    <script>
+        (function() {
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+
+            if (!window.FamousPluginCore || !window.FamousPluginCore.CsvMode) {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = 'Error: CsvMode not defined on window.FamousPluginCore';
+                return;
+            }
+
+            const CsvModeHelper = window.FamousPluginCore.CsvMode;
+            const Mode = ace.require('ace/mode/csv').Mode;
+
+            const testCases = [
+                // detectSeparator tests
+                {
+                    name: "detectSeparator: Comma file",
+                    test: function() {
+                        const sample = "a,b,c\n1,2,3\n4,5,6";
+                        return CsvModeHelper.detectSeparator(sample) === ",";
+                    }
+                },
+                {
+                    name: "detectSeparator: Semicolon file with decimal commas in quotes",
+                    test: function() {
+                        const sample = '"Segment 1";"0,30";"0,70"\n"Segment 2";"0,25";"0,65"';
+                        return CsvModeHelper.detectSeparator(sample) === ";";
+                    }
+                },
+                {
+                    name: "detectSeparator: Tab-separated file",
+                    test: function() {
+                        const sample = "col1\tcol2\tcol3\nval1\tval2\tval3";
+                        return CsvModeHelper.detectSeparator(sample) === "\t";
+                    }
+                },
+                {
+                    name: "detectSeparator: Pipe-separated file",
+                    test: function() {
+                        const sample = "col1|col2|col3\nval1|val2|val3";
+                        return CsvModeHelper.detectSeparator(sample) === "|";
+                    }
+                },
+                {
+                    name: "detectSeparator: Single column file -> fallback to comma",
+                    test: function() {
+                        const sample = "heading\nvalue1\nvalue2";
+                        return CsvModeHelper.detectSeparator(sample) === ",";
+                    }
+                },
+                {
+                    name: "detectSeparator: Empty string -> fallback to comma",
+                    test: function() {
+                        return CsvModeHelper.detectSeparator("") === ",";
+                    }
+                },
+
+                // Tokenizer tests
+                {
+                    name: "Tokenizer: 12 columns cycle wrapping (col 11 becomes csv_col_1)",
+                    test: function() {
+                        const mode = new Mode({ splitter: ';' });
+                        const line = "1;2;3;4;5;6;7;8;9;10;11;12";
+                        const result = mode.getTokenizer().getLineTokens(line, "start");
+                        const tokens = result.tokens;
+
+                        // Check column 1 (index 0) and column 11 (index 20)
+                        const col1Token = tokens[0];
+                        const col11Token = tokens[20];
+
+                        return col1Token.type === "csv_col_1" && col11Token.type === "csv_col_1";
+                    }
+                },
+                {
+                    name: "Tokenizer: Semicolon inside quotes does not split cell",
+                    test: function() {
+                        const mode = new Mode({ splitter: ';' });
+                        const line = '"a;b";c';
+                        const result = mode.getTokenizer().getLineTokens(line, "start");
+                        const tokens = result.tokens;
+
+                        // Semicolon inside quotes receives csv_col_1 token, not csv_separator
+                        const col1Tokens = tokens.filter(t => t.type === "csv_col_1");
+                        const col2Tokens = tokens.filter(t => t.type === "csv_col_2");
+                        const sepTokens = tokens.filter(t => t.type === "csv_separator");
+
+                        const col1Value = col1Tokens.map(t => t.value).join("");
+                        const col2Value = col2Tokens.map(t => t.value).join("");
+
+                        return col1Value === "a;b" && col2Value === "c" && sepTokens.length === 1;
+                    }
+                },
+                {
+                    name: "Tokenizer: Doubled quote inside quoted field",
+                    test: function() {
+                        const mode = new Mode({ splitter: ';' });
+                        const line = '"x ""y"" z";w';
+                        const result = mode.getTokenizer().getLineTokens(line, "start");
+                        const tokens = result.tokens;
+
+                        // Doubled quotes "" receive csv_quote token
+                        const quoteTokens = tokens.filter(t => t.type === "csv_quote");
+                        const hasEscapedQuote = quoteTokens.some(t => t.value === '""');
+                        const col1Tokens = tokens.filter(t => t.type === "csv_col_1");
+                        const col1Text = col1Tokens.map(t => t.value).join("");
+
+                        return hasEscapedQuote && col1Text === "x y z";
+                    }
+                },
+                {
+                    name: "Tokenizer: Multi-line quoted field keeps column index on line 2",
+                    test: function() {
+                        const mode = new Mode({ splitter: ';' });
+                        const line1 = 'a;"b';
+                        const res1 = mode.getTokenizer().getLineTokens(line1, "start");
+
+                        // State after line 1 should be "string-1"
+                        if (res1.state !== "string-1") return false;
+
+                        const line2 = 'c";d';
+                        const res2 = mode.getTokenizer().getLineTokens(line2, res1.state);
+
+                        // On line 2, token "c" should still be in col 2 (csv_col_2) and "d" in col 3 (csv_col_3)
+                        const tokens2 = res2.tokens;
+                        const tokenC = tokens2.find(t => t.value === "c");
+                        const tokenD = tokens2.find(t => t.value === "d");
+
+                        return tokenC && tokenC.type === "csv_col_2" && tokenD && tokenD.type === "csv_col_3";
+                    }
+                }
+            ];
+
+            let passed = 0;
+            let total = testCases.length;
+
+            testCases.forEach((tc, index) => {
+                let isPass = false;
+                try {
+                    isPass = tc.test();
+                } catch (e) {
+                    console.error("Test error:", e);
+                }
+
+                if (isPass) {
+                    passed++;
+                }
+
+                const card = document.createElement('div');
+                card.className = `test-case ${isPass ? 'pass' : 'fail'}`;
+
+                const badge = document.createElement('span');
+                badge.className = `badge ${isPass ? 'pass' : 'fail'}`;
+                badge.textContent = isPass ? 'PASS' : 'FAIL';
+
+                const title = document.createElement('span');
+                title.textContent = `Case ${index + 1}: ${tc.name}`;
+
+                card.appendChild(badge);
+                card.appendChild(title);
+
+                container.appendChild(card);
+            });
+
+            const summaryText = `${passed}/${total} passed`;
+            summaryEl.className = `summary ${passed === total ? 'passed' : 'failed'}`;
+            summaryEl.textContent = summaryText;
+
+            console.log(`Unit Tests - CSV Mode: ${summaryText}`);
+        })();
+    </script>
+</body>
+</html>

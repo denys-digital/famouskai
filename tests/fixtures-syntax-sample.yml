@@ -1,0 +1,138 @@
+# ﹥ Famouskai syntax sample: YAML (ace/mode/yaml, folding by plugins/ace-custom/folding-yaml.js)
+#
+# Two documents in one file:
+#   1. a GitHub Actions workflow: the consistency checks of the public repository (lot S3);
+#   2. the 0.1.0 release card, written to show the rest of YAML: anchors and aliases, merge
+#      keys, tags, block scalars, flow collections, complex keys, every scalar type.
+# Both are valid YAML (checked with PyYAML). Fold any key to check the folding rules.
+
+---
+# ﹥ 1. Workflow
+name: Sanity
+
+on:                    # YAML 1.1 loaders read this key as true; GitHub reads "on"
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every path in the Service Worker cache list exists
+        run: |
+          fail=0
+          for p in $(grep -o "'/[^']*'" sw.js | tr -d "'"); do
+            [ "$p" = "/" ] && continue
+            [ -f ".${p}" ] || { echo "::error file=sw.js::Missing cached file: ${p}"; fail=1; }
+          done
+          exit $fail
+
+      - name: Every JSON file is valid
+        # The block below is a literal scalar: its lines are shell code, not YAML,
+        # so "key: value" inside it never gets a fold arrow.
+        run: |
+          find . -name '*.json' -not -path './vendor/*' -print0 |
+            xargs -0 -n1 sh -c 'jq empty "$0" || echo "::error file=$0::Invalid JSON"'
+        continue-on-error: false
+
+---
+# ﹥ 2. Release card
+release: &release
+  name: Famouskai
+  version: "0.1.0"            # quoted, so it stays a string and not a number
+  codename: Sankukai
+  date: 2026-10-25
+  published: 2026-10-25T12:00:00+09:00
+  license: AGPL-3.0-or-later
+  stable: true
+  breaking_changes: false
+  previous_version: ~
+  supported_browsers: [Chrome, Edge, "Chromium-based"]
+
+# • Anchors, aliases and merge keys
+defaults: &browser_defaults
+  file_system_access: true
+  offline: https-or-localhost
+  install_as_app: yes         # YAML 1.1 boolean, a plain string for YAML 1.2 loaders
+
+chrome:
+  <<: *browser_defaults
+  channel: stable
+
+firefox:
+  <<: *browser_defaults
+  file_system_access: false   # overrides the merged value
+  note: Opens with a banner; files cannot be saved in place.
+
+# • Lists at the same indent as their key (a common style in GitHub workflows)
+features:
+- Live Markdown preview
+- Diffskai compare and merge
+- Famous Marks ﹥ • °
+- Offline mode
+
+marks:
+  - name: arrow
+    char: "﹥"            # escapes work in double quotes only
+    snippet: /fa
+  - name: magic
+    char: '•'
+    snippet: /md
+  - name: bubble
+    char: °
+    snippet: /fb
+
+# • Block scalars: literal keeps line breaks, folded joins them
+release_notes: |
+  First open source release.
+    Indented lines stay indented in a literal block.
+  The last line break is kept.
+tagline: >-
+  Fast. Private. Resilient.
+  Your files, on your disk,
+  in your browser.
+
+# • Numbers in every notation
+numbers:
+  integer: 42
+  negative: -273
+  octal: 0o755             # YAML 1.2 notation (YAML 1.1 wrote 0755)
+  hexadecimal: 0x2A
+  float: 3.14159
+  exponent: 6.022e+23
+  infinity: .inf
+  not_a_number: .nan
+
+# • An alias reuses a whole node
+latest: *release
+
+# • Explicit tags
+explicit:
+  as_string: !!str 2026
+  as_float: !!float 1
+  as_set: !!set { md: null, txt: null, log: null }
+  logo_png: !!binary |
+    iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=
+
+# • Flow style, quoting and complex keys
+flow_mapping: { preview: true, diffskai: true, account: false }
+quoted:
+  single: 'It''s plain text'
+  double: "Tab:\t, line break:\n, quote: \""
+  multiline_double: "A double-quoted scalar can
+    continue on the next line, indented."
+? [Ctrl, S]
+: Save the file in place
+? |
+  A block scalar
+  used as a key
+: rare, but valid
+
+...

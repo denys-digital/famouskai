@@ -1,0 +1,29 @@
+id,feature,category,where,shortcut,file_types,works_offline,needs_chromium,writes_to_disk,stored_in_browser,source_file,doc,description
+F01,Open a file,Files,Toolbar: Open,Ctrl+O,all,yes,yes,no,recent files,index.html,README.md,Opens a file from your disk through the File System Access API; Famouskai keeps a handle to save it back in place.
+F02,Save in place,Files,Toolbar: Save,Ctrl+S,all,yes,yes,yes,no,index.html,README.md,"Writes straight to the file you opened, with no download and no copy."
+F03,Save as,Files,Toolbar: As...,,all,yes,yes,yes,no,index.html,README.md,"Opens the ""Save as"" dialog to write a new file."
+F04,New document,Files,Toolbar: New,Ctrl+N,all,yes,no,no,no,index.html,README.md,"Starts an empty, unsaved document in the current window."
+F05,New window,Files,"Toolbar: +, or Ctrl+click in the Explorer",Ctrl+click,all,yes,no,no,no,index.html,README.md,"One document per page: a second file opens in its own window, your browser already has tabs."
+F06,Reload from disk,Files,Toolbar: Reload,,all,yes,yes,no,no,index.html,README.md,"Reads the file again, for example after another program changed it."
+F07,Search and replace,Editing,Editor,"Ctrl+F, Ctrl+H",all,yes,no,no,no,vendor/ace-builds/ext-searchbox.js,,"Ace search box, with regular expressions and case options; Ctrl+K finds the next match."
+F08,Syntax coloring,Editing,Editor,,"css, csv, tsv, diff, patch, html, js, ts, json, md, svg, xml, yml, log, txt",yes,no,no,no,syntax-themes.css,README.md,"One palette, one CSS section per language; colors are plain CSS variables you can change."
+F09,Famous Marks,Navigation,Editor and Outline tab,"/fa, /md, /fb then Tab",all,yes,no,no,no,plugins/ext-famous-core.js,docs/FAMOUS-MARK.md,"Three characters, ﹥ • °, turn a line into a bookmark and a fold point.
+In any other editor they stay plain text."
+F10,Outline,Navigation,Sidebar: Outline tab,,all,yes,no,no,no,plugins/ext-outline.js,docs/FAMOUS-MARK.md,"Lists headings and Famous Marks; filter by mark, sort A-Z or reorder by drag and drop."
+F11,Explorer and workspaces,Navigation,Sidebar: Explorer tab,"Click, Ctrl+click, Ctrl+Shift+click",all,yes,yes,no,"workspaces, recent files",plugins/ext-sidebar.js,README.md,"Browse a folder; a click opens here, Ctrl+click in a new window, Ctrl+Shift+click in a new tab."
+F12,Recent files,Navigation,Sidebar: Explorer tab,,all,yes,yes,no,last 50 files,index.html,CHANGELOG.md,"Reopens a recent file in one click, filtered by workspace if you want."
+F13,Markdown preview,Preview,"Toolbar: Preview, Full View",,md,yes,no,no,no,index.html,README.md,"Live preview next to the text, sanitized by DOMPurify: no script from a file can run."
+F14,Patch preview,Preview,Toolbar: Preview,,"diff, patch",yes,no,no,no,vendor/diff2html,README.md,"Shows a unified diff side by side, read-only."
+F15,Print to PDF,Export,Toolbar: Print PDF,,md,yes,no,no,no,preview-themes.css,tests/manual-print-pdf.md,"Prints the preview on white pages, without the editor around it."
+F16,Export HTML,Export,Toolbar: Export,,md,yes,no,no,no,plugins/ext-export-html.js,README.md,"One self-contained HTML file with the Oswald font embedded: it opens anywhere, with no network."
+F17,Magic Snippets,Editing,Sidebar: Tools tab,"/ then the snippet name, then Tab",depends on the snippet,yes,no,no,your own snippets,plugins/ext-snippets.js,README.md,"Inserts templates and symbols, such as /t1 for a centered title or /fa for a Famous Arrow."
+F18,Diffskai compare,Diffskai,Toolbar: D,,all,after one online visit,yes,yes,no,plugins/tool-diffskai.js,README.md,Compares the open text with another version side by side; Save writes the merge back to the real file.
+F19,Conflict guard,Diffskai,On Save,Ctrl+S,all,yes,yes,no,no,index.html,DNA.md,"If another program changed the file since you opened it, Famouskai stops and offers Diffskai instead of overwriting it."
+F20,Beautify selection,Tools,Sidebar: Tools tab,,"js, ts, json, html, xml, svg, css, md",yes,no,no,no,plugins/tool-beautify.js,,Re-indents code with js-beautify.
+F21,Tidy & Sanitize Text,Tools,Sidebar: Tools tab,,all,yes,no,no,no,plugins/tool-cleanup-text.js,,"Cleans pasted text; keeps line endings, cursor and scroll position."
+F22,Auto-cleanup on Open,Tools,Sidebar: Tools tab,,all,yes,no,no,setting,index.html,CHANGELOG.md,"Runs the cleanup on every way of opening a file; a file it changes is marked as modified, with a notice."
+F23,"Sort Lines, Remove Duplicate Lines",Tools,Sidebar: Tools tab,,all,yes,no,no,no,plugins/tool-sort-lines.js,docs/PLUGIN-ARCHITECTURE.md,"Two small tools, each a single JavaScript file you can read in a few minutes."
+F24,Extract & Copy Table,Tools,Sidebar: Tools tab,,md,yes,no,no,no,plugins/tool-extract-mk-table.js,,"Copies a Markdown table, ready to paste into a spreadsheet."
+F25,Window layout,Windows,Sidebar: Windows & Settings tab,,all,yes,no,no,no,index.html,,"Tiles the window left or right, or maximizes it, to work on two files side by side."
+F26,Offline mode,App,Automatic,,all,yes,no,no,app files in the cache,sw.js,README.md,"A Service Worker keeps the app working without a network, once served over HTTPS or localhost."
+F27,Install as an app,App,Browser address bar,,all,yes,yes,no,no,manifest.json,README.md,"Installs on Windows, macOS, Linux and ChromeOS; files then open straight from your file manager."

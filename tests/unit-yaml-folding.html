@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - YAML Folding</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="../vendor/ace-builds/ace.js"></script>
+    <script src="../plugins/ace-custom/folding-yaml.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - YAML Folding</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+
+    <script>
+        (function() {
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+
+            if (!window.FamousPluginCore || !window.FamousPluginCore.YamlFolding) {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = 'Error: window.FamousPluginCore.YamlFolding not defined';
+                return;
+            }
+
+            function getActualFolds(text) {
+                const session = ace.createEditSession(text);
+                window.FamousPluginCore.YamlFolding.apply(session);
+
+                const folds = [];
+                const len = session.getLength();
+                for (let r = 0; r < len; r++) {
+                    const widget = session.getFoldWidget(r);
+                    if (widget === "start") {
+                        const range = session.getFoldWidgetRange(r);
+                        if (range) {
+                            // Convert 0-based row to 1-based row for user-facing messaging
+                            folds.push(`${range.start.row + 1}→${range.end.row + 1}`);
+                        }
+                    }
+                }
+                return folds;
+            }
+
+            const sampleSectionA = [
+                "services:",             // 1
+                "  web:",                // 2
+                "    image: nginx",      // 3
+                "    ports:",            // 4
+                "    - \"80:80\"",       // 5
+                "    - \"443:443\"",     // 6
+                "    environment:",      // 7
+                "      - A=1",           // 8
+                "",                      // 9
+                "  db:",                 // 10
+                "    image: postgres",   // 11
+                "# comment",             // 12
+                "list_same_indent:",     // 13
+                "- a",                   // 14
+                "- b:",                  // 15
+                "    c: 1",              // 16
+                "- d",                   // 17
+                "last: 1"                // 18
+            ].join("\n");
+
+            const sampleBlockScalar = [
+                "a: |",
+                "  line 1",
+                "  line 2",
+                "b: 1"
+            ].join("\n");
+
+            const sampleComment = [
+                "# comment header",
+                "  indented child",
+                "key:",
+                "  child: 1"
+            ].join("\n");
+
+            const sampleDocMarker = [
+                "k:",
+                "  child: 1",
+                "",
+                "---",
+                "x: 1"
+            ].join("\n");
+
+            const sampleDashItem = [
+                "- name: a",
+                "  image: b",
+                "last: 1"
+            ].join("\n");
+
+            // Scalar text that looks like YAML keys, with uneven indentation.
+            const sampleNestedScalar = [
+                "script: |",
+                "  echo start",
+                "    options:",
+                "      verbose: true",
+                "  echo end",
+                "next: 1"
+            ].join("\n");
+
+            const sampleKeyValue = "key: value\n";
+            const sampleEmptyKey = "key:\n";
+
+            const testCases = [
+                {
+                    name: "Section A full sample folding",
+                    input: sampleSectionA,
+                    expectedFolds: ["1→11", "2→8", "4→6", "7→8", "10→11", "13→17", "15→16"]
+                },
+                {
+                    name: "Block scalar (one fold, no widget on scalar lines)",
+                    input: sampleBlockScalar,
+                    expectedFolds: ["1→3"]
+                },
+                {
+                    name: "Comment line followed by indented lines (no widget on comment)",
+                    input: sampleComment,
+                    expectedFolds: ["3→4"]
+                },
+                {
+                    name: "Doc marker boundary (fold ends on child, before blank line and ---)",
+                    input: sampleDocMarker,
+                    expectedFolds: ["1→2"]
+                },
+                {
+                    name: "List-item dash line folding (- name: a + indented child)",
+                    input: sampleDashItem,
+                    expectedFolds: ["1→2"]
+                },
+                {
+                    name: "Key-like text inside a block scalar (only the header folds)",
+                    input: sampleNestedScalar,
+                    expectedFolds: ["1→5"]
+                },
+                {
+                    name: "key: value (no widget)",
+                    input: sampleKeyValue,
+                    expectedFolds: []
+                },
+                {
+                    name: "key: with nothing after (no widget)",
+                    input: sampleEmptyKey,
+                    expectedFolds: []
+                }
+            ];
+
+            let passed = 0;
+            const total = testCases.length;
+
+            testCases.forEach((tc, index) => {
+                const actual = getActualFolds(tc.input);
+                const isPass = JSON.stringify(actual) === JSON.stringify(tc.expectedFolds);
+
+                if (isPass) {
+                    passed++;
+                }
+
+                const card = document.createElement('div');
+                card.className = `test-case ${isPass ? 'pass' : 'fail'}`;
+
+                const badge = document.createElement('span');
+                badge.className = `badge ${isPass ? 'pass' : 'fail'}`;
+                badge.textContent = isPass ? 'PASS' : 'FAIL';
+
+                const title = document.createElement('span');
+                title.textContent = `Case ${index + 1}: ${tc.name}`;
+
+                card.appendChild(badge);
+                card.appendChild(title);
+
+                if (!isPass) {
+                    const diff = document.createElement('div');
+                    diff.className = 'details';
+                    diff.textContent = `Expected: ${JSON.stringify(tc.expectedFolds)}\nActual:   ${JSON.stringify(actual)}`;
+                    card.appendChild(diff);
+                }
+
+                container.appendChild(card);
+            });
+
+            const summaryText = `${passed}/${total} passed`;
+            summaryEl.className = `summary ${passed === total ? 'passed' : 'failed'}`;
+            summaryEl.textContent = summaryText;
+
+            console.log(`Unit Tests - YAML Folding: ${summaryText}`);
+        })();
+    </script>
+</body>
+</html>

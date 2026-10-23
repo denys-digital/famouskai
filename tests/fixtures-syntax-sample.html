@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!--
+  Famouskai syntax sample: HTML (ace/mode/html), with embedded CSS, JavaScript and SVG.
+  A one-page "Famous Mark tester": type a line, the page tells you whether Famouskai sees a
+  Famous Mark in it. Valid HTML5, works offline, loads nothing from the network.
+  Coloring checklist: doctype, comments, tags (including a, form, table, script, style),
+  attributes in double, single and no quotes, boolean attributes, entities, inline SVG with
+  CDATA, and the CSS and JavaScript highlighters inside <style> and <script>.
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Famous Mark tester</title>
+
+    <!-- ﹥ Styles: plain CSS custom properties, like style.css -->
+    <style>
+        :root {
+            --tester-bg: #202124;          /* --fm-dark */
+            --tester-text: #F8F8F2;        /* --fm-light */
+            --tester-accent: #8AB4F8;      /* --fm-sky */
+            --tester-hit: #A6E22E;         /* --fm-green */
+            --tester-miss: #F95B56;        /* --fm-red */
+        }
+        body {
+            margin: 0 auto;
+            max-width: 48rem;
+            padding: 2rem 1rem;
+            background: var(--tester-bg);
+            color: var(--tester-text);
+            font-family: "Segoe UI", Roboto, sans-serif;
+            line-height: 1.5;
+        }
+        code, input[type="text"] { font-family: Consolas, "Cascadia Mono", monospace; }
+        .result.is-hit { color: var(--tester-hit); }
+        .result.is-miss { color: var(--tester-miss); }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border-bottom: 1px solid #3c4043; padding: 0.25em 0.5em; text-align: left; }
+        a:hover::after { content: " ↗"; }
+    </style>
+</head>
+
+<body class="tester" data-version="0.1.0">
+    <header>
+        <h1>Famous Mark tester</h1>
+        <p>A Famous Mark is one of three characters at the start of a line: &laquo;&#xFE65;&raquo;,
+           &laquo;&bull;&raquo; or &laquo;&deg;&raquo;. Famouskai lists those lines in the Outline tab and
+           folds the text down to the next mark. In any other editor they are just characters
+           &mdash; no lock-in.</p>
+    </header>
+
+    <main>
+        <!-- ﹥ The three marks -->
+        <section id="marks">
+            <h2>The three marks</h2>
+            <table>
+                <thead>
+                    <tr><th scope="col">Mark</th><th scope="col">Name</th><th scope="col">Code point</th><th scope="col">Snippet</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>&#xFE65;</td><td>Famous Arrow</td><td><code>U+FE65</code></td><td><kbd>/fa</kbd> + <kbd>Tab</kbd></td></tr>
+                    <tr><td>&#x2022;</td><td>Magic Dot</td><td><code>U+2022</code></td><td><kbd>/md</kbd> + <kbd>Tab</kbd></td></tr>
+                    <tr><td>&#176;</td><td>Flying Bubble</td><td><code>U+00B0</code></td><td><kbd>/fb</kbd> + <kbd>Tab</kbd></td></tr>
+                </tbody>
+            </table>
+            <p>Full rules: <a href="../docs/FAMOUS-MARK.md" target=_blank rel='noopener'>docs/FAMOUS-MARK.md</a>.</p>
+        </section>
+
+        <!-- ﹥ Try a line -->
+        <section id="try">
+            <h2>Try a line</h2>
+            <form id="tester-form" action="#" autocomplete="off" novalidate>
+                <label for="line">Line of text</label>
+                <input type="text" id="line" name="line" value="// ﹥ Core Logic Setup" required autofocus>
+                <button type="submit">Test</button>
+                <output class="result" for="line" aria-live="polite"></output>
+            </form>
+        </section>
+
+        <!-- ° Logo: inline SVG, styled through CDATA -->
+        <section id="logo">
+            <svg width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Famous Arrow">
+                <style><![CDATA[
+                    .arrow { fill: none; stroke: #8AB4F8; stroke-width: 10; stroke-linecap: round; }
+                ]]></style>
+                <rect x="4" y="4" width="88" height="88" rx="16" fill="#2f3033"/>
+                <path class="arrow" d="M36 24 L64 48 L36 72"/>
+            </svg>
+        </section>
+    </main>
+
+    <footer>
+        <p><small>&copy; 2026 Famouskai contributors &middot; AGPLv3 &middot; nothing leaves this page.</small></p>
+    </footer>
+
+    <!-- ﹥ Script: same rule as FamousPluginCore.FamousMark.regex, simplified for the demo -->
+    <script>
+        'use strict';
+        const MARK_LINE = /^\s*[\/!<*\\\-#%;@]*\s*([﹥•°])\s*(.*?)\s*(?:-->|\*\/)?\s*$/u;
+
+        function describe(line) {
+            const match = MARK_LINE.exec(line);
+            if (match === null) {
+                return { hit: false, text: 'No Famous Mark: the line stays out of the Outline.' };
+            }
+            const [, mark, label] = match;
+            return { hit: true, text: `Famous Mark ${mark} found, Outline label: "${label || '(empty)'}"` };
+        }
+
+        document.getElementById('tester-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const output = event.target.querySelector('output');
+            const { hit, text } = describe(event.target.elements.line.value);
+            output.textContent = text;                       // textContent, never innerHTML
+            output.classList.toggle('is-hit', hit);
+            output.classList.toggle('is-miss', !hit);
+            console.log('[tester]', hit, text);
+        });
+    </script>
+</body>
+</html>

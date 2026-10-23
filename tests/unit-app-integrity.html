@@ -1,0 +1,311 @@
+<!--
+/*
+ * Famouskai Editor - Local-First PWA IDE
+ * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * -------------------------------------------------------------------------
+ * COMMERCIAL LICENSE
+ * For commercial integration without the AGPLv3 strict open-source
+ * restrictions, please contact the author to acquire a commercial license.
+ * -------------------------------------------------------------------------
+ */
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - App Integrity</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>App Integrity Unit Tests (sw.js &amp; index.html)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Check Name</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        (async function runIntegrityTests() {
+            const resultsBody = document.getElementById("results");
+            const summaryEl = document.getElementById("summary");
+
+            let passedCount = 0;
+            let totalCount = 0;
+
+            function addRow(passed, checkName, detail) {
+                totalCount++;
+                if (passed) passedCount++;
+
+                const tr = document.createElement("tr");
+                tr.className = passed ? "pass" : "fail";
+
+                const tdStatus = document.createElement("td");
+                tdStatus.className = "status";
+                tdStatus.textContent = passed ? "PASS" : "FAIL";
+
+                const tdName = document.createElement("td");
+                tdName.textContent = checkName;
+
+                const tdDetail = document.createElement("td");
+                tdDetail.textContent = detail;
+
+                tr.appendChild(tdStatus);
+                tr.appendChild(tdName);
+                tr.appendChild(tdDetail);
+
+                resultsBody.appendChild(tr);
+
+                const consoleMsg = `[${passed ? "PASS" : "FAIL"}] ${checkName}: ${detail}`;
+                if (passed) {
+                    console.log(consoleMsg);
+                } else {
+                    console.error(consoleMsg);
+                }
+            }
+
+            function updateSummary() {
+                const finalStatusText = `${passedCount}/${totalCount} passed`;
+                summaryEl.textContent = finalStatusText;
+                summaryEl.className = `summary ${passedCount === totalCount && totalCount > 0 ? "pass" : "fail"}`;
+                console.log(`\nTest Result: ${finalStatusText}`);
+            }
+
+            // Protocol Guard
+            if (window.location.protocol === 'file:') {
+                addRow(false, "Protocol check", "This test page must be opened through an HTTP server at repository root (e.g. python3 -m http.server), not via file:// protocol.");
+                updateSummary();
+                return;
+            }
+
+            async function checkPathExists(path) {
+                try {
+                    const response = await fetch(path, { cache: 'no-store' });
+                    if (!response.ok) {
+                        return { ok: false, reason: `HTTP status ${response.status}` };
+                    }
+                    const isHtmlFileType = path.endsWith('/') || path.endsWith('.html');
+                    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+                    if (!isHtmlFileType && contentType.startsWith('text/html')) {
+                        return { ok: false, reason: `Returned text/html (Cloudflare fallback for missing asset)` };
+                    }
+                    return { ok: true };
+                } catch (err) {
+                    return { ok: false, reason: err.message || 'Fetch failed' };
+                }
+            }
+
+            // Check 1: Cache list parsed
+            let cachedUrls = [];
+            try {
+                const swResponse = await fetch('/sw.js', { cache: 'no-store' });
+                if (!swResponse.ok) {
+                    addRow(false, "1. Cache list parsed", `Failed to fetch /sw.js (HTTP ${swResponse.status})`);
+                } else {
+                    const swText = await swResponse.text();
+                    const arrayMatch = swText.match(/const\s+URLS_TO_CACHE\s*=\s*\[([\s\S]*?)\];/);
+                    if (!arrayMatch) {
+                        addRow(false, "1. Cache list parsed", "Could not find const URLS_TO_CACHE array in sw.js");
+                    } else {
+                        const regex = /'([^']+)'/g;
+                        let match;
+                        while ((match = regex.exec(arrayMatch[1])) !== null) {
+                            cachedUrls.push(match[1]);
+                        }
+                        if (cachedUrls.length === 0) {
+                            addRow(false, "1. Cache list parsed", "URLS_TO_CACHE array in sw.js is empty");
+                        } else {
+                            addRow(true, "1. Cache list parsed", `Parsed ${cachedUrls.length} cached paths from URLS_TO_CACHE`);
+                        }
+                    }
+                }
+            } catch (err) {
+                addRow(false, "1. Cache list parsed", `Error parsing sw.js: ${err.message}`);
+            }
+
+            // Check 2: Every cached path exists
+            if (cachedUrls.length > 0) {
+                const cachedResults = await Promise.all(cachedUrls.map(async (path) => {
+                    const res = await checkPathExists(path);
+                    return { path, ...res };
+                }));
+
+                const failedCachedPaths = cachedResults.filter(r => !r.ok);
+                if (failedCachedPaths.length === 0) {
+                    addRow(true, "2. Every cached path exists", `All ${cachedUrls.length} cached paths exist`);
+                } else {
+                    for (const failure of failedCachedPaths) {
+                        addRow(false, "2. Every cached path exists", `Missing or invalid cached path: ${failure.path} (${failure.reason})`);
+                    }
+                }
+            } else {
+                addRow(false, "2. Every cached path exists", "Skipped because URLS_TO_CACHE list was empty");
+            }
+
+            // Check 3: index.html references exist
+            let normalizedRefs = [];
+            try {
+                const indexResponse = await fetch('/index.html', { cache: 'no-store' });
+                if (!indexResponse.ok) {
+                    addRow(false, "3. index.html references exist", `Failed to fetch /index.html (HTTP ${indexResponse.status})`);
+                } else {
+                    const indexText = await indexResponse.text();
+                    const doc = new DOMParser().parseFromString(indexText, 'text/html');
+                    const refs = [];
+
+                    doc.querySelectorAll('script[src]').forEach(s => {
+                        const src = s.getAttribute('src');
+                        if (src) refs.push(src);
+                    });
+
+                    doc.querySelectorAll('link[href]').forEach(l => {
+                        const href = l.getAttribute('href');
+                        if (href) refs.push(href);
+                    });
+
+                    const ignoredPrefixes = ['http:', 'https:', 'data:', '#'];
+                    for (let ref of refs) {
+                        ref = ref.trim();
+                        if (ignoredPrefixes.some(p => ref.startsWith(p))) continue;
+                        let path = ref.split('?')[0];
+                        if (!path.startsWith('/')) {
+                            path = '/' + path;
+                        }
+                        if (!normalizedRefs.includes(path)) {
+                            normalizedRefs.push(path);
+                        }
+                    }
+
+                    const indexRefResults = await Promise.all(normalizedRefs.map(async (path) => {
+                        const res = await checkPathExists(path);
+                        return { path, ...res };
+                    }));
+
+                    const failedIndexRefs = indexRefResults.filter(r => !r.ok);
+                    if (failedIndexRefs.length === 0) {
+                        addRow(true, "3. index.html references exist", `All ${normalizedRefs.length} references in index.html exist`);
+                    } else {
+                        for (const failure of failedIndexRefs) {
+                            addRow(false, "3. index.html references exist", `Missing or invalid index.html reference: ${failure.path} (${failure.reason})`);
+                        }
+                    }
+                }
+            } catch (err) {
+                addRow(false, "3. index.html references exist", `Error parsing index.html: ${err.message}`);
+            }
+
+            // Check 4: index.html references are cached
+            if (cachedUrls.length > 0 && normalizedRefs.length > 0) {
+                const missingFromCache = normalizedRefs.filter(ref => !cachedUrls.includes(ref));
+                if (missingFromCache.length === 0) {
+                    addRow(true, "4. index.html references are cached", `all ${normalizedRefs.length} references cached`);
+                } else {
+                    for (const missing of missingFromCache) {
+                        addRow(false, "4. index.html references are cached", `Reference missing from URLS_TO_CACHE: ${missing}`);
+                    }
+                }
+            } else {
+                addRow(false, "4. index.html references are cached", "Skipped due to missing cache or reference data");
+            }
+
+            // Check 5: No duplicates
+            if (cachedUrls.length > 0) {
+                const duplicates = [];
+                const seen = new Set();
+                for (const url of cachedUrls) {
+                    if (seen.has(url)) {
+                        if (!duplicates.includes(url)) duplicates.push(url);
+                    } else {
+                        seen.add(url);
+                    }
+                }
+                if (duplicates.length === 0) {
+                    addRow(true, "5. No duplicates", `URLS_TO_CACHE has no duplicate entry (${cachedUrls.length} paths checked)`);
+                } else {
+                    addRow(false, "5. No duplicates", `Duplicate entries found in URLS_TO_CACHE: ${duplicates.join(', ')}`);
+                }
+            } else {
+                addRow(false, "5. No duplicates", "Skipped because URLS_TO_CACHE list was empty");
+            }
+
+            updateSummary();
+        })();
+    </script>
+</body>
+</html>

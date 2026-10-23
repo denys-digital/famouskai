@@ -1,0 +1,234 @@
+{
+  "fa": {
+    "snippet": "﹥ $1",
+    "help": "Famous arrow",
+    "extensions": []
+  },
+  "fb": {
+    "snippet": "° $1",
+    "help": "Flying bubble",
+    "extensions": []
+  },
+  "md": {
+    "snippet": "• $1",
+    "help": "Magic dot",
+    "extensions": []
+  },
+  "md2": {
+    "snippet": "•• $1",
+    "help": "Magic dot level 2",
+    "extensions": [],
+    "isCustom": true
+  },
+  "md3": {
+    "snippet": "••• $1",
+    "help": "Magic dot level 3",
+    "extensions": [],
+    "isCustom": true
+  },
+  "date": {
+    "snippet": "{{date}} $1",
+    "help": "Insert current date (YYYY-MM-DD)",
+    "extensions": []
+  },
+  "time": {
+    "snippet": "{{time}} $1",
+    "help": "Insert current time (HH:MM)",
+    "extensions": []
+  },
+  "cmt": {
+    "snippet": "<!-- $1 -->",
+    "help": "Multiline comment",
+    "extensions": [
+      "md",
+      "html",
+      "xml",
+      "svg"
+    ]
+  },
+  "pb": {
+    "snippet": "<div style=\"page-break-after: always;\"></div>$1",
+    "help": "Force page break (PDF)",
+    "extensions": [
+      "md",
+      "html"
+    ]
+  },
+  "br": {
+    "snippet": "<br>$1",
+    "help": "Insert a line break",
+    "extensions": [
+      "md",
+      "html"
+    ]
+  },
+  "code": {
+    "snippet": "```$1\n```",
+    "help": "Insert a code section",
+    "extensions": [
+      "md",
+      "log",
+      "txt"
+    ]
+  },
+  "sp": {
+    "snippet": "&nbsp;$1",
+    "help": "Insert a non-breaking space",
+    "extensions": [
+      "md",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "mark": {
+    "snippet": "<mark>$1</mark>",
+    "help": "Highlight text (yellow)",
+    "extensions": [
+      "md",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "center": {
+    "snippet": "<div align=\"center\">\n\n$1\n\n</div>",
+    "help": "Center text or element",
+    "extensions": [
+      "md",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "right": {
+    "snippet": "<div align=\"right\">\n\n$1\n\n</div>",
+    "help": "Right text or element",
+    "extensions": [
+      "md",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "t1": {
+    "snippet": "<div class=\"t1\" align=\"center\"><h1>$1</h1></div>",
+    "help": "Format H1 with border",
+    "extensions": [
+      "md",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "t2": {
+    "snippet": "<div class=\"t2\" align=\"center\"><h2>$1</h2></div>",
+    "help": "Format H2 with border",
+    "extensions": [
+      "md",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "t3": {
+    "snippet": "<div class=\"t3\" align=\"center\"><h3>$1</h3></div>",
+    "help": "Format H3 with border",
+    "extensions": [
+      "md",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "details": {
+    "snippet": "<details>\n<summary>Title (Click to expand)</summary>\n\n$1\n\n</details>",
+    "help": "Collapsible HTML block",
+    "extensions": [
+      "md",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "clg": {
+    "snippet": "console.log($1);",
+    "help": "Console log",
+    "extensions": [
+      "js",
+      "html"
+    ],
+    "isCustom": true
+  },
+  "doc": {
+    "snippet": "# {{filename}}\nDate: {{date}}\n\n## Overview\n$1\n",
+    "help": "Document header template",
+    "extensions": [
+      "md",
+      "txt"
+    ],
+    "isCustom": true
+  },
+  "att": {
+    "snippet": "- _Attachements :_ $1",
+    "help": "Display Attachement bloc",
+    "extensions": [
+      "md"
+    ],
+    "isCustom": true
+  },
+    "src": {
+    "snippet": "> _(source: $1)_",
+    "help": "Display source bloc",
+    "extensions": [
+      "md"
+    ],
+    "isCustom": true
+  },
+    "sqr": {
+    "snippet": "🟥 $1",
+    "help": "Red square emoji",
+    "extensions": [],
+    "isCustom": true
+  },
+    "sqo": {
+    "snippet": "🟧 $1",
+    "help": "Orange square emoji",
+    "extensions": [],
+    "isCustom": true
+  },
+    "sqy": {
+    "snippet": "🟨 $1",
+    "help": "Yellow square emoji",
+    "extensions": [],
+    "isCustom": true
+  },
+    "sqg": {
+    "snippet": "🟩 $1",
+    "help": "Green square emoji",
+    "extensions": [],
+    "isCustom": true
+  },
+    "sqb": {
+    "snippet": "🟦 $1",
+    "help": "Blue square emoji",
+    "extensions": [],
+    "isCustom": true
+  },
+    "sqp": {
+    "snippet": "🟪 $1",
+    "help": "Purple square emoji",
+    "extensions": [],
+    "isCustom": true
+  },
+    "sqn": {
+    "snippet": "🟫 $1",
+    "help": "Brown square emoji",
+    "extensions": [],
+    "isCustom": true
+  },
+    "sqk": {
+    "snippet": "⬛ $1",
+    "help": "Black square emoji",
+    "extensions": [],
+    "isCustom": true
+  },
+    "sqw": {
+    "snippet": "⬜ $1",
+    "help": "White square emoji",
+    "extensions": [],
+    "isCustom": true
+  }
+}

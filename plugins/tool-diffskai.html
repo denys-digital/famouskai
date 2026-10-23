@@ -1,0 +1,545 @@
+<!--
+/*
+ * Famouskai Editor - Local-First PWA IDE
+ * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * -------------------------------------------------------------------------
+ * COMMERCIAL LICENSE
+ * For commercial integration without the AGPLv3 strict open-source 
+ * restrictions, please contact the author to acquire a commercial license.
+ * -------------------------------------------------------------------------
+ *
+ * Famouskai Editor Plugin window:
+ * ﹥ Diffskai, compare & conflict resolution (`tool-diffskai.html`)
+ *
+ * REFERENCE PATTERN FOR A TOOL THAT OPENS ITS OWN WINDOW:
+ * 1. Launcher: `tool-diffskai.js` registers the tool and hands the data over through one
+ *    IndexedDB record (`diffskai_session_<id>`), then opens this page with `?session=<id>`.
+ * 2. Styles: this page loads `../style.css` and has no <style> block, no inline style and
+ *    no hex color. Its rules live in style.css, Layer 5, scoped to `body.diffskai`, and its
+ *    colors are the tokens of Layer 1 (read with getComputedStyle when a library needs
+ *    literal values, as Monaco does).
+ * 3. States are CSS classes on <body> (`diffskai-conflict-mode`), not style.display.
+ * 4. User data (file names) is written with textContent, never innerHTML.
+ * 5. Keyboard: Ctrl+S / Cmd+S saves like the main window, and closing with unsaved
+ *    work asks first.
+ */
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diffskai - Compare & Conflict Resolution</title>
+    <link rel="icon" type="image/svg+xml" href="../icon.svg">
+    <link rel="stylesheet" href="../style.css">
+    
+
+    <!-- Local idb-keyval for offline PWA storage -->
+    <script src="../vendor/idb-keyval/umd.min.js"></script>
+</head>
+<body class="diffskai">
+    <div id="conflict-banner" class="diffskai-banner">
+        <span class="diffskai-banner-title">CONFLICT RESOLUTION MODE:</span> The physical file was modified externally. Merge your changes into the right panel and save to overwrite the disk version.
+    </div>
+
+    <div id="main-area">
+        <div class="split-headers">
+            <!-- LEFT PANEL -->
+            <div class="header-panel left">
+                <button id="btn-open-left">Open</button>
+                <button id="btn-save-left" disabled>Save</button>
+                <div class="divider" id="div-left"></div>
+                <span id="label-left" class="file-name-display">Original</span>
+            </div>
+            
+            <!-- RIGHT PANEL -->
+            <div class="header-panel right">
+                <button id="btn-open-right">Open</button>
+                <button id="btn-save-right" disabled>Save</button>
+                <div class="divider" id="div-right"></div>
+                <span id="label-right" class="file-name-display">Modified</span>
+            </div>
+        </div>
+        
+        <div id="diff-container"><div id="loader">Loading Diffskai...</div></div>
+    </div>
+
+    <!-- Global toolbar (Settings) moved to bottom -->
+    <div id="toolbar">
+        <button id="btn-swap" title="Swap left and right panels">Swap</button>
+        <div class="divider"></div>
+        <label class="sidebar-label diffskai-toolbar-label">
+            <input type="checkbox" id="toggle-whitespace" class="sidebar-checkbox" checked> Ignore whitespace
+        </label>
+        <div class="divider"></div>
+        <label class="sidebar-label diffskai-toolbar-label">
+            <input type="checkbox" id="toggle-collapse" class="sidebar-checkbox" checked> Collapse unchanged
+        </label>
+        <div class="divider"></div>
+        <label class="sidebar-label diffskai-toolbar-label">
+            <input type="checkbox" id="toggle-wordwrap" class="sidebar-checkbox" checked> Word wrap
+        </label>
+    </div>
+
+    <script src="../vendor/monaco-editor/loader.js"></script>
+    <script>
+        window.MonacoEnvironment = {
+            getWorkerUrl: function(workerId, label) {
+                return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+                    self.MonacoEnvironment = { baseUrl: '../vendor/monaco-editor/' };
+                    importScripts('../vendor/monaco-editor/editor/editor.worker.js');
+                `)}`;
+            }
+        };
+
+        require.config({ paths: { 'vs': '../vendor/monaco-editor' }});
+    
+        let diffEditor, originalModel, modifiedModel;
+        let originalHandle = null, modifiedHandle = null;
+        let sourceHandle = null, sourceBaseline = 0;
+        let leftListener = null, rightListener = null;
+        let isConflictMode = false;
+        let sessionId = null;
+        
+        // One map for both entry points: the session record (ext or language name)
+        // and files opened with the Open buttons (file extension).
+        const LANGUAGE_BY_EXT = {
+            'js': 'javascript', 'javascript': 'javascript', 'ts': 'javascript',
+            'json': 'json', 'html': 'html', 'css': 'css', 'xml': 'xml',
+            'md': 'markdown', 'markdown': 'markdown'
+        };
+        function languageFor(ext) {
+            return LANGUAGE_BY_EXT[String(ext || '').toLowerCase()] || 'plaintext';
+        }
+
+        let leftState = { name: "Original", isModified: false, isInitialLoad: false, isFamouskaiSource: false };
+        let rightState = { name: "Modified", isModified: false, isInitialLoad: false, isFamouskaiSource: false };
+
+        // =========================================================================
+        // GLOBAL WORKSPACE: Asynchronous initialization (I/O)
+        // =========================================================================
+        window.currentWorkspaceHandle = null;
+        
+        async function initWorkspace() {
+            try {
+                const handle = await idbKeyval.get('default_workspace_handle');
+                if (handle) {
+                    // Silent permission check
+                    const permission = await handle.queryPermission({ mode: 'readwrite' });
+                    if (permission === 'granted') {
+                        window.currentWorkspaceHandle = handle;
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load default workspace", err);
+            }
+        }
+        initWorkspace();
+
+        function updateUI(side, state) {
+            const labelId = side === 'left' ? 'label-left' : 'label-right';
+            const btnId = side === 'left' ? 'btn-save-left' : 'btn-save-right';
+            const handle = side === 'left' ? originalHandle : modifiedHandle;
+            
+            const span = document.getElementById(labelId);
+
+            // Build the label with DOM nodes, never innerHTML: a file name is user data
+            // and may contain "<" (allowed in file names on Linux and ChromeOS).
+            span.replaceChildren(document.createTextNode(state.name));
+            const addPart = (text, className) => {
+                const part = document.createElement('span');
+                part.className = className;
+                part.textContent = text;
+                span.appendChild(part);
+            };
+
+            if (isConflictMode) {
+                if (side === 'left') {
+                    addPart(' - version on Disk (updated / read-only)', 'diffskai-label-readonly');
+                } else {
+                    addPart(' - imported from Famouskai (unsaved / editable)', 'diffskai-label-editable');
+                    if (state.isModified) addPart(' *', 'diffskai-label-modified-star');
+                }
+            } else {
+                if (state.isFamouskaiSource) {
+                    const linkStatus = handle ? ' (linked to file on disk)' : ' (not saved yet)';
+                    addPart(' - from Famouskai' + linkStatus, 'diffskai-label-source');
+                }
+                if (state.isModified) addPart(' *', 'diffskai-label-modified-star');
+                span.classList.toggle('is-modified', state.isModified);
+            }
+
+            document.getElementById(btnId).disabled = !(state.isModified || !handle || isConflictMode);
+        }
+
+        function setupListeners() {
+            if (leftListener) leftListener.dispose();
+            if (rightListener) rightListener.dispose();
+            
+            leftListener = originalModel.onDidChangeContent(() => {
+                if (!leftState.isInitialLoad && !leftState.isModified) {
+                    leftState.isModified = true;
+                    updateUI('left', leftState);
+                }
+            });
+            
+            rightListener = modifiedModel.onDidChangeContent(() => {
+                if (!rightState.isInitialLoad && !rightState.isModified) {
+                    rightState.isModified = true;
+                    updateUI('right', rightState);
+                }
+            });
+        }
+
+        require(['vs/editor/editor.main'], async function() {
+            document.getElementById('loader').remove();
+
+            // Monaco needs literal colors: read them from the CSS tokens of style.css
+            // (Layer 1), so this window has no hardcoded color.
+            const rootStyle = getComputedStyle(document.documentElement);
+            const themeColors = {};
+            Object.entries({
+                'editor.background': '--color-bg-app',
+                'diffEditor.insertedTextBackground': '--color-diffskai-inserted-text',
+                'diffEditor.insertedLineBackground': '--color-diffskai-inserted-line',
+                'diffEditor.removedTextBackground': '--color-diffskai-removed-text',
+                'diffEditor.removedLineBackground': '--color-diffskai-removed-line'
+            }).forEach(([monacoKey, token]) => {
+                const value = rootStyle.getPropertyValue(token).trim();
+                if (value) themeColors[monacoKey] = value;
+            });
+
+            monaco.editor.defineTheme('famouskai-dark', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [],
+                colors: themeColors
+            });
+
+            originalModel = monaco.editor.createModel("", "plaintext");
+            modifiedModel = monaco.editor.createModel("", "plaintext");
+
+            diffEditor = monaco.editor.createDiffEditor(document.getElementById('diff-container'), {
+                theme: 'famouskai-dark',
+                originalEditable: true, 
+                automaticLayout: true,
+                renderSideBySide: true,
+                ignoreTrimWhitespace: true,
+                renderWhitespace: "none",
+                wordWrap: "on",
+                fontSize: 18,
+                minimap: { enabled: false },
+                hideUnchangedRegions: { enabled: true, contextLineCount: 3, minimumLineCount: 3, revealLineCount: 5 },
+                
+                // --- LARGE FILE CRASH FIX ---
+                maxComputationTime: 0, // Disable timeout (calculation will run to completion)
+                diffAlgorithm: 'legacy' // Use stable engine immune to lineRange.ts bug
+            });
+
+            diffEditor.setModel({ original: originalModel, modified: modifiedModel });
+            setupListeners();
+
+            // =========================================================================
+            // ASYNCHRONOUS INITIALIZATION: SESSION RECORD CONSUMER VIA INDEXEDDB AND URL
+            // =========================================================================
+            const urlParams = new URLSearchParams(window.location.search);
+            sessionId = urlParams.get('session');
+            
+            let record = null;
+            if (sessionId) {
+                try {
+                    record = await idbKeyval.get('diffskai_session_' + sessionId);
+                } catch (e) {
+                    console.warn("Failed to load session record:", e);
+                }
+            }
+            
+            if (record) {
+                isConflictMode = (record.mode === 'conflict');
+                sourceHandle = record.handle || null;
+                sourceBaseline = record.baseline || 0;
+
+                leftState.isInitialLoad = true;
+                rightState.isInitialLoad = true;
+
+                const lang = languageFor(record.ext);
+
+                if (isConflictMode) {
+                    modifiedHandle = record.handle || null;
+
+                    // UX Interface lock: style.css shows the banner and hides Open, the
+                    // left Save and Swap when the body has this class.
+                    document.body.classList.add('diffskai-conflict-mode');
+
+                    // Save & Overwrite button style modification
+                    const btnSaveRight = document.getElementById('btn-save-right');
+                    btnSaveRight.textContent = 'Save & Overwrite';
+                    btnSaveRight.classList.add('diffskai-btn-conflict');
+
+                    // Monaco Lock (Read-Only Left Panel)
+                    diffEditor.updateOptions({ originalEditable: false });
+
+                    // INVARIANT (do not swap): LEFT is the read-only disk snapshot,
+                    // RIGHT is the editable buffer that "Save & Overwrite" will write
+                    // back to `modifiedHandle` (the real on-disk FileSystemFileHandle).
+                    originalModel.setValue(record.diskText || '');  // LEFT  = disk (read-only)
+                    modifiedModel.setValue(record.buffer || '');    // RIGHT = user buffer (editable, saved)
+
+                    leftState.name = record.filename || 'File';
+                    rightState.name = record.filename || 'File';
+
+                    monaco.editor.setModelLanguage(originalModel, lang);
+                    monaco.editor.setModelLanguage(modifiedModel, lang);
+
+                    updateUI('left', leftState);
+                    updateUI('right', rightState);
+
+                    leftState.isInitialLoad = false;
+                    rightState.isInitialLoad = false;
+                } else {
+                    // Compare mode
+                    modifiedHandle = record.handle || null;
+
+                    modifiedModel.setValue(record.buffer || '');
+                    rightState.name = record.filename || 'Untitled_File';
+                    rightState.isFamouskaiSource = true;
+                    rightState.isModified = false;
+
+                    monaco.editor.setModelLanguage(originalModel, lang);
+                    monaco.editor.setModelLanguage(modifiedModel, lang);
+
+                    updateUI('left', leftState);
+                    updateUI('right', rightState);
+
+                    leftState.isInitialLoad = false;
+                    rightState.isInitialLoad = false;
+                }
+            }
+
+            // Toggles
+            document.getElementById('toggle-whitespace').addEventListener('change', (e) => {
+                diffEditor.updateOptions({ ignoreTrimWhitespace: e.target.checked });
+            });
+            document.getElementById('toggle-collapse').addEventListener('change', (e) => {
+                diffEditor.updateOptions({ hideUnchangedRegions: { enabled: e.target.checked } });
+            });
+            document.getElementById('toggle-wordwrap').addEventListener('change', (e) => {
+                diffEditor.updateOptions({ wordWrap: e.target.checked ? "on" : "off" });
+            });            
+
+            // SWAP ACTION
+            document.getElementById('btn-swap').addEventListener('click', () => {
+                if (isConflictMode) return; 
+
+                const tempModel = originalModel;
+                originalModel = modifiedModel;
+                modifiedModel = tempModel;
+                
+                diffEditor.setModel({ original: originalModel, modified: modifiedModel });
+                setupListeners();
+
+                const tempHandle = originalHandle;
+                originalHandle = modifiedHandle;
+                modifiedHandle = tempHandle;
+
+                const tempName = leftState.name;
+                const tempMod = leftState.isModified;
+                const tempSource = leftState.isFamouskaiSource;
+                
+                leftState.name = rightState.name;
+                leftState.isModified = rightState.isModified;
+                leftState.isFamouskaiSource = rightState.isFamouskaiSource;
+                
+                rightState.name = tempName;
+                rightState.isModified = tempMod;
+                rightState.isFamouskaiSource = tempSource;
+
+                updateUI('left', leftState);
+                updateUI('right', rightState);
+            });
+        });
+
+        async function loadFile(modelToUpdate, side) {
+            const state = side === 'left' ? leftState : rightState;
+            const currentHandle = side === 'left' ? originalHandle : modifiedHandle;
+            
+            try {
+                const pickerOptions = {};
+                
+                // Priority 1: Existing handle on the active panel
+                if (currentHandle) {
+                    pickerOptions.startIn = currentHandle;
+                }
+                // Priority 2: sourceHandle when available
+                else if (sourceHandle) {
+                    pickerOptions.startIn = sourceHandle;
+                }
+                // Priority 3: Persistent global workspace
+                else if (window.currentWorkspaceHandle) {
+                    if (await window.currentWorkspaceHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                        await window.currentWorkspaceHandle.requestPermission({ mode: 'readwrite' });
+                    }
+                    pickerOptions.startIn = window.currentWorkspaceHandle;
+                }
+
+                const [fileHandle] = await window.showOpenFilePicker(pickerOptions);
+                const file = await fileHandle.getFile();
+                const text = await file.text();
+                
+                if (side === 'left') originalHandle = fileHandle;
+                else modifiedHandle = fileHandle;
+
+                state.isFamouskaiSource = (fileHandle === sourceHandle);
+
+                const lang = languageFor(file.name.split('.').pop());
+                
+                state.isInitialLoad = true;
+                monaco.editor.setModelLanguage(modelToUpdate, lang);
+                modelToUpdate.setValue(text);
+                
+                state.name = file.name;
+                state.isModified = false;
+                updateUI(side, state);
+                
+                setTimeout(() => { state.isInitialLoad = false; }, 50);
+            } catch (err) {
+                if (err.name !== 'AbortError') alert("Error: " + err.message);
+            }
+        }
+
+        async function saveFile(model, side) {
+            const btnId = side === 'left' ? 'btn-save-left' : 'btn-save-right';
+            const state = side === 'left' ? leftState : rightState;
+            let handle = side === 'left' ? originalHandle : modifiedHandle;
+            
+            try {
+                if (!handle) {
+                    const opts = { suggestedName: state.name.includes("imported") ? "original.txt" : state.name };
+                    
+                    if (sourceHandle) {
+                        opts.startIn = sourceHandle;
+                    } else if (window.currentWorkspaceHandle) {
+                        if (await window.currentWorkspaceHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                            await window.currentWorkspaceHandle.requestPermission({ mode: 'readwrite' });
+                        }
+                        opts.startIn = window.currentWorkspaceHandle;
+                    }
+                    
+                    handle = await window.showSaveFilePicker(opts);
+                    if (side === 'left') originalHandle = handle;
+                    else modifiedHandle = handle;
+                    state.name = handle.name;
+                }
+                
+                // Permission check if handle exists
+                if (await handle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+                    const perm = await handle.requestPermission({ mode: 'readwrite' });
+                    if (perm !== 'granted') return;
+                }
+
+                // Overwrite guard: both modes, only when handle === sourceHandle
+                if (handle === sourceHandle) {
+                    const disk = await handle.getFile();
+                    if (disk.lastModified > sourceBaseline) {
+                        if (!confirm('This file was changed on disk after Diffskai opened it. Overwrite it anyway?')) {
+                            return;
+                        }
+                    }
+                }
+
+                // SAFETY NET: in conflict mode, the ONLY valid write target is the
+                // RIGHT panel (modifiedModel -> modifiedHandle == the real file on
+                // disk). If this ever fires, a regression re-inverted the routing
+                // above -- fail loudly instead of silently overwriting the file
+                // with the wrong content.
+                if (isConflictMode && side !== 'right') {
+                    throw new Error('Diffskai conflict-mode invariant violated: only the right panel may overwrite the disk file.');
+                }
+
+                const writable = await handle.createWritable();
+                await writable.write(model.getValue());
+                await writable.close();
+                
+                // Update baseline timestamp if writing to the source handle
+                if (handle === sourceHandle) {
+                    sourceBaseline = (await handle.getFile()).lastModified;
+                }
+
+                // CONFLICT MODE CLEANUP AND CLOSURE
+                if (isConflictMode && side === 'right') {
+                    if (sessionId) {
+                        await idbKeyval.del('diffskai_session_' + sessionId);
+                    }
+                    
+                    new BroadcastChannel('famouskai_sync').postMessage({ type: 'MERGE_COMPLETE', sessionId: sessionId, handle: handle });
+                    
+                    alert("File successfully overwritten! The main editor has been updated.");
+                    rightState.isModified = false; // saved: no close warning
+                    window.close();
+                    return; 
+                }
+                
+                // --- BROADCAST SYNC SIGNAL IN NORMAL MODE ---
+                // Notify the main PWA that a file was saved to disk
+                new BroadcastChannel('famouskai_sync').postMessage({ type: 'DIFFSKAI_SAVED', sessionId: sessionId, handle: handle });
+        
+                state.isModified = false;
+                updateUI(side, state);
+                
+                const btn = document.getElementById(btnId);
+                const originalText = btn.textContent;
+                btn.textContent = "Saved";
+                btn.classList.add('btn-success');
+                setTimeout(() => { btn.textContent = originalText; btn.classList.remove('btn-success'); }, 1500);
+            } catch (err) {
+                if (err.name !== 'AbortError') alert("Save error: " + err.message);
+            }
+        }
+
+        document.getElementById('btn-open-left').addEventListener('click', () => loadFile(originalModel, 'left'));
+        document.getElementById('btn-open-right').addEventListener('click', () => loadFile(modifiedModel, 'right'));
+        
+        document.getElementById('btn-save-left').addEventListener('click', () => saveFile(originalModel, 'left'));
+        document.getElementById('btn-save-right').addEventListener('click', () => saveFile(modifiedModel, 'right'));
+
+        // Ctrl+S / Cmd+S saves the panel that has the focus, like Famouskai, instead of
+        // opening the browser's "Save page as" dialog. Capture phase: runs before Monaco.
+        window.addEventListener('keydown', (e) => {
+            if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 's') return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.shiftKey || !diffEditor) return; // Ctrl+Shift+S: only block the browser dialog
+
+            // Conflict mode: only the right panel can be saved. Otherwise the focused panel,
+            // or the right one when no editor has the focus.
+            const leftFocused = !isConflictMode && diffEditor.getOriginalEditor().hasTextFocus();
+            const side = leftFocused ? 'left' : 'right';
+            const btn = document.getElementById(side === 'left' ? 'btn-save-left' : 'btn-save-right');
+            if (btn.disabled) return; // nothing to save, same rule as the button
+            saveFile(side === 'left' ? originalModel : modifiedModel, side);
+        }, true);
+
+        // Same protection as Famouskai: warn before closing or reloading with unsaved merge work.
+        window.addEventListener('beforeunload', (e) => {
+            if (leftState.isModified || rightState.isModified) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>

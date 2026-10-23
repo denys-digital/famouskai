@@ -1,0 +1,204 @@
+code_point;decimal;character;name;category;block;html_entity;utf8_length;utf8_bytes;famouskai_note
+U+0020;32; ;SPACE;Zs;Basic Latin;"&#32;";1;20;The only Zs (space separator) character of Basic Latin
+U+0021;33;!;EXCLAMATION MARK;Po;Basic Latin;"&#33;";1;21;Famous Mark prefix
+U+0022;34;"""";QUOTATION MARK;Po;Basic Latin;"&quot;";1;22;Doubled inside a quoted CSV field
+U+0023;35;#;NUMBER SIGN;Po;Basic Latin;"&#35;";1;23;"Markdown heading; Famous Mark prefix"
+U+0024;36;$;DOLLAR SIGN;Sc;Basic Latin;"&#36;";1;24;
+U+0025;37;%;PERCENT SIGN;Po;Basic Latin;"&#37;";1;25;Famous Mark prefix
+U+0026;38;&;AMPERSAND;Po;Basic Latin;"&amp;";1;26;"Escaped as &amp; in HTML"
+U+0027;39;';APOSTROPHE;Po;Basic Latin;"&#39;";1;27;
+U+0028;40;(;LEFT PARENTHESIS;Ps;Basic Latin;"&#40;";1;28;
+U+0029;41;);RIGHT PARENTHESIS;Pe;Basic Latin;"&#41;";1;29;
+U+002A;42;*;ASTERISK;Po;Basic Latin;"&#42;";1;2A;"Markdown emphasis; Famous Mark prefix"
+U+002B;43;+;PLUS SIGN;Sm;Basic Latin;"&#43;";1;2B;
+U+002C;44;,;COMMA;Po;Basic Latin;"&#44;";1;2C;Separator of comma CSV files
+U+002D;45;-;HYPHEN-MINUS;Pd;Basic Latin;"&#45;";1;2D;"Markdown list item; Famous Mark prefix"
+U+002E;46;.;FULL STOP;Po;Basic Latin;"&#46;";1;2E;
+U+002F;47;/;SOLIDUS;Po;Basic Latin;"&#47;";1;2F;"Snippet trigger (/fa, /md, /fb); Famous Mark prefix"
+U+0030;48;0;DIGIT ZERO;Nd;Basic Latin;"&#48;";1;30;
+U+0031;49;1;DIGIT ONE;Nd;Basic Latin;"&#49;";1;31;
+U+0032;50;2;DIGIT TWO;Nd;Basic Latin;"&#50;";1;32;
+U+0033;51;3;DIGIT THREE;Nd;Basic Latin;"&#51;";1;33;
+U+0034;52;4;DIGIT FOUR;Nd;Basic Latin;"&#52;";1;34;
+U+0035;53;5;DIGIT FIVE;Nd;Basic Latin;"&#53;";1;35;
+U+0036;54;6;DIGIT SIX;Nd;Basic Latin;"&#54;";1;36;
+U+0037;55;7;DIGIT SEVEN;Nd;Basic Latin;"&#55;";1;37;
+U+0038;56;8;DIGIT EIGHT;Nd;Basic Latin;"&#56;";1;38;
+U+0039;57;9;DIGIT NINE;Nd;Basic Latin;"&#57;";1;39;
+U+003A;58;:;COLON;Po;Basic Latin;"&#58;";1;3A;
+U+003B;59;";";SEMICOLON;Po;Basic Latin;"&#59;";1;3B;Separator of this file, so it is quoted here
+U+003C;60;<;LESS-THAN SIGN;Sm;Basic Latin;"&lt;";1;3C;"Escaped as &lt; in HTML"
+U+003D;61;=;EQUALS SIGN;Sm;Basic Latin;"&#61;";1;3D;
+U+003E;62;>;GREATER-THAN SIGN;Sm;Basic Latin;"&gt;";1;3E;Markdown quote
+U+003F;63;?;QUESTION MARK;Po;Basic Latin;"&#63;";1;3F;
+U+0040;64;@;COMMERCIAL AT;Po;Basic Latin;"&#64;";1;40;Famous Mark prefix
+U+0041;65;A;LATIN CAPITAL LETTER A;Lu;Basic Latin;"&#65;";1;41;
+U+0042;66;B;LATIN CAPITAL LETTER B;Lu;Basic Latin;"&#66;";1;42;
+U+0043;67;C;LATIN CAPITAL LETTER C;Lu;Basic Latin;"&#67;";1;43;
+U+0044;68;D;LATIN CAPITAL LETTER D;Lu;Basic Latin;"&#68;";1;44;
+U+0045;69;E;LATIN CAPITAL LETTER E;Lu;Basic Latin;"&#69;";1;45;
+U+0046;70;F;LATIN CAPITAL LETTER F;Lu;Basic Latin;"&#70;";1;46;
+U+0047;71;G;LATIN CAPITAL LETTER G;Lu;Basic Latin;"&#71;";1;47;
+U+0048;72;H;LATIN CAPITAL LETTER H;Lu;Basic Latin;"&#72;";1;48;
+U+0049;73;I;LATIN CAPITAL LETTER I;Lu;Basic Latin;"&#73;";1;49;
+U+004A;74;J;LATIN CAPITAL LETTER J;Lu;Basic Latin;"&#74;";1;4A;
+U+004B;75;K;LATIN CAPITAL LETTER K;Lu;Basic Latin;"&#75;";1;4B;
+U+004C;76;L;LATIN CAPITAL LETTER L;Lu;Basic Latin;"&#76;";1;4C;
+U+004D;77;M;LATIN CAPITAL LETTER M;Lu;Basic Latin;"&#77;";1;4D;
+U+004E;78;N;LATIN CAPITAL LETTER N;Lu;Basic Latin;"&#78;";1;4E;
+U+004F;79;O;LATIN CAPITAL LETTER O;Lu;Basic Latin;"&#79;";1;4F;
+U+0050;80;P;LATIN CAPITAL LETTER P;Lu;Basic Latin;"&#80;";1;50;
+U+0051;81;Q;LATIN CAPITAL LETTER Q;Lu;Basic Latin;"&#81;";1;51;
+U+0052;82;R;LATIN CAPITAL LETTER R;Lu;Basic Latin;"&#82;";1;52;
+U+0053;83;S;LATIN CAPITAL LETTER S;Lu;Basic Latin;"&#83;";1;53;
+U+0054;84;T;LATIN CAPITAL LETTER T;Lu;Basic Latin;"&#84;";1;54;
+U+0055;85;U;LATIN CAPITAL LETTER U;Lu;Basic Latin;"&#85;";1;55;
+U+0056;86;V;LATIN CAPITAL LETTER V;Lu;Basic Latin;"&#86;";1;56;
+U+0057;87;W;LATIN CAPITAL LETTER W;Lu;Basic Latin;"&#87;";1;57;
+U+0058;88;X;LATIN CAPITAL LETTER X;Lu;Basic Latin;"&#88;";1;58;
+U+0059;89;Y;LATIN CAPITAL LETTER Y;Lu;Basic Latin;"&#89;";1;59;
+U+005A;90;Z;LATIN CAPITAL LETTER Z;Lu;Basic Latin;"&#90;";1;5A;
+U+005B;91;[;LEFT SQUARE BRACKET;Ps;Basic Latin;"&#91;";1;5B;Markdown link text
+U+005C;92;\;REVERSE SOLIDUS;Po;Basic Latin;"&#92;";1;5C;Famous Mark prefix
+U+005D;93;];RIGHT SQUARE BRACKET;Pe;Basic Latin;"&#93;";1;5D;Markdown link text
+U+005E;94;^;CIRCUMFLEX ACCENT;Sk;Basic Latin;"&#94;";1;5E;
+U+005F;95;_;LOW LINE;Pc;Basic Latin;"&#95;";1;5F;
+U+0060;96;`;GRAVE ACCENT;Sk;Basic Latin;"&#96;";1;60;Markdown inline code
+U+0061;97;a;LATIN SMALL LETTER A;Ll;Basic Latin;"&#97;";1;61;
+U+0062;98;b;LATIN SMALL LETTER B;Ll;Basic Latin;"&#98;";1;62;
+U+0063;99;c;LATIN SMALL LETTER C;Ll;Basic Latin;"&#99;";1;63;
+U+0064;100;d;LATIN SMALL LETTER D;Ll;Basic Latin;"&#100;";1;64;
+U+0065;101;e;LATIN SMALL LETTER E;Ll;Basic Latin;"&#101;";1;65;
+U+0066;102;f;LATIN SMALL LETTER F;Ll;Basic Latin;"&#102;";1;66;
+U+0067;103;g;LATIN SMALL LETTER G;Ll;Basic Latin;"&#103;";1;67;
+U+0068;104;h;LATIN SMALL LETTER H;Ll;Basic Latin;"&#104;";1;68;
+U+0069;105;i;LATIN SMALL LETTER I;Ll;Basic Latin;"&#105;";1;69;
+U+006A;106;j;LATIN SMALL LETTER J;Ll;Basic Latin;"&#106;";1;6A;
+U+006B;107;k;LATIN SMALL LETTER K;Ll;Basic Latin;"&#107;";1;6B;
+U+006C;108;l;LATIN SMALL LETTER L;Ll;Basic Latin;"&#108;";1;6C;
+U+006D;109;m;LATIN SMALL LETTER M;Ll;Basic Latin;"&#109;";1;6D;
+U+006E;110;n;LATIN SMALL LETTER N;Ll;Basic Latin;"&#110;";1;6E;
+U+006F;111;o;LATIN SMALL LETTER O;Ll;Basic Latin;"&#111;";1;6F;
+U+0070;112;p;LATIN SMALL LETTER P;Ll;Basic Latin;"&#112;";1;70;
+U+0071;113;q;LATIN SMALL LETTER Q;Ll;Basic Latin;"&#113;";1;71;
+U+0072;114;r;LATIN SMALL LETTER R;Ll;Basic Latin;"&#114;";1;72;
+U+0073;115;s;LATIN SMALL LETTER S;Ll;Basic Latin;"&#115;";1;73;
+U+0074;116;t;LATIN SMALL LETTER T;Ll;Basic Latin;"&#116;";1;74;
+U+0075;117;u;LATIN SMALL LETTER U;Ll;Basic Latin;"&#117;";1;75;
+U+0076;118;v;LATIN SMALL LETTER V;Ll;Basic Latin;"&#118;";1;76;
+U+0077;119;w;LATIN SMALL LETTER W;Ll;Basic Latin;"&#119;";1;77;
+U+0078;120;x;LATIN SMALL LETTER X;Ll;Basic Latin;"&#120;";1;78;
+U+0079;121;y;LATIN SMALL LETTER Y;Ll;Basic Latin;"&#121;";1;79;
+U+007A;122;z;LATIN SMALL LETTER Z;Ll;Basic Latin;"&#122;";1;7A;
+U+007B;123;{;LEFT CURLY BRACKET;Ps;Basic Latin;"&#123;";1;7B;
+U+007C;124;|;VERTICAL LINE;Sm;Basic Latin;"&#124;";1;7C;Markdown table cell separator
+U+007D;125;};RIGHT CURLY BRACKET;Pe;Basic Latin;"&#125;";1;7D;
+U+007E;126;~;TILDE;Sm;Basic Latin;"&#126;";1;7E;
+U+00A0;160; ;NO-BREAK SPACE;Zs;Latin-1 Supplement;"&nbsp;";2;C2 A0;Looks like a space, but a search for a normal space does not find it
+U+00A1;161;¡;INVERTED EXCLAMATION MARK;Po;Latin-1 Supplement;"&iexcl;";2;C2 A1;
+U+00A2;162;¢;CENT SIGN;Sc;Latin-1 Supplement;"&cent;";2;C2 A2;
+U+00A3;163;£;POUND SIGN;Sc;Latin-1 Supplement;"&pound;";2;C2 A3;
+U+00A4;164;¤;CURRENCY SIGN;Sc;Latin-1 Supplement;"&curren;";2;C2 A4;
+U+00A5;165;¥;YEN SIGN;Sc;Latin-1 Supplement;"&yen;";2;C2 A5;
+U+00A6;166;¦;BROKEN BAR;So;Latin-1 Supplement;"&brvbar;";2;C2 A6;
+U+00A7;167;§;SECTION SIGN;Po;Latin-1 Supplement;"&sect;";2;C2 A7;
+U+00A8;168;¨;DIAERESIS;Sk;Latin-1 Supplement;"&uml;";2;C2 A8;
+U+00A9;169;©;COPYRIGHT SIGN;So;Latin-1 Supplement;"&copy;";2;C2 A9;
+U+00AA;170;ª;FEMININE ORDINAL INDICATOR;Lo;Latin-1 Supplement;"&ordf;";2;C2 AA;
+U+00AB;171;«;LEFT-POINTING DOUBLE ANGLE QUOTATION MARK;Pi;Latin-1 Supplement;"&laquo;";2;C2 AB;
+U+00AC;172;¬;NOT SIGN;Sm;Latin-1 Supplement;"&not;";2;C2 AC;
+U+00AD;173;­;SOFT HYPHEN;Cf;Latin-1 Supplement;"&shy;";2;C2 AD;
+U+00AE;174;®;REGISTERED SIGN;So;Latin-1 Supplement;"&reg;";2;C2 AE;
+U+00AF;175;¯;MACRON;Sk;Latin-1 Supplement;"&macr;";2;C2 AF;
+U+00B0;176;°;DEGREE SIGN;So;Latin-1 Supplement;"&deg;";2;C2 B0;Famous Mark: Flying Bubble (/fb)
+U+00B1;177;±;PLUS-MINUS SIGN;Sm;Latin-1 Supplement;"&plusmn;";2;C2 B1;
+U+00B2;178;²;SUPERSCRIPT TWO;No;Latin-1 Supplement;"&sup2;";2;C2 B2;
+U+00B3;179;³;SUPERSCRIPT THREE;No;Latin-1 Supplement;"&sup3;";2;C2 B3;
+U+00B4;180;´;ACUTE ACCENT;Sk;Latin-1 Supplement;"&acute;";2;C2 B4;
+U+00B5;181;µ;MICRO SIGN;Ll;Latin-1 Supplement;"&micro;";2;C2 B5;
+U+00B6;182;¶;PILCROW SIGN;Po;Latin-1 Supplement;"&para;";2;C2 B6;
+U+00B7;183;·;MIDDLE DOT;Po;Latin-1 Supplement;"&middot;";2;C2 B7;
+U+00B8;184;¸;CEDILLA;Sk;Latin-1 Supplement;"&cedil;";2;C2 B8;
+U+00B9;185;¹;SUPERSCRIPT ONE;No;Latin-1 Supplement;"&sup1;";2;C2 B9;
+U+00BA;186;º;MASCULINE ORDINAL INDICATOR;Lo;Latin-1 Supplement;"&ordm;";2;C2 BA;
+U+00BB;187;»;RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK;Pf;Latin-1 Supplement;"&raquo;";2;C2 BB;
+U+00BC;188;¼;VULGAR FRACTION ONE QUARTER;No;Latin-1 Supplement;"&frac14;";2;C2 BC;
+U+00BD;189;½;VULGAR FRACTION ONE HALF;No;Latin-1 Supplement;"&frac12;";2;C2 BD;
+U+00BE;190;¾;VULGAR FRACTION THREE QUARTERS;No;Latin-1 Supplement;"&frac34;";2;C2 BE;
+U+00BF;191;¿;INVERTED QUESTION MARK;Po;Latin-1 Supplement;"&iquest;";2;C2 BF;
+U+00C0;192;À;LATIN CAPITAL LETTER A WITH GRAVE;Lu;Latin-1 Supplement;"&Agrave;";2;C3 80;
+U+00C1;193;Á;LATIN CAPITAL LETTER A WITH ACUTE;Lu;Latin-1 Supplement;"&Aacute;";2;C3 81;
+U+00C2;194;Â;LATIN CAPITAL LETTER A WITH CIRCUMFLEX;Lu;Latin-1 Supplement;"&Acirc;";2;C3 82;
+U+00C3;195;Ã;LATIN CAPITAL LETTER A WITH TILDE;Lu;Latin-1 Supplement;"&Atilde;";2;C3 83;
+U+00C4;196;Ä;LATIN CAPITAL LETTER A WITH DIAERESIS;Lu;Latin-1 Supplement;"&Auml;";2;C3 84;
+U+00C5;197;Å;LATIN CAPITAL LETTER A WITH RING ABOVE;Lu;Latin-1 Supplement;"&Aring;";2;C3 85;
+U+00C6;198;Æ;LATIN CAPITAL LETTER AE;Lu;Latin-1 Supplement;"&AElig;";2;C3 86;
+U+00C7;199;Ç;LATIN CAPITAL LETTER C WITH CEDILLA;Lu;Latin-1 Supplement;"&Ccedil;";2;C3 87;
+U+00C8;200;È;LATIN CAPITAL LETTER E WITH GRAVE;Lu;Latin-1 Supplement;"&Egrave;";2;C3 88;
+U+00C9;201;É;LATIN CAPITAL LETTER E WITH ACUTE;Lu;Latin-1 Supplement;"&Eacute;";2;C3 89;
+U+00CA;202;Ê;LATIN CAPITAL LETTER E WITH CIRCUMFLEX;Lu;Latin-1 Supplement;"&Ecirc;";2;C3 8A;
+U+00CB;203;Ë;LATIN CAPITAL LETTER E WITH DIAERESIS;Lu;Latin-1 Supplement;"&Euml;";2;C3 8B;
+U+00CC;204;Ì;LATIN CAPITAL LETTER I WITH GRAVE;Lu;Latin-1 Supplement;"&Igrave;";2;C3 8C;
+U+00CD;205;Í;LATIN CAPITAL LETTER I WITH ACUTE;Lu;Latin-1 Supplement;"&Iacute;";2;C3 8D;
+U+00CE;206;Î;LATIN CAPITAL LETTER I WITH CIRCUMFLEX;Lu;Latin-1 Supplement;"&Icirc;";2;C3 8E;
+U+00CF;207;Ï;LATIN CAPITAL LETTER I WITH DIAERESIS;Lu;Latin-1 Supplement;"&Iuml;";2;C3 8F;
+U+00D0;208;Ð;LATIN CAPITAL LETTER ETH;Lu;Latin-1 Supplement;"&ETH;";2;C3 90;
+U+00D1;209;Ñ;LATIN CAPITAL LETTER N WITH TILDE;Lu;Latin-1 Supplement;"&Ntilde;";2;C3 91;
+U+00D2;210;Ò;LATIN CAPITAL LETTER O WITH GRAVE;Lu;Latin-1 Supplement;"&Ograve;";2;C3 92;
+U+00D3;211;Ó;LATIN CAPITAL LETTER O WITH ACUTE;Lu;Latin-1 Supplement;"&Oacute;";2;C3 93;
+U+00D4;212;Ô;LATIN CAPITAL LETTER O WITH CIRCUMFLEX;Lu;Latin-1 Supplement;"&Ocirc;";2;C3 94;
+U+00D5;213;Õ;LATIN CAPITAL LETTER O WITH TILDE;Lu;Latin-1 Supplement;"&Otilde;";2;C3 95;
+U+00D6;214;Ö;LATIN CAPITAL LETTER O WITH DIAERESIS;Lu;Latin-1 Supplement;"&Ouml;";2;C3 96;
+U+00D7;215;×;MULTIPLICATION SIGN;Sm;Latin-1 Supplement;"&times;";2;C3 97;
+U+00D8;216;Ø;LATIN CAPITAL LETTER O WITH STROKE;Lu;Latin-1 Supplement;"&Oslash;";2;C3 98;
+U+00D9;217;Ù;LATIN CAPITAL LETTER U WITH GRAVE;Lu;Latin-1 Supplement;"&Ugrave;";2;C3 99;
+U+00DA;218;Ú;LATIN CAPITAL LETTER U WITH ACUTE;Lu;Latin-1 Supplement;"&Uacute;";2;C3 9A;
+U+00DB;219;Û;LATIN CAPITAL LETTER U WITH CIRCUMFLEX;Lu;Latin-1 Supplement;"&Ucirc;";2;C3 9B;
+U+00DC;220;Ü;LATIN CAPITAL LETTER U WITH DIAERESIS;Lu;Latin-1 Supplement;"&Uuml;";2;C3 9C;
+U+00DD;221;Ý;LATIN CAPITAL LETTER Y WITH ACUTE;Lu;Latin-1 Supplement;"&Yacute;";2;C3 9D;
+U+00DE;222;Þ;LATIN CAPITAL LETTER THORN;Lu;Latin-1 Supplement;"&THORN;";2;C3 9E;
+U+00DF;223;ß;LATIN SMALL LETTER SHARP S;Ll;Latin-1 Supplement;"&szlig;";2;C3 9F;
+U+00E0;224;à;LATIN SMALL LETTER A WITH GRAVE;Ll;Latin-1 Supplement;"&agrave;";2;C3 A0;
+U+00E1;225;á;LATIN SMALL LETTER A WITH ACUTE;Ll;Latin-1 Supplement;"&aacute;";2;C3 A1;
+U+00E2;226;â;LATIN SMALL LETTER A WITH CIRCUMFLEX;Ll;Latin-1 Supplement;"&acirc;";2;C3 A2;
+U+00E3;227;ã;LATIN SMALL LETTER A WITH TILDE;Ll;Latin-1 Supplement;"&atilde;";2;C3 A3;
+U+00E4;228;ä;LATIN SMALL LETTER A WITH DIAERESIS;Ll;Latin-1 Supplement;"&auml;";2;C3 A4;
+U+00E5;229;å;LATIN SMALL LETTER A WITH RING ABOVE;Ll;Latin-1 Supplement;"&aring;";2;C3 A5;
+U+00E6;230;æ;LATIN SMALL LETTER AE;Ll;Latin-1 Supplement;"&aelig;";2;C3 A6;
+U+00E7;231;ç;LATIN SMALL LETTER C WITH CEDILLA;Ll;Latin-1 Supplement;"&ccedil;";2;C3 A7;
+U+00E8;232;è;LATIN SMALL LETTER E WITH GRAVE;Ll;Latin-1 Supplement;"&egrave;";2;C3 A8;
+U+00E9;233;é;LATIN SMALL LETTER E WITH ACUTE;Ll;Latin-1 Supplement;"&eacute;";2;C3 A9;
+U+00EA;234;ê;LATIN SMALL LETTER E WITH CIRCUMFLEX;Ll;Latin-1 Supplement;"&ecirc;";2;C3 AA;
+U+00EB;235;ë;LATIN SMALL LETTER E WITH DIAERESIS;Ll;Latin-1 Supplement;"&euml;";2;C3 AB;
+U+00EC;236;ì;LATIN SMALL LETTER I WITH GRAVE;Ll;Latin-1 Supplement;"&igrave;";2;C3 AC;
+U+00ED;237;í;LATIN SMALL LETTER I WITH ACUTE;Ll;Latin-1 Supplement;"&iacute;";2;C3 AD;
+U+00EE;238;î;LATIN SMALL LETTER I WITH CIRCUMFLEX;Ll;Latin-1 Supplement;"&icirc;";2;C3 AE;
+U+00EF;239;ï;LATIN SMALL LETTER I WITH DIAERESIS;Ll;Latin-1 Supplement;"&iuml;";2;C3 AF;
+U+00F0;240;ð;LATIN SMALL LETTER ETH;Ll;Latin-1 Supplement;"&eth;";2;C3 B0;
+U+00F1;241;ñ;LATIN SMALL LETTER N WITH TILDE;Ll;Latin-1 Supplement;"&ntilde;";2;C3 B1;
+U+00F2;242;ò;LATIN SMALL LETTER O WITH GRAVE;Ll;Latin-1 Supplement;"&ograve;";2;C3 B2;
+U+00F3;243;ó;LATIN SMALL LETTER O WITH ACUTE;Ll;Latin-1 Supplement;"&oacute;";2;C3 B3;
+U+00F4;244;ô;LATIN SMALL LETTER O WITH CIRCUMFLEX;Ll;Latin-1 Supplement;"&ocirc;";2;C3 B4;
+U+00F5;245;õ;LATIN SMALL LETTER O WITH TILDE;Ll;Latin-1 Supplement;"&otilde;";2;C3 B5;
+U+00F6;246;ö;LATIN SMALL LETTER O WITH DIAERESIS;Ll;Latin-1 Supplement;"&ouml;";2;C3 B6;
+U+00F7;247;÷;DIVISION SIGN;Sm;Latin-1 Supplement;"&divide;";2;C3 B7;
+U+00F8;248;ø;LATIN SMALL LETTER O WITH STROKE;Ll;Latin-1 Supplement;"&oslash;";2;C3 B8;
+U+00F9;249;ù;LATIN SMALL LETTER U WITH GRAVE;Ll;Latin-1 Supplement;"&ugrave;";2;C3 B9;
+U+00FA;250;ú;LATIN SMALL LETTER U WITH ACUTE;Ll;Latin-1 Supplement;"&uacute;";2;C3 BA;
+U+00FB;251;û;LATIN SMALL LETTER U WITH CIRCUMFLEX;Ll;Latin-1 Supplement;"&ucirc;";2;C3 BB;
+U+00FC;252;ü;LATIN SMALL LETTER U WITH DIAERESIS;Ll;Latin-1 Supplement;"&uuml;";2;C3 BC;
+U+00FD;253;ý;LATIN SMALL LETTER Y WITH ACUTE;Ll;Latin-1 Supplement;"&yacute;";2;C3 BD;
+U+00FE;254;þ;LATIN SMALL LETTER THORN;Ll;Latin-1 Supplement;"&thorn;";2;C3 BE;
+U+00FF;255;ÿ;LATIN SMALL LETTER Y WITH DIAERESIS;Ll;Latin-1 Supplement;"&yuml;";2;C3 BF;
+U+2013;8211;–;EN DASH;Pd;General Punctuation;"&ndash;";3;E2 80 93;
+U+2014;8212;—;EM DASH;Pd;General Punctuation;"&mdash;";3;E2 80 94;
+U+2018;8216;‘;LEFT SINGLE QUOTATION MARK;Pi;General Punctuation;"&lsquo;";3;E2 80 98;
+U+2019;8217;’;RIGHT SINGLE QUOTATION MARK;Pf;General Punctuation;"&rsquo;";3;E2 80 99;
+U+201C;8220;“;LEFT DOUBLE QUOTATION MARK;Pi;General Punctuation;"&ldquo;";3;E2 80 9C;
+U+201D;8221;”;RIGHT DOUBLE QUOTATION MARK;Pf;General Punctuation;"&rdquo;";3;E2 80 9D;
+U+2022;8226;•;BULLET;Po;General Punctuation;"&bull;";3;E2 80 A2;Famous Mark: Magic Dot (/md)
+U+2026;8230;…;HORIZONTAL ELLIPSIS;Po;General Punctuation;"&hellip;";3;E2 80 A6;Typographic ellipsis
+U+20AC;8364;€;EURO SIGN;Sc;Currency Symbols;"&euro;";3;E2 82 AC;Not in Latin-1: needs UTF-8
+U+2122;8482;™;TRADE MARK SIGN;So;Letterlike Symbols;"&trade;";3;E2 84 A2;
+U+21E3;8675;⇣;DOWNWARDS DASHED ARROW;So;Arrows;"&#8675;";3;E2 87 A3;Part of the M⇣ Markdown file icon in the Explorer
+U+FE65;65125;﹥;SMALL GREATER-THAN SIGN;Sm;Small Form Variants;"&#65125;";3;EF B9 A5;Famous Mark: Famous Arrow (/fa)
