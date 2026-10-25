@@ -1,0 +1,68 @@
+# Famouskai release check: runs only on pull requests into `prod` (a release).
+# A release must ship a new version, recorded in the CHANGELOG, with a new
+# Service Worker cache name (otherwise browsers keep the old files).
+# Pure shell, no install step. Same file in the private and public repositories.
+name: Release check
+
+on:
+  pull_request:
+    branches: [prod]
+
+permissions:
+  contents: read
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Version, CHANGELOG and CACHE_NAME are bumped together
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          fail=0
+          err() { echo "::error file=$1::$2"; fail=1; }
+          cache_name() { { grep -oE "CACHE_NAME *= *'[^']+'" || true; } | head -1 | sed -E "s/.*'([^']+)'/\1/"; }
+          # First released version of a CHANGELOG ("## [X.Y.Z] - YYYY-MM-DD"), Unreleased skipped.
+          top_version() { { grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' || true; } | head -1 | { grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true; }; }
+
+          head_cache=$(cache_name < sw.js)
+          base_cache=$(git show "${BASE_SHA}:sw.js" | cache_name)
+          version=$(top_version < CHANGELOG.md)
+          base_version=$(git show "${BASE_SHA}:CHANGELOG.md" | top_version)
+          echo "prod:    version ${base_version:-none}, CACHE_NAME ${base_cache:-none}"
+          echo "release: version ${version:-none}, CACHE_NAME ${head_cache:-none}"
+
+          [ -n "$version" ] || err CHANGELOG.md "No released version found (expected a heading like ## [0.1.1] - 2026-11-01)"
+          [ -n "$head_cache" ] || err sw.js "CACHE_NAME not found"
+
+          # 1. A new version heading, with a real date.
+          if [ -n "$version" ] && [ "$version" = "$base_version" ]; then
+            err CHANGELOG.md "Version ${version} is already on prod: move [Unreleased] to a new version heading"
+          fi
+          if [ -n "$version" ]; then
+            date=$(grep -oE "^## \[${version//./\\.}\] - [0-9]{4}-[0-9]{2}-[0-9]{2}" CHANGELOG.md | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}$' || true)
+            if [ -z "$date" ] || ! date -d "$date" > /dev/null 2>&1; then
+              err CHANGELOG.md "Heading of ${version} needs a release date: ## [${version}] - YYYY-MM-DD"
+            fi
+          fi
+
+          # 2. Nothing left under [Unreleased]: prod would ship changes the release notes do not mention.
+          unreleased=$(sed -n '/^## \[Unreleased\]/,/^## \[[0-9]/p' CHANGELOG.md | sed '1d;$d' | grep -vE '^\s*$' || true)
+          if [ -n "$unreleased" ]; then
+            err CHANGELOG.md "[Unreleased] is not empty: move its lines under ${version:-the new version}"
+          fi
+
+          # 3. CACHE_NAME changed and named after the version.
+          if [ -n "$head_cache" ] && [ "$head_cache" = "$base_cache" ]; then
+            err sw.js "CACHE_NAME is still ${head_cache}: browsers would keep the old files"
+          fi
+          if [ -n "$version" ] && [ -n "$head_cache" ] && [ "$head_cache" != "famouskai-${version}" ]; then
+            err sw.js "CACHE_NAME is ${head_cache}, expected famouskai-${version}"
+          fi
+
+          [ $fail -eq 0 ] && echo "Release ${version} OK: CHANGELOG and CACHE_NAME bumped together."
+          exit $fail
