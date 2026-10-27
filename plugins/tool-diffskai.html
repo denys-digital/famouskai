@@ -60,7 +60,7 @@
         <div class="split-headers">
             <!-- LEFT PANEL -->
             <div class="header-panel left">
-                <button id="btn-open-left">Open</button>
+                <button id="btn-open-left" disabled>Open</button>
                 <button id="btn-save-left" disabled>Save</button>
                 <div class="divider" id="div-left"></div>
                 <span id="label-left" class="file-name-display">Original</span>
@@ -68,7 +68,7 @@
             
             <!-- RIGHT PANEL -->
             <div class="header-panel right">
-                <button id="btn-open-right">Open</button>
+                <button id="btn-open-right" disabled>Open</button>
                 <button id="btn-save-right" disabled>Save</button>
                 <div class="divider" id="div-right"></div>
                 <span id="label-right" class="file-name-display">Modified</span>
@@ -330,6 +330,11 @@
                 }
             }
 
+            // Both Open buttons start disabled in the HTML: Monaco and the session
+            // record load first, so a file picked too early cannot hit missing models.
+            document.getElementById('btn-open-left').disabled = false;
+            document.getElementById('btn-open-right').disabled = false;
+
             // Toggles
             document.getElementById('toggle-whitespace').addEventListener('change', (e) => {
                 diffEditor.updateOptions({ ignoreTrimWhitespace: e.target.checked });
@@ -373,7 +378,8 @@
             });
         });
 
-        async function loadFile(modelToUpdate, side) {
+        async function loadFile(side) {
+            if (!diffEditor) return; // Monaco not ready yet (Open buttons are disabled until then)
             const state = side === 'left' ? leftState : rightState;
             const currentHandle = side === 'left' ? originalHandle : modifiedHandle;
             
@@ -406,6 +412,8 @@
                 state.isFamouskaiSource = (fileHandle === sourceHandle);
 
                 const lang = languageFor(file.name.split('.').pop());
+                // Read the model now, not at click time: Swap may run while the picker is open.
+                const modelToUpdate = side === 'left' ? originalModel : modifiedModel;
                 
                 state.isInitialLoad = true;
                 monaco.editor.setModelLanguage(modelToUpdate, lang);
@@ -510,8 +518,8 @@
             }
         }
 
-        document.getElementById('btn-open-left').addEventListener('click', () => loadFile(originalModel, 'left'));
-        document.getElementById('btn-open-right').addEventListener('click', () => loadFile(modifiedModel, 'right'));
+        document.getElementById('btn-open-left').addEventListener('click', () => loadFile('left'));
+        document.getElementById('btn-open-right').addEventListener('click', () => loadFile('right'));
         
         document.getElementById('btn-save-left').addEventListener('click', () => saveFile(originalModel, 'left'));
         document.getElementById('btn-save-right').addEventListener('click', () => saveFile(modifiedModel, 'right'));

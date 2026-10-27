@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Diffskai: the Open buttons stay disabled until the editor and the file sent by
+  Famouskai have finished loading. Picking a file too early showed the error
+  "Cannot read properties of undefined (reading 'setLanguage')".
+
 ## [0.1.0] - 2026-10-23
 
 ### Added
