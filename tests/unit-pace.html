@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - pace (inactive contributions)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <!-- The script of the daily "pace" workflow (.github/workflows/pace.yml). -->
+    <script src="../.github/pace.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - pace (inactive contributions)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+    <script>
+        (function () {
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+            const P = window.FamousPace;
+            if (!P) {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = 'Error: ../.github/pace.js did not load (window.FamousPace missing)';
+                return;
+            }
+
+            const NOW = new Date('2026-11-20T00:00:00Z');
+            const ago = (days, hours) => new Date(NOW.getTime() - ((days * 24) + (hours || 0)) * 3600000).toISOString();
+            const ME = 'denys-digital';
+            const C = 'contrib-a';
+            const item = (extra) => Object.assign({ pace: 8, contributor: C, maintainers: [ME], hasHelpLabel: false, pr: null, events: [] }, extra);
+
+            const cases = [
+                { name: 'no pace label: nothing', got: () => P.decide(item({ pace: null }), NOW).action, expected: 'none' },
+                { name: 'contributor is a maintainer: nothing', got: () => P.decide(item({ contributor: ME, events: [{ at: ago(30), login: ME }] }), NOW).action, expected: 'none' },
+                { name: 'bot as contributor: nothing', got: () => P.decide(item({ contributor: 'jules[bot]', events: [{ at: ago(30), login: 'jules[bot]' }] }), NOW).action, expected: 'none' },
+                { name: 'pace 8, 3 days idle: wait', got: () => P.decide(item({ events: [{ at: ago(3), login: C }] }), NOW).action, expected: 'none' },
+                { name: 'pace 8, 4 days idle: reminder', got: () => P.decide(item({ events: [{ at: ago(4), login: C }] }), NOW).action, expected: 'remind' },
+                { name: 'reminder adds help wanted', got: () => P.decide(item({ events: [{ at: ago(4), login: C }] }), NOW).helpLabel, expected: 'add' },
+                { name: 'clock starts at the latest of contributor and maintainer', got: () => P.decide(item({ events: [{ at: ago(10), login: C }, { at: ago(2), login: ME }] }), NOW).days, expected: 2 },
+                { name: 'a visitor comment does not restart the clock', got: () => P.decide(item({ events: [{ at: ago(5), login: C }, { at: ago(1), login: 'visitor' }] }), NOW).action, expected: 'remind' },
+                { name: 'reminded 3 days ago (pace 8): still waiting', got: () => P.decide(item({ hasHelpLabel: true, events: [{ at: ago(7), login: C }, { at: ago(3), login: 'github-actions[bot]', marker: 'reminder' }] }), NOW).action, expected: 'none' },
+                { name: 'reminded 3 days ago: help wanted kept', got: () => P.decide(item({ hasHelpLabel: true, events: [{ at: ago(7), login: C }, { at: ago(3), login: 'github-actions[bot]', marker: 'reminder' }] }), NOW).helpLabel, expected: 'keep' },
+                { name: 'reminded 4 days ago (pace 8): takeover', got: () => P.decide(item({ hasHelpLabel: true, events: [{ at: ago(8), login: C }, { at: ago(4), login: 'github-actions[bot]', marker: 'reminder' }] }), NOW).action, expected: 'takeover' },
+                { name: 'takeover removes help wanted', got: () => P.decide(item({ hasHelpLabel: true, events: [{ at: ago(8), login: C }, { at: ago(4), login: 'github-actions[bot]', marker: 'reminder' }] }), NOW).helpLabel, expected: 'remove' },
+                { name: 'missed runs: 12 days idle, no reminder yet: reminder first', got: () => P.decide(item({ events: [{ at: ago(12), login: C }] }), NOW).action, expected: 'remind' },
+                { name: 'contributor back after the reminder: no action', got: () => P.decide(item({ hasHelpLabel: true, events: [{ at: ago(9), login: C }, { at: ago(5), login: 'github-actions[bot]', marker: 'reminder' }, { at: ago(1), login: C }] }), NOW).action, expected: 'none' },
+                { name: 'contributor back after the reminder: help wanted removed', got: () => P.decide(item({ hasHelpLabel: true, events: [{ at: ago(9), login: C }, { at: ago(5), login: 'github-actions[bot]', marker: 'reminder' }, { at: ago(1), login: C }] }), NOW).helpLabel, expected: 'remove' },
+                { name: 'already taken over: nothing more', got: () => P.decide(item({ events: [{ at: ago(20), login: C }, { at: ago(16), login: 'github-actions[bot]', marker: 'reminder' }, { at: ago(12), login: 'github-actions[bot]', marker: 'takeover' }] }), NOW).action, expected: 'none' },
+                { name: 'ready PR, contributor pushed after the review: paused', got: () => P.decide(item({ pr: { draft: false }, events: [{ at: ago(30), login: ME, where: 'pr' }, { at: ago(20), login: C, where: 'pr' }] }), NOW).reason, expected: 'waiting for a maintainer' },
+                { name: 'ready PR never reviewed: paused', got: () => P.decide(item({ pr: { draft: false }, events: [{ at: ago(20), login: C, where: 'pr' }] }), NOW).action, expected: 'none' },
+                { name: 'draft PR: the clock runs', got: () => P.decide(item({ pr: { draft: true }, events: [{ at: ago(20), login: C, where: 'pr' }] }), NOW).action, expected: 'remind' },
+                { name: 'changes requested 4 days ago: reminder', got: () => P.decide(item({ pr: { draft: false }, events: [{ at: ago(6), login: C, where: 'pr' }, { at: ago(4), login: ME, where: 'pr' }] }), NOW).action, expected: 'remind' },
+                { name: 'pace 30: no reminder before day 15', got: () => P.decide(item({ pace: 30, events: [{ at: ago(14, 23), login: C }] }), NOW).action, expected: 'none' },
+                { name: 'pace 30: reminder on day 15', got: () => P.decide(item({ pace: 30, events: [{ at: ago(15), login: C }] }), NOW).action, expected: 'remind' },
+                { name: 'helper assigned after a reminder: new clock', got: () => P.decide(item({ contributor: 'helper-b', hasHelpLabel: true, events: [{ at: ago(9), login: C }, { at: ago(5), login: 'github-actions[bot]', marker: 'reminder' }, { at: ago(1), login: ME }] }), NOW).helpLabel, expected: 'remove' },
+                { name: 'paceDays: "pace: 14 days"', got: () => P.paceDays([{ name: 'bug' }, { name: 'pace: 14 days' }]), expected: 14 },
+                { name: 'paceDays: "Pace: 1 day"', got: () => P.paceDays(['Pace: 1 day']), expected: 1 },
+                { name: 'paceDays: "pace: soon" is not a pace', got: () => P.paceDays(['pace: soon']), expected: null },
+                { name: 'toEvents: a commit belongs to the PR author', got: () => P.toEvents([{ event: 'committed', committer: { date: ago(2) } }], 'pr', C)[0].login, expected: C },
+                { name: 'toEvents: bot reminder marker is read', got: () => P.toEvents([{ event: 'commented', created_at: ago(1), user: { login: 'github-actions[bot]' }, body: P.MARKER_REMIND + '\nHi' }], 'issue', C)[0].marker, expected: 'reminder' },
+                { name: 'toEvents: a human copying the marker is not a reminder', got: () => String(P.toEvents([{ event: 'commented', created_at: ago(1), user: { login: C }, body: P.MARKER_REMIND }], 'issue', C)[0].marker), expected: 'undefined' },
+                { name: 'toEvents: labels are not activity', got: () => P.toEvents([{ event: 'labeled', created_at: ago(1), actor: { login: ME } }], 'issue', C).length, expected: 0 },
+                { name: 'reminder text names the contributor and the days left', got: () => /@contrib-a[\s\S]*within 4 days/.test(P.reminderText(C, 'issue', 8, 4, 4)), expected: true }
+            ];
+
+            let passed = 0;
+            cases.forEach((tc) => {
+                let got;
+                try { got = tc.got(); } catch (e) { got = 'ERROR: ' + e.message; }
+                const ok = got === tc.expected;
+                if (ok) { passed++; }
+                const div = document.createElement('div');
+                div.className = 'test-case ' + (ok ? 'pass' : 'fail');
+                div.innerHTML = '<span class="badge ' + (ok ? 'pass' : 'fail') + '">' + (ok ? 'PASS' : 'FAIL') + '</span>';
+                div.appendChild(document.createTextNode(tc.name));
+                if (!ok) {
+                    const det = document.createElement('div');
+                    det.className = 'diff-details';
+                    det.textContent = 'expected: ' + JSON.stringify(tc.expected) + '\ngot: ' + JSON.stringify(got);
+                    div.appendChild(det);
+                }
+                container.appendChild(div);
+            });
+            const allOk = passed === cases.length;
+            summaryEl.className = 'summary ' + (allOk ? 'passed' : 'failed');
+            summaryEl.textContent = passed + '/' + cases.length + ' passed';
+        })();
+    </script>
+</body>
+</html>
