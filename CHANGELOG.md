@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-29
+
 ### Fixed
 
 - Diffskai: the Open buttons stay disabled until the editor and the file sent by
