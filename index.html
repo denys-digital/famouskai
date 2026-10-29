@@ -340,7 +340,7 @@
                         <select id="workspace-select" class="fmk-select" style="flex: 1; background: var(--color-bg-app); color: var(--color-text-primary); border: 1px solid var(--color-border); padding: 4px; border-radius: var(--radius-sm); font-family: var(--font-ui); font-size: 12px;">
                             <option value="">-- No workspace selected --</option>
                         </select>
-                        <button id="workspace-remove" type="button" title="Remove selected workspace from the list" aria-label="Remove selected workspace" style="background: var(--color-bg-app); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 2px 8px; cursor: pointer;">×</button>
+                        <button id="workspace-remove" class="fold-btn" type="button" title="Remove selected workspace from the list" aria-label="Remove selected workspace" disabled>×</button>
                     </div>
 
                     <!-- Current Workspace Display Name -->
@@ -797,22 +797,38 @@
                 }
                 selectEl.appendChild(opt);
             });
+
+            const removeBtn = document.getElementById('workspace-remove');
+            if (removeBtn) {
+                removeBtn.disabled = (selectEl.value === '');
+            }
+        }
+
+        async function removeWorkspaceByName(name) {
+            if (!name) return;
+            if (!confirm("Remove '" + name + "' from the list? The folder on disk is not touched.")) return;
+            let workspaces = await getSavedWorkspaces();
+            workspaces = workspaces.filter(w => w.name !== name);
+            await idbKeyval.set('famouskai_workspaces', workspaces);
+            const defaultHandle = await idbKeyval.get('default_workspace_handle');
+            if (defaultHandle && defaultHandle.name === name) {
+                await idbKeyval.del('default_workspace_handle');
+            }
+            if (window.currentWorkspaceHandle && window.currentWorkspaceHandle.name === name) {
+                window.currentWorkspaceHandle = null;
+                refreshWorkspaceList();
+                renderRecentFilesList();
+            }
+            await renderWorkspaceSelect();
         }
 
         async function removeSelectedWorkspace() {
             const selectEl = document.getElementById('workspace-select');
             if (!selectEl || selectEl.value === '') return;
             const idx = Number(selectEl.value);
-            let workspaces = await getSavedWorkspaces();
+            const workspaces = await getSavedWorkspaces();
             if (!Number.isInteger(idx) || idx < 0 || idx >= workspaces.length) return;
-            const removed = workspaces[idx];
-            workspaces.splice(idx, 1);
-            await idbKeyval.set('famouskai_workspaces', workspaces);
-            if (window.currentWorkspaceHandle && window.currentWorkspaceHandle.name === removed.name) {
-                window.currentWorkspaceHandle = null;
-                await idbKeyval.del('default_workspace_handle');
-            }
-            await renderWorkspaceSelect();
+            await removeWorkspaceByName(workspaces[idx].name);
         }
 
         async function initWorkspace() {
@@ -1690,6 +1706,8 @@
             if (wksSelect) {
                 wksSelect.addEventListener('change', async (e) => {
                     const idx = e.target.value;
+                    const removeBtn = document.getElementById('workspace-remove');
+                    if (removeBtn) removeBtn.disabled = (idx === '');
                     if (idx === '') return;
                     const list = await getSavedWorkspaces();
                     const selected = list[parseInt(idx)];
@@ -2258,7 +2276,20 @@
             } catch (error) {
                 console.error("Workspace read error:", error);
                 if (renderToken === currentWorkspaceRenderToken) {
+                    const failedName = window.currentWorkspaceHandle ? window.currentWorkspaceHandle.name : '';
                     listContainer.innerHTML = `<div class="workspace-empty-msg is-error">Access error. Please reset the folder.</div>`;
+                    if (failedName) {
+                        const errDiv = listContainer.querySelector('.workspace-empty-msg');
+                        const removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
+                        removeBtn.className = 'fold-btn';
+                        removeBtn.textContent = "Remove '" + failedName + "' from the list";
+                        removeBtn.addEventListener('click', () => {
+                            removeWorkspaceByName(failedName).catch((err) => console.error('Failed to remove workspace:', err));
+                        });
+                        errDiv.appendChild(document.createElement('br'));
+                        errDiv.appendChild(removeBtn);
+                    }
                 }
             }
         }
