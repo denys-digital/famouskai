@@ -1201,6 +1201,8 @@
             ace.config.setModuleUrl("ace/mode/log", "plugins/ace-custom/mode-log.js");
             
             editor = ace.edit("editor");
+            // Without this, window.editor is the <div id="editor"> element (browser named access).
+            window.editor = editor;
 
             editor.setTheme("ace/theme/famouskai");
             editor.session.setMode("ace/mode/text");
