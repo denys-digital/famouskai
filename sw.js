@@ -25,7 +25,7 @@
 // Import IDB Keyval to allow the Service Worker to save shared files locally on Android
 importScripts('/vendor/idb-keyval/umd.min.js');
 
-const CACHE_NAME = 'famouskai-0.1.0'; // Always increment this when updating files  to force cache cleanup
+const CACHE_NAME = 'famouskai-0.1.1'; // Always increment this when updating files  to force cache cleanup
 
 const URLS_TO_CACHE = [
     '/',

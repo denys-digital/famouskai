@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-29
+
+### Fixed
+
+- Diffskai: the Open buttons stay disabled until the editor and the file sent by
+  Famouskai have finished loading. Picking a file too early showed the error
+  "Cannot read properties of undefined (reading 'setLanguage')".
+- Magic Snippets: clicking a snippet in the Tools tab list, or in the Manage
+  Snippets drawer, inserts it into the editor again. The click did nothing.
+
 ## [0.1.0] - 2026-10-23
 
 ### Added

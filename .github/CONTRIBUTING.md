@@ -23,6 +23,36 @@ The maintainer aims to give a first answer to every new Issue and Pull Request *
 This is a first response (a question, a review or a decision), not a promise to merge. If a week
 has passed without any answer, a polite comment on the Issue or PR is welcome.
 
+## Inactive contributions
+
+Famouskai moves fast, and a contribution should keep the pace of the project. An issue open to
+contributors can carry a **pace label**, which says how fast we expect it to move, before you
+start:
+
+| Label | Typical use | Reminder after | Maintainer takes over after |
+|---|---|---|---|
+| `pace: 8 days` | Small fixes, `good first issue` | 4 days | 8 days |
+| `pace: 14 days` | Medium changes | 7 days | 14 days |
+| `pace: 30 days` | Larger features | 15 days | 30 days |
+
+How it works (a small daily workflow, `.github/workflows/pace.yml`, applies it; no AI involved):
+
+1. **Claim** the issue with a comment; the maintainer assigns it to you. The clock starts.
+2. **Any action** from you (a commit, a comment) restarts the clock, and so does any maintainer
+   action, such as a review.
+3. **Paused while you wait for us:** the clock stops while your ready pull request waits for the
+   maintainer (you acted last on it). A draft pull request does not pause it.
+4. **Half the time without activity:** one friendly reminder, and the `help wanted` label, so
+   another contributor can offer to help. Your next commit or comment removes the label.
+5. **End of the time, no answer:** the maintainer takes over and finishes the work, crediting you
+   as co-author (`Co-authored-by`).
+6. **Someone else takes over:** the maintainer assigns the issue to them, their own clock starts,
+   and your work is credited as co-author.
+
+No time anymore? Just say so in a comment, no explanation needed. A takeover is never a judgement
+on you, and you are welcome back anytime. A pull request without an issue can carry a pace label
+too; the same rule then applies to its author.
+
 ## Ways to contribute
 
 - **Bug reports** — open an
@@ -296,8 +326,9 @@ start there — no need to ask permission; just comment on the issue to claim it
 
 ## Release process (for context, not something contributors need to manage)
 
-Releases follow [Semantic Versioning](https://semver.org/) and are tagged on `main`
-(`vMAJOR.MINOR.PATCH`). The changelog is maintained in
+Releases follow [Semantic Versioning](https://semver.org/). `main` collects accepted
+contributions; a release merges `main` into `prod`, the branch that runs on
+[app.famouskai.com](https://app.famouskai.com), and is tagged there (`vMAJOR.MINOR.PATCH`). The changelog is maintained in
 [`CHANGELOG.md`](https://github.com/denys-digital/famouskai/blob/main/CHANGELOG.md).
 
 ## Questions?
