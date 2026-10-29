@@ -74,7 +74,7 @@ The global sidebar manager attaches to `window.FamousPluginCore.Sidebar`.
 
 ### Tools Panel (`#panel-tools`)
 - **Contextual Tools:** Dynamic list (`#tools-list`) of registered tools matching the current file extension.
-- **Magic Snippets:** Snippets list (`#snippets-lexicon`) with search input (`#snippet-search`), type filter buttons (`Custom`, `Default`), and Manage Snippets button (`#btn-manage-snippets`) triggering the Side Drawer.
+- **Magic Snippets:** Snippets list (`#snippets-lexicon`) with search input (`#snippet-search`), type filter buttons (`Custom`, `Default`), click-to-insert on each row, and Manage Snippets button (`#btn-manage-snippets`) triggering the Side Drawer. In the drawer, clicking a snippet's text also inserts it.
 
 ### Windows & Settings Panel (`#panel-settings`)
 - **Screen Layout Controls:** Positioning buttons (`#btn-layout-tile-left`, `#btn-layout-tile-right`, `#btn-layout-fullscreen`) utilizing `window.moveTo()` and `window.resizeTo()`.

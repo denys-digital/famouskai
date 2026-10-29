@@ -559,7 +559,7 @@ window.FamousPluginCore.SnippetManager = {
             const escapedSnippet = this.escapeHtml(data.snippet);
 
             itemDiv.innerHTML = `
-                <div class="snippet-item-info">
+                <div class="snippet-item-info" title="Click to insert into the editor">
                     <div class="snippet-item-header">
                         <span class="${keyClass}">/${key}</span>
                         ${badgeHtml}
@@ -573,6 +573,14 @@ window.FamousPluginCore.SnippetManager = {
                     <button type="button" class="fold-btn btn-del-snip" data-key="${key}" title="Delete"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ``}
                 </div>
             `;
+
+            const infoDiv = itemDiv.querySelector('.snippet-item-info');
+            if (infoDiv && typeof insertSnippetByKey === 'function') {
+                infoDiv.addEventListener('click', () => {
+                    insertSnippetByKey(key);
+                    if (window.showToast) window.showToast(`Snippet /${key} inserted`, "success");
+                });
+            }
 
             const editBtn = itemDiv.querySelector('.btn-edit-snip');
             if (editBtn) {
