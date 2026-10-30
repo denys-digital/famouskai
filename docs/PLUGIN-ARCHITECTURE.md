@@ -206,6 +206,8 @@ window.FamousPluginCore.Manager.register({
 
 Tools can subscribe to background lifecycle events dispatched by the core application via `FamousPluginCore.Manager.emit(eventName, editorInstance, extraArgs)`.
 
+Like the Tools tab, `emit()` filters tools by their `extensions` list: a tool with a non-empty `extensions` array only runs its triggers when the current file's extension is in that list (include `""` to also run on new, unnamed files), while a tool with an empty `extensions: []` runs on every file.
+
 ##### Available Event Names & Sources
 
 - `onFileOpen`: Dispatched in `index.html` within `openFile()` (when loading a file via native file picker) and `reloadFile()` (when re-reading active file from disk). Only these two functions emit it: files opened from the Explorer tab, the recent files list, the operating system's file manager, a new window or shared content do not trigger `onFileOpen` in 0.1.0.
