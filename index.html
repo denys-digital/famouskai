@@ -2612,7 +2612,34 @@
                     // 4. XML générique (ex: <?xml sans balise <svg>)
                     } else if (text.startsWith('<?xml')) {
                         newMode = 'ace/mode/xml';
-                    
+
+                    // YAML — tested before JS/CSS/Markdown so leading # comments, - key: value
+                    // lists, and flow mappings ({ key: val }) are not mistaken for Markdown or CSS.
+                    // Skip Markdown documents that begin with YAML front matter (--- ... --- + prose).
+                    } else if ((() => {
+                        const isYamlKey = (l) => {
+                            const clean = l.replace(/(?:^|\s+)#.*$/, '').trimEnd();
+                            return /^\s*(?:-\s+)?["']?[\w./-]+["']?\s*:(?:\s+.*|\s*)$/.test(clean) && !/[;{]$/.test(clean);
+                        };
+                        const fm = text.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n([\s\S]*)$/);
+                        if (fm) {
+                            const bodyNonComment = fm[2].split(/\r?\n/).filter((l) => l.trim() && !/^\s*#/.test(l));
+                            const isMdBody = bodyNonComment.length === 0 ? /^#{1,6}\s+\S/m.test(fm[2]) : !isYamlKey(bodyNonComment[0]);
+                            if (isMdBody) return false;
+                        }
+                        const nonComment = text.split(/\r?\n/).filter((l) => l.trim() !== '' && !/^\s*#/.test(l));
+                        if (nonComment.length === 0) return false;
+                        const first = nonComment[0].trim();
+                        if (first === '---') return true;
+                        if (/^-\s+["']?[\w./-]+["']?\s*:\s+\S/.test(first)) return true;
+                        if (!isYamlKey(nonComment[0])) return false;
+                        const sample = nonComment.slice(0, 8);
+                        const keyCount = sample.filter(isYamlKey).length;
+                        const hasIndented = sample.slice(1).some((l) => /^\s{2,}(?:-\s+|\S)/.test(l));
+                        return keyCount >= 3 || (keyCount >= 2 && hasIndented) || (keyCount >= 1 && sample.some((l) => /^\s*-\s+\S/.test(l)));
+                    })()) {
+                        newMode = 'ace/mode/yaml';
+
                     // JavaScript — mots-clés en limite de mot, testé en dernier recours
                     } else if (/\b(function|const|let|var|=>)\b/.test(text)) {
                         newMode = 'ace/mode/javascript';
@@ -2620,15 +2647,15 @@
                     // JSON — sur la FORME, pas sur la validité stricte (tolère les fragments copiés)
                     } else if (/["'][\w-]+["']\s*:\s*("|\[|\{|-?\d|true|false|null)/.test(text) && /[{}]/.test(text)) {
                         newMode = 'ace/mode/json';
-                    
+
                     // CSS — exige un vrai bloc "sélecteur { propriété: valeur }", pas juste un # isolé
                     } else if (/[.#]?[\w-]+\s*\{[^{}]*:[^{}]*\}/.test(text)) {
                         newMode = 'ace/mode/css';
-                    
+
                     // Markdown — titre ancré en début de ligne avec espace obligatoire (plus de faux positif CSS)
-                    } else if (/^#{1,6}\s+\S/m.test(text) || /^[-*]\s+\S/m.test(text)) {
+                    } else if (/^#{1,6}\s+\S/m.test(text) || /^[-*]\s+\S/m.test(text) || /^---\s*\r?\n[\s\S]*?\r?\n---\s*\r?\n[\s\S]*\S/.test(text)) {
                         newMode = 'ace/mode/markdown';
-                    
+
                     // 5. CSV — confiance faible, donc testé en tout dernier avant le fallback texte
                     } else {
                         const sample = text.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 5);
@@ -2644,7 +2671,11 @@
                     }
                     
                     if (editor.session.$modeId !== newMode) {
-                        editor.session.setMode(newMode);
+                        editor.session.setMode(newMode, () => {
+                            if (newMode === 'ace/mode/yaml' && window.FamousPluginCore?.YamlFolding) {
+                                window.FamousPluginCore.YamlFolding.apply(editor.session);
+                            }
+                        });
                         if (editor.session.bgTokenizer) editor.session.bgTokenizer.start(0);
                         if (editor.renderer) editor.renderer.updateFull(true);
                         setTimeout(updateUI, 10);
