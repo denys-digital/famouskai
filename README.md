@@ -8,7 +8,7 @@ Famouskai is a "Local-First" code and text editor built as a Progressive Web App
 
 Think of it as a reliable, editable post-it for your files rather than a heavyweight IDE. Coupled with **Diffskai**, its built-in comparison and merge tool, Famouskai makes sure your local edits are never silently overwritten when another program changes the same file.
 
-**Supported browsers:** desktop Chromium browsers (Chrome, Edge). Firefox and Safari can display the editor but cannot open or save files, because they do not implement the File System Access API.
+**Supported browsers:** desktop Chromium browsers (Chrome, Edge) for full in-place editing, workspaces and conflict detection. Firefox and Safari can open and download files, though they cannot write in place because they do not implement the File System Access API.
 
 **Find the creator and other projects at: [github.com/denys-digital](https://github.com/denys-digital)**
 
@@ -38,7 +38,7 @@ Think of it as a reliable, editable post-it for your files rather than a heavywe
 
 ## Known limitations
 
-- **Desktop Chromium only** for opening and saving files. Other browsers show a banner explaining this; there is no upload/download fallback yet.
+- **Desktop Chromium only** for saving files in place, workspaces and conflict detection. In Firefox and Safari, **Open** loads a file via the browser picker and **Save** downloads a copy instead of writing in place.
 - **Offline mode needs HTTP(S).** A Service Worker cannot run from `file://`, so a copy opened by double-clicking `index.html` works, but only while its files are reachable. Serve the folder over HTTPS or `localhost` for offline use.
 - **Host it at the root of a domain.** The Service Worker and the manifest use absolute paths, so a sub-folder deployment (such as a GitHub Pages project site) breaks offline mode.
 - **Diffskai offline:** its engine (Monaco Editor) is cached in the background after the first visit; open Diffskai once while online to be sure it is available offline. Monaco is pinned at 0.56.0 for this release.

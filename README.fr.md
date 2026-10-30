@@ -8,7 +8,7 @@ Famouskai est un éditeur de code et de texte "Local-First", conçu sous forme d
 
 Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que comme un IDE lourd. Couplé à **Diffskai**, son outil intégré de comparaison et de fusion, Famouskai garantit que vos modifications locales ne seront jamais écrasées en silence quand un autre programme modifie le même fichier.
 
-**Navigateurs supportés :** navigateurs Chromium de bureau (Chrome, Edge). Firefox et Safari affichent l'éditeur mais ne peuvent ni ouvrir ni enregistrer de fichiers, car ils n'implémentent pas l'API File System Access.
+**Navigateurs supportés :** navigateurs Chromium de bureau (Chrome, Edge) pour l'édition sur place, les espaces de travail et la détection de conflits. Firefox et Safari permettent d'ouvrir et de télécharger des fichiers, sans écriture sur place car ils n'implémentent pas l'API File System Access.
 
 **Retrouvez le créateur et d'autres projets sur : [github.com/denys-digital](https://github.com/denys-digital)**
 
@@ -38,7 +38,7 @@ Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que co
 
 ## Limites connues
 
-- **Chromium de bureau uniquement** pour ouvrir et enregistrer des fichiers. Les autres navigateurs affichent un bandeau qui l'explique ; il n'existe pas encore de solution de repli par import/téléchargement.
+- **Chromium de bureau uniquement** pour enregistrer les fichiers sur place, gérer les espaces de travail et détecter les conflits. Dans Firefox et Safari, **Open** charge un fichier choisi et **Save** en télécharge une copie au lieu d'écrire sur place.
 - **Le hors-ligne exige HTTP(S).** Un Service Worker ne peut pas fonctionner en `file://` : une copie ouverte en double-cliquant sur `index.html` fonctionne, mais seulement tant que ses fichiers sont accessibles. Servez le dossier en HTTPS ou sur `localhost` pour un usage hors-ligne.
 - **Hébergement à la racine d'un domaine.** Le Service Worker et le manifeste utilisent des chemins absolus : un déploiement dans un sous-dossier (comme un site de projet GitHub Pages) casse le mode hors-ligne.
 - **Diffskai hors-ligne :** son moteur (Monaco Editor) est mis en cache en arrière-plan après la première visite ; ouvrez Diffskai une fois en ligne pour être sûr qu'il soit disponible hors-ligne. Monaco reste figé en 0.56.0 pour cette version.
