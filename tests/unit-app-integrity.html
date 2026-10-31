@@ -199,10 +199,18 @@
                 addRow(false, "1. Cache list parsed", `Error parsing sw.js: ${err.message}`);
             }
 
+            // Both index.html refs and the cache list may use / or ./ paths.
+            function normalizePath(p) {
+                let s = String(p).split('?')[0];
+                if (s.startsWith('./')) s = s.slice(1);
+                if (!s.startsWith('/')) s = '/' + s;
+                return s;
+            }
+
             // Check 2: Every cached path exists
             if (cachedUrls.length > 0) {
                 const cachedResults = await Promise.all(cachedUrls.map(async (path) => {
-                    const res = await checkPathExists(path);
+                    const res = await checkPathExists(normalizePath(path));
                     return { path, ...res };
                 }));
 
@@ -240,13 +248,6 @@
                     });
 
                     const ignoredPrefixes = ['http:', 'https:', 'data:', '#'];
-                    // Both index.html refs and the cache list may use / or ./ paths.
-                    const normalizePath = (p) => {
-                        let s = String(p).split('?')[0];
-                        if (s.startsWith('./')) s = s.slice(1);
-                        if (!s.startsWith('/')) s = '/' + s;
-                        return s;
-                    };
                     for (let ref of refs) {
                         ref = ref.trim();
                         if (ignoredPrefixes.some(p => ref.startsWith(p))) continue;
@@ -276,12 +277,7 @@
 
             // Check 4: index.html references are cached
             if (cachedUrls.length > 0 && normalizedRefs.length > 0) {
-                const cachedNormalized = cachedUrls.map((p) => {
-                    let s = String(p).split('?')[0];
-                    if (s.startsWith('./')) s = s.slice(1);
-                    if (!s.startsWith('/')) s = '/' + s;
-                    return s;
-                });
+                const cachedNormalized = cachedUrls.map(normalizePath);
                 const missingFromCache = normalizedRefs.filter(ref => !cachedNormalized.includes(ref));
                 if (missingFromCache.length === 0) {
                     addRow(true, "4. index.html references are cached", `all ${normalizedRefs.length} references cached`);
