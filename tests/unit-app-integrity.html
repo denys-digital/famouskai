@@ -199,10 +199,18 @@
                 addRow(false, "1. Cache list parsed", `Error parsing sw.js: ${err.message}`);
             }
 
+            // Both index.html refs and the cache list may use / or ./ paths.
+            function normalizePath(p) {
+                let s = String(p).split('?')[0];
+                if (s.startsWith('./')) s = s.slice(1);
+                if (!s.startsWith('/')) s = '/' + s;
+                return s;
+            }
+
             // Check 2: Every cached path exists
             if (cachedUrls.length > 0) {
                 const cachedResults = await Promise.all(cachedUrls.map(async (path) => {
-                    const res = await checkPathExists(path);
+                    const res = await checkPathExists(normalizePath(path));
                     return { path, ...res };
                 }));
 
@@ -243,10 +251,7 @@
                     for (let ref of refs) {
                         ref = ref.trim();
                         if (ignoredPrefixes.some(p => ref.startsWith(p))) continue;
-                        let path = ref.split('?')[0];
-                        if (!path.startsWith('/')) {
-                            path = '/' + path;
-                        }
+                        const path = normalizePath(ref);
                         if (!normalizedRefs.includes(path)) {
                             normalizedRefs.push(path);
                         }
@@ -272,7 +277,8 @@
 
             // Check 4: index.html references are cached
             if (cachedUrls.length > 0 && normalizedRefs.length > 0) {
-                const missingFromCache = normalizedRefs.filter(ref => !cachedUrls.includes(ref));
+                const cachedNormalized = cachedUrls.map(normalizePath);
+                const missingFromCache = normalizedRefs.filter(ref => !cachedNormalized.includes(ref));
                 if (missingFromCache.length === 0) {
                     addRow(true, "4. index.html references are cached", `all ${normalizedRefs.length} references cached`);
                 } else {

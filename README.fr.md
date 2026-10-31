@@ -40,7 +40,6 @@ Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que co
 
 - **Chromium de bureau uniquement** pour enregistrer les fichiers sur place, gérer les espaces de travail et détecter les conflits. Dans Firefox et Safari, **Open** charge un fichier choisi et **Save** en télécharge une copie au lieu d'écrire sur place.
 - **Le hors-ligne exige HTTP(S).** Un Service Worker ne peut pas fonctionner en `file://` : une copie ouverte en double-cliquant sur `index.html` fonctionne, mais seulement tant que ses fichiers sont accessibles. Servez le dossier en HTTPS ou sur `localhost` pour un usage hors-ligne.
-- **Hébergement à la racine d'un domaine.** Le Service Worker et le manifeste utilisent des chemins absolus : un déploiement dans un sous-dossier (comme un site de projet GitHub Pages) casse le mode hors-ligne.
 - **Diffskai hors-ligne :** son moteur (Monaco Editor) est mis en cache en arrière-plan après la première visite ; ouvrez Diffskai une fois en ligne pour être sûr qu'il soit disponible hors-ligne. Monaco reste figé en 0.56.0 pour cette version.
 
 ## Technologies utilisées (Architecture Zéro-CDN)
