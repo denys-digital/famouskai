@@ -19,11 +19,13 @@ jobs:
       - name: Every path in the Service Worker cache list exists
         run: |
           fail=0
-          paths=$(sed -n '/URLS_TO_CACHE *= *\[/,/\]/p' sw.js | grep -o "'/[^']*'" | tr -d "'")
+          paths=$(sed -n '/URLS_TO_CACHE *= *\[/,/\]/p' sw.js | grep -oE "'\.?/[^']*'" | tr -d "'")
           [ -n "$paths" ] || { echo "::error::URLS_TO_CACHE not found in sw.js"; exit 1; }
           for p in $paths; do
-            [ "$p" = "/" ] && continue
-            if [ ! -f ".${p}" ]; then echo "::error file=sw.js::Missing cached file: ${p}"; fail=1; fi
+            [ "$p" = "/" ] || [ "$p" = "./" ] && continue
+            f="${p#./}"
+            f="${f#/}"
+            if [ ! -f "./${f}" ]; then echo "::error file=sw.js::Missing cached file: ${p}"; fail=1; fi
           done
           exit $fail
 

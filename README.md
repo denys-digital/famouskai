@@ -40,7 +40,6 @@ Think of it as a reliable, editable post-it for your files rather than a heavywe
 
 - **Desktop Chromium only** for saving files in place, workspaces and conflict detection. In Firefox and Safari, **Open** loads a file via the browser picker and **Save** downloads a copy instead of writing in place.
 - **Offline mode needs HTTP(S).** A Service Worker cannot run from `file://`, so a copy opened by double-clicking `index.html` works, but only while its files are reachable. Serve the folder over HTTPS or `localhost` for offline use.
-- **Host it at the root of a domain.** The Service Worker and the manifest use absolute paths, so a sub-folder deployment (such as a GitHub Pages project site) breaks offline mode.
 - **Diffskai offline:** its engine (Monaco Editor) is cached in the background after the first visit; open Diffskai once while online to be sure it is available offline. Monaco is pinned at 0.56.0 for this release.
 
 ## Built With (Zero-CDN Architecture)
