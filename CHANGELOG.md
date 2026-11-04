@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-04
+
 ### Added
 
 - Workspaces: a × button next to the workspace list removes the selected
