@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-04
+
+### Added
+
+- Workspaces: a × button next to the workspace list removes the selected
+  workspace after a confirmation (the folder on disk is not touched), and the
+  "Access error" message offers to remove the broken workspace. Thanks
+  @yoreva-01 (#43).
+- Firefox and Safari: **Open** loads a file through the browser picker and
+  **Save** downloads a copy, instead of doing nothing. Saving in place,
+  workspaces and conflict detection still need desktop Chromium. Thanks
+  @yoreva-01 (#44).
+
+### Fixed
+
+- Offline mode now works when Famouskai is hosted in a sub-folder (such as a
+  GitHub Pages project site): the Service Worker and the manifest use relative
+  paths. Thanks @yoreva-01 (#40, closes #35).
+- Pasting YAML into a new, empty document now selects YAML highlighting (files
+  starting with `#` comments or a top-level list were taken for Markdown or
+  CSS). Markdown with YAML front matter stays Markdown. Thanks @yoreva-01 (#41).
+- Tool triggers (`onFileOpen`, `onBeforeSave`, ...) now respect the tool's
+  `extensions` list, like the Tools tab. Thanks @yoreva-01 (#42).
+- Full preview on a new, unsaved file no longer throws an error, and a diff
+  typed in a new file is still shown as a diff after switching full preview.
+- Diffskai: "Collapse unchanged" works as soon as the files load. Identical
+  lines stayed visible until the box was unchecked and checked again.
+- Windows & Settings tab: the list of open windows no longer drops windows
+  that sit in the background, then shows them again. A closed window leaves the
+  list at once.
+
 ## [0.1.1] - 2026-10-29
 
 ### Fixed
@@ -80,4 +111,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Monaco Editor (Diffskai) remains pinned at version 0.56.0 for this release.
 
 [Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.1.0...HEAD
+[0.1.1]: https://github.com/denys-digital/famouskai/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/denys-digital/famouskai/releases/tag/v0.1.0

@@ -100,7 +100,7 @@ Famouskai is an offline-capable Progressive Web App (PWA). If you don't declare 
 
 1. Open `sw.js`.
 2. Locate the `URLS_TO_CACHE` array.
-3. Add your new file path: `'/plugins/tool-table-generator.js',`.
+3. Add your new file path: `'./plugins/tool-table-generator.js',`.
 4. **CRITICAL:** Increment the `CACHE_NAME` version at the top of the file following Semantic Versioning (e.g., change `famouskai-v1.0.0` to `famouskai-v1.0.1`). If you forget this, returning users' browsers will never download your new file!
 
 ### Step 5: Test Locally & Verify
@@ -205,6 +205,8 @@ window.FamousPluginCore.Manager.register({
 #### Lifecycle Event Triggers
 
 Tools can subscribe to background lifecycle events dispatched by the core application via `FamousPluginCore.Manager.emit(eventName, editorInstance, extraArgs)`.
+
+Like the Tools tab, `emit()` filters tools by their `extensions` list: a tool with a non-empty `extensions` array only runs its triggers when the current file's extension is in that list (include `""` to also run on new, unnamed files), while a tool with an empty `extensions: []` runs on every file.
 
 ##### Available Event Names & Sources
 
@@ -340,7 +342,7 @@ window.addEventListener('DOMContentLoaded', () => {
 ```
 
 ### Step 5: Update the Service Worker (`sw.js`)
-Exactly like tools ([see Step 4](#step-4-add-it-to-the-service-worker-swjs)), add `'/plugins/ext-wordcounter.js'` to the `URLS_TO_CACHE` array and **increment the `CACHE_NAME` version**.
+Exactly like tools ([see Step 4](#step-4-add-it-to-the-service-worker-swjs)), add `'./plugins/ext-wordcounter.js'` to the `URLS_TO_CACHE` array and **increment the `CACHE_NAME` version**.
 
 ### Step 6: Test Locally & Verify
 
