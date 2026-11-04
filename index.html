@@ -1,4 +1,4 @@
-<!-- 
+<!--
 /*
  * Famouskai Editor - Local-First PWA IDE
  * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
@@ -18,7 +18,7 @@
  *
  * -------------------------------------------------------------------------
  * COMMERCIAL LICENSE
- * For commercial integration without the AGPLv3 strict open-source 
+ * For commercial integration without the AGPLv3 strict open-source
  * restrictions, please contact the author to acquire a commercial license.
  * -------------------------------------------------------------------------
  */
@@ -34,25 +34,25 @@
     <!-- LINKS FOR CLOUDFLARE PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2f3033">
-    
+
     <!-- Tab icon (Favicon) -->
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    
+
     <!-- Ultra-light Markdown Parser (Local) -->
     <script src="vendor/marked/marked.umd.min.js"></script>
     <!-- DOMPurify for HTML Sanitization -->
     <script src="vendor/dompurify/purify.min.js"></script>
-    
+
     <!-- Read-only unified-diff-to-HTML renderer -->
     <script src="vendor/diff2html/js/diff2html.min.js" onerror="this.onerror=null;this.src='vendor/diff2html/js/diff2html.min.js?v='+Date.now();"></script>
     <link rel="stylesheet" href="vendor/diff2html/css/diff2html.min.css" onerror="this.onerror=null;this.href='vendor/diff2html/css/diff2html.min.css?v='+Date.now();">
-    
+
     <!-- Application style with auto-recovery cache-buster -->
     <link rel="stylesheet" href="style.css" onerror="this.onerror=null;this.href='style.css?v=' + Date.now();">
     <link rel="stylesheet" href="syntax-themes.css" onerror="this.onerror=null;this.href='syntax-themes.css?v=' + Date.now();">
     <!-- Preview Themes ready for user customization -->
     <link rel="stylesheet" href="preview-themes.css" onerror="this.onerror=null;this.href='preview-themes.css?v=' + Date.now();">
-    
+
     <style id="ace_searchbox">
         /* ------------------------------------------------------------------------------------------
          * Editor Search Form - Dark Theme Patch (Pixel-Perfect Cloud9 Style)
@@ -554,7 +554,6 @@
         </form>
     </dialog>
 
-    
     <!-- ﹥ TOAST CONTAINER -->
     <div id="toast-msg"></div>
 
@@ -563,13 +562,13 @@
     <script src="theme-famouskai.js"></script>
     <script src="plugins/ace-custom/mode-csv.js"></script>
     <script src="plugins/ace-custom/folding-yaml.js"></script>
-    
+
     <!-- ========================================== -->
     <!-- ﹥ TOOLS LOADING + EXTENSIONS              -->
     <!-- ========================================== -->
     <!-- Local idb-keyval for offline PWA storage -->
     <script src="vendor/idb-keyval/umd.min.js"></script>
-    
+
     <!-- Local code formatters -->
     <script src="vendor/js-beautify/beautify.min.js"></script>
     <script src="vendor/js-beautify/beautify-html.min.js"></script>
@@ -593,7 +592,6 @@
     <script src="plugins/tool-beautify.js"></script>
     <script src="plugins/tool-workspace.js"></script>
 
-    
     <!-- ========================================== -->
     <!-- ﹥ MAIN SCRIPT                             -->
     <!-- ========================================== -->
@@ -708,9 +706,9 @@
             clearTimeout(window._toastTimer);
             window._toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
         };
-        
+
         window.currentWorkspaceHandle = null;
-        
+
         // Workspace Search Filter Globals (Hoisted above refreshWorkspaceList)
         let activeExtFilter = null;
         let wsSearchInput = null;
@@ -1029,7 +1027,7 @@
                 listEl.appendChild(div);
             });
         }
-        
+
         // Launch initialization on startup
         initWorkspace();
         function showError() { document.getElementById('error-msg').style.display = 'block'; }
@@ -1058,35 +1056,35 @@
          * This automatically dictates allowed extensions and color inheritance.
          */
         const WORKSPACE_FILE_GROUPS = [
-            { filter: 'JS',  className: 'icon-js',   
-                types: { 
-                    js: 'JS', 
+            { filter: 'JS',  className: 'icon-js',
+                types: {
+                    js: 'JS',
                     ts: { label: 'TS', className: 'icon-ts' }
                 } },
             { filter: '{}',  className: 'icon-json', types: { json: '{}' } },
-            { filter: '</>', className: 'icon-html', 
-                types: { 
+            { filter: '</>', className: 'icon-html',
+                types: {
                     html: '&lt;h&gt;',
                     xml: { label: '&lt;x&gt;', className: 'icon-xml' },
                     svg: { label: '&lt;s&gt;', className: 'icon-svg' }
-                    
+
                 } },
             { filter: '#',   className: 'icon-css',  types: { css: '#' } },
             { filter: 'Yᴍʟ', className: 'icon-yml',  types: { yaml: 'Yᴍʟ', yml: 'Yᴍʟ' } },
             { filter: '±',   className: 'icon-diff', types: { patch: '±', diff: '±' } },
             { filter: 'M⇣',  className: 'icon-md',   types: { md: 'M⇣' } },
-            { filter: '≣',   className: 'icon-txt',  
+            { filter: '≣',   className: 'icon-txt',
                 types: {
-                    txt: 'Txᴛ', 
+                    txt: 'Txᴛ',
                     log: { label: 'Lᴏɢ', className: 'icon-log' },
                     csv: { label: '▥' , className: 'icon-csv' },
                     tsv: { label: '▥' , className: 'icon-csv' }
-                    
+
                 } }
         ];
-        
+
         // ﹥ AUTO-GENERATED RESOURCES (Do not edit directly)
-        
+
         // 1. Generate O(1) lookup map for fast file icon rendering
         const FILE_ICON_MAP = Object.freeze(
             WORKSPACE_FILE_GROUPS.reduce((acc, group) => {
@@ -1099,8 +1097,8 @@
                 });
                 return acc;
             }, {})
-        );        
-        
+        );
+
         // 2. Dynamically extract allowed extensions for the Workspace Explorer
         const WORKSPACE_ALLOWED_EXT = Object.keys(FILE_ICON_MAP);
 
@@ -1113,35 +1111,35 @@
             const titleName = currentFileName || "[New]";
             const modStar = isModified ? " *" : "";
             document.title = modStar + titleName + " - Famouskai Editor";
-        
+
             const fileNameEl = document.getElementById("file-name");
-            
+
             let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
-            
+
             if (!ext && editor) {
                 const modeId = editor.session.$modeId || "";
-                const modeName = modeId.split('/').pop(); 
-                
+                const modeName = modeId.split('/').pop();
+
                 const modeMap = { 'javascript':'js', 'typescript':'ts', 'html':'html', 'xml':'xml',
                    'css':'css', 'json':'json', 'markdown':'md', 'yaml':'yml', 'text':'txt',
                    'csv':'csv', 'svg':'svg', 'diff':'patch', 'patch':'patch'
                 };
-                ext = modeMap[modeName] || 'txt'; 
+                ext = modeMap[modeName] || 'txt';
             }
-        
+
             updateSnippetsUI(ext);
-                        
+
             const iconHtml = getFileIcon(ext);
-            
+
             // Build modular HTML structure for text and copy button
             let content = iconHtml + `<span id="file-name-text">${titleName}${modStar}</span>`;
-            
+
             if (fileHandle) {
                 // Inline SVG for the copy icon
                 content += `<button id="file-name-copy" class="toolbar-icon-btn" title="Copy file name">
                                 <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                             </button>`;
-                
+
                 // Add external link button specifically for HTML files
                 if (ext === 'html' || ext === 'svg')  {
                     content += `<button id="file-name-open-ext" class="toolbar-icon-btn" title="View in new tab">
@@ -1149,26 +1147,26 @@
                                 </button>`;
                 }
             }
-            
+
             fileNameEl.innerHTML = content;
             fileNameEl.title = currentFileName || "[New]";
-            
+
             // Re-attach specific event listeners after innerHTML mutation
             const textEl = document.getElementById("file-name-text");
             if (textEl) {
                 // Set tooltip securely via DOM property to avoid quote escaping issues
                 textEl.title = `${titleName} - Click to rename`;
-                
+
                 if (fileHandle) {
                     textEl.addEventListener("click", renameCurrentFile);
                 }
             }
-            
+
             const copyEl = document.getElementById("file-name-copy");
             if (copyEl) {
                 copyEl.addEventListener("click", copyFileName);
             }
-        
+
             // Attach event listener for the external link button
             const openExtEl = document.getElementById("file-name-open-ext");
             if (openExtEl && fileHandle) {
@@ -1184,13 +1182,13 @@
             const toggleAutoSave = document.getElementById("toggle-autosave");
             toggleAutoSave.disabled = !fileHandle;
             if (!fileHandle) {
-                toggleAutoSave.checked = false; 
+                toggleAutoSave.checked = false;
                 // Do NOT touch isAutoSaveEnabled here, preserve user intent in memory
             } else {
                 // Restore actual user intent visually when a file is opened
                 toggleAutoSave.checked = isAutoSaveEnabled;
             }
-            
+
             const btnPreview = document.getElementById("btn-preview");
             const btnExport = document.getElementById("btn-export-html");
             const btnPreviewTheme = document.getElementById("btn-preview-theme");
@@ -1214,21 +1212,26 @@
                 document.getElementById("btn-print").style.display = "none";
                 if (btnExport) btnExport.style.display = "none";
                 if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
-                if (isPreviewOpen) togglePreview(); 
+                if (isPreviewOpen) togglePreview();
             }
 
             const toolbarRight = document.getElementById("toolbar-right");
             const divider = document.getElementById("toolbar-plugins-divider");
-            
+
             if (toolbarRight && divider && btnPreview) {
                 const hasTools = toolbarRight.hasAttribute("data-has-tools");
                 const isPreviewVisible = btnPreview.style.display !== "none";
-                
+
                 if (hasTools && isPreviewVisible) {
                     divider.style.display = "block";
                 } else {
                     divider.style.display = "none";
                 }
+            }
+
+            // Tell the other windows at once when the file name changes.
+            if (typeof window.sendWindowHeartbeat === 'function') {
+                window.sendWindowHeartbeat();
             }
         }
 
@@ -1239,7 +1242,7 @@
 
             // Register custom syntax modes explicitly to bypass the default vendor directory
             ace.config.setModuleUrl("ace/mode/log", "plugins/ace-custom/mode-log.js");
-            
+
             editor = ace.edit("editor");
             // Without this, window.editor is the <div id="editor"> element (browser named access).
             window.editor = editor;
@@ -1306,9 +1309,9 @@
                     return;
                 }
                 editor.session.isFamousFoldPatchInit = true;
-            
+
                 console.log('[FoldPatch] 0. Initializing Famous Mark universal folding system (v8).');
-            
+
                 const Range = ace.require('ace/range').Range;
                 // U+FE65 "﹥" (Famous Arrow) + U+2022 "•" (Magic Dot) + U+00B0 "°" (Flying Bubble)
                 // Read from the single source of truth (ext-famous-core.js) instead of a local
@@ -1318,14 +1321,14 @@
                 const famousRegex = (window.FamousPluginCore && window.FamousPluginCore.FamousMark)
                     ? window.FamousPluginCore.FamousMark.regex
                     : /^\s*[/<*!\-#%;]*\s*[﹥•°]/;
-            
+
                 // Returns true if the CURRENT session language is YAML. Famous Mark
                 // folding is intentionally disabled for this mode (see header comment).
                 function isYamlMode() {
                     const modeId = editor.session.getMode() && editor.session.getMode().$id;
                     return !!modeId && modeId.indexOf('yaml') !== -1;
                 }
-            
+
                 // ------------------------------------------------------------------------
                 // STEP 1 - Universal Fold Support Extension for modes WITHOUT native
                 // folding (ace/mode/text: .txt files and brand new unsaved documents).
@@ -1350,7 +1353,7 @@
                 } catch (e) {
                     console.log('[FoldPatch] ERROR while injecting text-mode folding support.', e);
                 }
-            
+
                 // ------------------------------------------------------------------------
                 // STEP 2 - Core patch: wrap getFoldWidget/getFoldWidgetRange of any
                 // foldMode object to recognize the Famous Mark, falling back to the
@@ -1364,11 +1367,11 @@
                     }
                     console.log('[FoldPatch] 2. Patching new foldMode instance.');
                     foldMode.isFamousPatched = true;
-            
+
                     const originalGetFoldWidget = foldMode.getFoldWidget;
                     const originalGetFoldWidgetRange = foldMode.getFoldWidgetRange;
                     const canDelegate = !foldMode.isFamousBaseFallback;
-            
+
                     // Does the native fold range for this row swallow a Famous Mark row?
                     // Anti-recursion: some native modes call "this.getFoldWidget(...)"
                     // from inside their own getFoldWidgetRange. We temporarily restore
@@ -1399,7 +1402,7 @@
                             foldMode.getFoldWidget = patchedGetFoldWidget;
                         }
                     }
-            
+
                     foldMode.getFoldWidget = function(session, foldStyle, row) {
                         const line = session.getLine(row);
                         if (line && famousRegex.test(line)) {
@@ -1423,7 +1426,7 @@
                         }
                         return '';
                     };
-            
+
                     foldMode.getFoldWidgetRange = function(session, foldStyle, row) {
                         const line = session.getLine(row);
                         if (line && famousRegex.test(line)) {
@@ -1461,7 +1464,7 @@
                         return null;
                     };
                 }
-            
+
                 // ------------------------------------------------------------------------
                 // STEP 3 - Synchronously repopulate session.foldWidgets for every Famous
                 // Mark row so Ace's native gutterclick gate always passes:
@@ -1493,7 +1496,7 @@
                         console.log('[FoldPatch] 5. foldWidgets cache synced for ' + synced + ' Famous Mark row(s).');
                     }
                 }
-            
+
                 // ------------------------------------------------------------------------
                 // STEP 4 - Trap session.$foldMode so every foldMode Ace assigns (now or
                 // later, for any language, including redundant reassignments) is patched
@@ -1510,40 +1513,40 @@
                     patchFoldMode(internalFoldMode);
                 }
                 let lastLanguageModeId = editor.session.getMode() && editor.session.getMode().$id;
-            
+
                 Object.defineProperty(editor.session, '$foldMode', {
                     get: function() {
                         return internalFoldMode;
                     },
                     set: function(newMode) {
                         internalFoldMode = newMode;
-            
+
                         const currentLanguageModeId = editor.session.getMode() && editor.session.getMode().$id;
                         const isYaml = currentLanguageModeId && currentLanguageModeId.indexOf('yaml') !== -1;
                         const isRedundantReassignment = currentLanguageModeId && currentLanguageModeId === lastLanguageModeId;
                         lastLanguageModeId = currentLanguageModeId;
-            
+
                         if (isYaml) {
                             console.log('[FoldPatch] YAML mode detected - skipping Famous Mark folding entirely, native YAML folding only.');
                             return;
                         }
-            
+
                         console.log('[FoldPatch] 3. Ace assigned a new $foldMode. Intercepting.');
                         if (newMode) {
                             patchFoldMode(newMode);
                         }
-            
+
                         // Ace's own $setFolding() just reset session.foldWidgets = []
                         // for this new object instance, REGARDLESS of whether the
                         // language actually changed. Resync our rows synchronously,
                         // right now, so clicks never race the cache.
                         syncFoldWidgetCache(editor.session);
-            
+
                         if (isRedundantReassignment) {
                             console.log('[FoldPatch] Redundant $foldMode reassignment for ' + currentLanguageModeId + ', skipping disruptive tokenizer restart.');
                             return;
                         }
-            
+
                         // Real language change: let the tokenizer redraw normally, then
                         // resync again once it settles (defensive double-check).
                         setTimeout(function() {
@@ -1558,7 +1561,7 @@
                         }, 10);
                     }
                 });
-            
+
                 // Keep the cache fresh as the user types (adds/removes Famous Marks).
                 // No-ops harmlessly for YAML sessions since syncFoldWidgetCache only
                 // touches Famous Mark rows, and those rows were never patched for YAML
@@ -1574,7 +1577,7 @@
                         syncFoldWidgetCache(editor.session);
                     }, 150);
                 });
-            
+
                 // ------------------------------------------------------------------------
                 // STEP 5 - Force the currently active session to pick up folding right
                 // now (covers a blank new document loaded in text mode BEFORE our patch
@@ -1628,11 +1631,11 @@
                 } catch (e) {
                     console.log('[FoldPatch] ERROR while forcing initial fold support.', e);
                 }
-            
+
                 console.log('[FoldPatch] 6. Famous Mark universal folding system ready (YAML excluded by design).');
             })(editor);
             // ------------------------------------------------------------------------
-            
+
             editor.session.setUseWorker(false);
 
             editor.session.on('change', function() {
@@ -1692,11 +1695,11 @@
                     cleanupCursorLocalStorage(MAX_CURSOR_ENTRIES);
                 }
             });
-            
+
         } else {
             showError();
         }
-        
+
         window.addEventListener('DOMContentLoaded', () => {
             // Initial LRU cleanup of cursor positions in LocalStorage
             if (typeof window.cleanupCursorLocalStorage === 'function') {
@@ -1790,6 +1793,7 @@
             const activeInstances = new Map();
             const winTrackerChannel = new BroadcastChannel('famouskai_window_tracker');
             let lastWindowsSignature = '';
+            const PRUNE_TIMEOUT_MS = 75000;
 
             function getWindowsSignature() {
                 let sig = 'self:' + windowInstanceId + ':' + (currentFileName || '[New]') + ';';
@@ -1817,9 +1821,9 @@
                 if (!listContainer) return;
 
                 const now = Date.now();
-                // Prune inactive windows (> 5000ms stale)
+                // Prune inactive windows (> 75s stale)
                 for (const [id, data] of activeInstances.entries()) {
-                    if (now - data.timestamp > 5000) {
+                    if (now - data.timestamp > PRUNE_TIMEOUT_MS) {
                         activeInstances.delete(id);
                     }
                 }
@@ -1902,8 +1906,11 @@
                 if (msg.type === 'HEARTBEAT' && msg.id) {
                     activeInstances.set(msg.id, {
                         title: msg.title,
-                        timestamp: msg.timestamp
+                        timestamp: Date.now()
                     });
+                    renderActiveWindowsList();
+                } else if (msg.type === 'BYE' && msg.id) {
+                    activeInstances.delete(msg.id);
                     renderActiveWindowsList();
                 } else if (msg.type === 'FOCUS_REQUEST' && msg.targetId === windowInstanceId) {
                     window.focus();
@@ -1912,6 +1919,29 @@
                     }
                 }
             };
+
+            // Send departure notification when window is closed or navigated away
+            window.addEventListener('pagehide', () => {
+                try {
+                    winTrackerChannel.postMessage({
+                        type: 'BYE',
+                        id: windowInstanceId
+                    });
+                } catch (e) {
+                    // Channel may already be closed
+                }
+            });
+
+            // Send heartbeat immediately when returning to visible state
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    sendWindowHeartbeat();
+                    renderActiveWindowsList();
+                }
+            });
+
+            // updateUI() runs outside this closure: give it the heartbeat.
+            window.sendWindowHeartbeat = sendWindowHeartbeat;
 
             // Start periodic heartbeat and prune check
             setInterval(() => {
@@ -1929,7 +1959,7 @@
             if (window.FamousPluginCore && window.FamousPluginCore.SnippetManager) {
                 window.FamousPluginCore.SnippetManager.init();
             }
-            
+
             // Secure bindings without HTML onclick attributes
             document.getElementById("btn-refresh-workspace").addEventListener("click", refreshWorkspaceList);
 
@@ -1946,11 +1976,11 @@
                     renderRecentFilesList();
                 });
             }
-            
+
             document.getElementById("btn-unfold-all").addEventListener("click", () => {
                 if(editor) editor.session.unfold();
             });
-            
+
             document.querySelectorAll("[data-fold-level]").forEach(btn => {
                 btn.addEventListener("click", (e) => {
                     const level = parseInt(e.target.dataset.foldLevel);
@@ -1983,11 +2013,11 @@
 
         function applyNativeColoration(filename) {
             if (!editor) return;
-            
+
             if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
-                // Purge any leftover filter from the previous file 
+                // Purge any leftover filter from the previous file
                 window.FamousPluginCore.Outline.resetFilter();
-        
+
                 // Render the TOC immediately on file load instead of
                 // waiting for the 800ms typing-debounce timer. That timer exists
                 // to avoid re-parsing on every keystroke, but editor.setValue()
@@ -1998,9 +2028,9 @@
                 clearTimeout(window.tocTimer);
                 window.FamousPluginCore.Outline.update(editor);
             }
-           
+
             const ext = filename.split('.').pop().toLowerCase();
-        
+
             // Inject the extension as a data attribute on the editor's root container
             // This allows CSS to scope syntax highlighting variables per language
             editor.container.setAttribute('data-lang', ext);
@@ -2016,11 +2046,11 @@
             else if (ext === 'xml') editor.session.setMode("ace/mode/xml");
             else if (ext === 'yml' || ext === 'yaml') editor.session.setMode("ace/mode/yaml", () => window.FamousPluginCore.YamlFolding.apply(editor.session));
             else if (ext === 'log') editor.session.setMode("ace/mode/log"); /* Famous custom */
-            else editor.session.setMode("ace/mode/text"); 
-        
+            else editor.session.setMode("ace/mode/text");
+
             const foldButtons = document.getElementById("markdown-fold-buttons");
             if (foldButtons) foldButtons.style.display = (ext === 'md') ? "flex" : "none";
-        
+
             if (window.FamousPluginCore && window.FamousPluginCore.Manager) {
                 window.FamousPluginCore.Manager.renderTools(editor, filename);
             }
@@ -2119,7 +2149,7 @@
                     id: "editeur-chromeos-text-clone",
                     types: [{ description: 'Famous files', accept: { 'text/*': WORKSPACE_ALLOWED_EXT.map(ext => "." + ext) } }]
                 };
-                
+
                 if (fileHandle) {
                     pickerOptions.startIn = fileHandle;
                 } else if (window.currentWorkspaceHandle) {
@@ -2129,14 +2159,14 @@
                     }
                     pickerOptions.startIn = window.currentWorkspaceHandle;
                 }
-                
+
                 const [handle] = await window.showOpenFilePicker(pickerOptions);
                 fileHandle = handle;
                 currentFileName = handle.name;
 
                 const file = await fileHandle.getFile();
                 const text = await file.text();
-                
+
                 lastKnownModifiedTime = file.lastModified;
 
                 isInitialLoad = true;
@@ -2176,7 +2206,7 @@
                     suggestedName: currentFileName || "famous-untitled.txt",
                     types: [{ description: 'Famous files', accept: { 'text/*': WORKSPACE_ALLOWED_EXT.map(ext => "." + ext) } }]
                 };
-                
+
                 if (fileHandle) {
                     pickerOptions.startIn = fileHandle;
                 } else if (window.currentWorkspaceHandle) {
@@ -2199,7 +2229,7 @@
                 const writable = await fileHandle.createWritable();
                 await writable.write(editor.getValue());
                 await writable.close();
-                
+
                 lastKnownModifiedTime = (await fileHandle.getFile()).lastModified;
 
                 isModified = false;
@@ -2229,7 +2259,7 @@
                 // 1. CONFLICT CHECK BEFORE WRITING
                 const currentFileOnDisk = await fileHandle.getFile();
                 if (currentFileOnDisk.lastModified > lastKnownModifiedTime) {
-                    
+
                     // ﹥ ASYNCHRONOUS PREPARATION BEFORE CONFIRM (Bypass Popup Blocker)
                     const diskText = await currentFileOnDisk.text();
                     const conflictId = await window.FamousPluginCore.Diffskai.prepareSession({
@@ -2238,7 +2268,7 @@
                         diskText,
                         baseline: currentFileOnDisk.lastModified
                     });
-                    
+
                     /// ﹥ USER INTERACTION IMMEDIATELY FOLLOWED BY WINDOW.OPEN
                     if (confirm("EDITING CONFLICT\nThe file has been modified on disk. Do you want to open the comparison tool?")) {
                         window.FamousPluginCore.Diffskai.openSession(conflictId);
@@ -2250,7 +2280,7 @@
                     }
                     return; // Intercept current save in all cases
                 }
-                
+
                 // 3. NORMAL SAVE IF NO CONFLICT
                 const writable = await fileHandle.createWritable();
                 await writable.write(editor.getValue());
@@ -2275,7 +2305,7 @@
             try {
                 const file = await fileHandle.getFile();
                 const text = await file.text();
-                
+
                 lastKnownModifiedTime = file.lastModified;
 
                 isInitialLoad = true;
@@ -2311,21 +2341,21 @@
         async function refreshWorkspaceList() {
             const listContainer = document.getElementById("workspace-file-list");
             const title = document.getElementById("workspace-name");
-            
+
             if (!window.currentWorkspaceHandle) {
                 title.textContent = "Not set";
                 listContainer.innerHTML = `<div class="workspace-empty-msg">No folder selected</div>`;
                 return;
             }
-        
+
             const renderToken = ++currentWorkspaceRenderToken;
             try {
                 title.textContent = window.currentWorkspaceHandle.name;
-                listContainer.innerHTML = ""; 
-                
+                listContainer.innerHTML = "";
+
                 // Launch recursive tree generation
                 await renderDirectoryTree(window.currentWorkspaceHandle, listContainer, renderToken);
-        
+
                 if (renderToken !== currentWorkspaceRenderToken) return;
 
                 // Re-apply filters safely after DOM regeneration (avoids startup TDZ crash)
@@ -2353,7 +2383,7 @@
                 }
             }
         }
-        
+
         /**
          * Lightweight badge generator.
          * Fetches data directly from the unified FILE_ICON_MAP.
@@ -2362,36 +2392,36 @@
             const ico = FILE_ICON_MAP[ext] || { label: '⛘', className: 'icon-default' };
             return `<span class="file-icon-badge ${ico.className}">${ico.label}</span>`;
         }
-        
+
         /**
          * Recursive function with Lazy Loading to generate the tree.
          */
         async function renderDirectoryTree(dirHandle, container, renderToken) {
             let hasItems = false;
             const entries = [];
-        
+
             for await (const entry of dirHandle.values()) {
                 if (renderToken !== undefined && renderToken !== currentWorkspaceRenderToken) return;
                 entries.push(entry);
             }
 
             if (renderToken !== undefined && renderToken !== currentWorkspaceRenderToken) return;
-        
+
             entries.sort((a, b) => {
                 if (a.kind === b.kind) return a.name.localeCompare(b.name);
                 return a.kind === 'directory' ? -1 : 1;
             });
-        
+
             for (const entry of entries) {
                 if (renderToken !== undefined && renderToken !== currentWorkspaceRenderToken) return;
                 if (entry.kind === 'directory') {
                     if (WORKSPACE_IGNORED_DIRS.includes(entry.name) || entry.name.startsWith('.')) continue;
                     hasItems = true;
-                    
+
                     const details = document.createElement("details");
                     details.classList.add("workspace-folder"); // CSS class for chevrons
-                    details.style.paddingLeft = "8px"; 
-                    
+                    details.style.paddingLeft = "8px";
+
                     const summary = document.createElement("summary");
                     summary.textContent = entry.name; // Folder emoji removed
                     summary.style.cursor = "pointer";
@@ -2399,9 +2429,9 @@
                     summary.style.userSelect = "none";
                     summary.style.fontSize = "13px";
                     summary.style.padding = "4px 0";
-                    
+
                     details.appendChild(summary);
-                    
+
                     let isLoaded = false;
                     summary.addEventListener('click', async (e) => {
                         if (!isLoaded) {
@@ -2415,26 +2445,26 @@
                             }
                         }
                     });
-                    
+
                     container.appendChild(details);
-                    
+
                 } else if (entry.kind === 'file') {
                     const ext = entry.name.split('.').pop().toLowerCase();
                     if (!WORKSPACE_ALLOWED_EXT.includes(ext)) continue;
                     hasItems = true;
-                    
+
                     const div = document.createElement("div");
                     div.classList.add("workspace-file-item");
                     div.style.paddingLeft = "28px"; // Alignment under folder text (14px icon + margins)
 
                     // Add tooltip for hover
-                    div.title = entry.name; 
+                    div.title = entry.name;
                     // Store the extension in the DOM for filtering
                     div.dataset.ext = ext;
-                    
+
                     // Inject colored icon via innerHTML
-                    div.innerHTML = getFileIcon(ext) + entry.name; 
-                    
+                    div.innerHTML = getFileIcon(ext) + entry.name;
+
                     div.onclick = async (e) => {
                         if (e.ctrlKey || e.metaKey) {
                             // CTRL+SHIFT+click (or CMD+SHIFT+click): open file in a new browser tab
@@ -2462,24 +2492,24 @@
                         }
 
                         if (isModified && !confirm("Unsaved changes will be lost. Continue?")) return;
-                        
+
                         try {
                             const file = await entry.getFile();
                             const text = await file.text();
-                            
+
                             lastKnownModifiedTime = file.lastModified;
-        
+
                             fileHandle = entry;
                             currentFileName = entry.name;
                             isInitialLoad = true;
                             isModified = false;
-                            
+
                             editor.setValue(text, -1);
                             applyNativeColoration(currentFileName);
                             emitFileOpen();
                             updateUI();
                             addRecentFile(entry);
-                            
+
                             setTimeout(() => { editor.focus(); isInitialLoad = false; }, 50);
                         } catch (err) {
                             alert("File read error: " + err.message);
@@ -2488,12 +2518,12 @@
                     container.appendChild(div);
                 }
             }
-            
+
             if (!hasItems) {
                 container.insertAdjacentHTML('beforeend', `<div class="workspace-empty-msg is-padded">No supported files</div>`);
             }
         }
-        
+
         // ﹥ SIDE MENU MANAGEMENT
         const sidebar = document.getElementById("sidebar-left");
 
@@ -2543,7 +2573,7 @@
                 }
             }
         }
-        
+
         function loadPreferences() {
             let prefs = defaultPrefs;
             try {
@@ -2552,7 +2582,7 @@
                     prefs = Object.assign({}, defaultPrefs, JSON.parse(stored));
                 }
             } catch (e) { console.warn("Failed to parse famouskai_prefs preference from localStorage:", e); }
-            
+
             // Restore UI state safely
             const toggleWrap = document.getElementById("toggle-wrap");
             if (toggleWrap) toggleWrap.checked = prefs.wrap;
@@ -2573,15 +2603,15 @@
                     window.FamousPluginCore.Manager.renderSettings(settingsContainer);
                 }
             }
-            
+
             // Autosave internal state restoration (visual state is handled by updateUI)
             isAutoSaveEnabled = prefs.autosave;
             isPreviewDark = !!prefs.previewDark;
             updatePreviewThemeUI();
-            
+
             // Apply editor settings
             if (editor) editor.session.setUseWrapMode(prefs.wrap);
-            
+
             // Apply Sidebar state safely
             if (prefs.sidebarStartup) {
                 const sidebar = document.getElementById("sidebar-left");
@@ -2611,7 +2641,7 @@
         document.querySelectorAll('#settings-container .sidebar-checkbox').forEach(cb => {
             cb.addEventListener('change', (e) => {
                 const setting = e.target.dataset.setting;
-                
+
                 // Specific logic trigger per setting
                 if (setting === 'wrap' && editor) {
                     editor.session.setUseWrapMode(e.target.checked);
@@ -2619,19 +2649,18 @@
                     isAutoSaveEnabled = e.target.checked;
                     if (isAutoSaveEnabled && isModified && fileHandle) saveFile();
                 }
-                
+
                 // Save globally on any modification
                 savePreferences();
             });
         });
-
 
         // ﹥ CLICKABLE INTERNET LINKS
         if (editor) {
             editor.on("click", function(e) {
                 // Bloque si la case n'est pas cochée
                 if (!document.getElementById("toggle-links").checked) return;
-                
+
                 const pos = e.getDocumentPosition();
                 const token = editor.session.getTokenAt(pos.row, pos.column);
                 if (token && /http/.test(token.value)) {
@@ -2646,7 +2675,7 @@
                     editor.renderer.content.style.cursor = "text";
                     return;
                 }
-                
+
                 const pos = e.getDocumentPosition();
                 const token = editor.session.getTokenAt(pos.row, pos.column);
                 if (token && /http/.test(token.value)) {
@@ -2665,28 +2694,28 @@
                 if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
                     window.tocTimer = setTimeout(() => window.FamousPluginCore.Outline.update(editor), 800);
                 }
-        
+
                 if (!isInitialLoad && isAutoSaveEnabled && fileHandle) {
                     clearTimeout(autoSaveTimer);
                     autoSaveTimer = setTimeout(() => {
-                        if (isModified) saveFile(); 
+                        if (isModified) saveFile();
                     }, 1500);
                 }
-                
+
                 if (isPreviewOpen) {
                     clearTimeout(previewTimer);
                     previewTimer = setTimeout(updatePreviewContent, 300);
                 }
             });
         }
-        
+
         document.getElementById("btn-new").addEventListener("click", newFile);
         document.getElementById("btn-open").addEventListener("click", openFile);
         document.getElementById("btn-save").addEventListener("click", saveFile);
         document.getElementById("btn-save-as").addEventListener("click", saveAsFile);
         document.getElementById("btn-move").addEventListener("click", moveFile);
         document.getElementById("btn-reload").addEventListener("click", reloadFile);
-        
+
         window.addEventListener("keydown", (e) => {
             // Listen for Control key (Windows/ChromeOS) or Meta (Mac)
             if (e.ctrlKey || e.metaKey) {
@@ -2700,28 +2729,28 @@
                     newFile(); }
             }
         });
-        
+
         // Colorize new file after pasting (fast detection)
         if (editor) {
             editor.on("paste", function(e) {
                 if (currentFileName === "" || currentFileName === "[New]") {
                     const text = e.text.trim();
                     let newMode = "ace/mode/text"; // Fallback par défaut
-        
+
                     // 1. Diff/patch — signature quasi-infaillible, à tester en premier
                     if (/^--- .+\n\+\+\+ .+/m.test(text) || /^@@ .+@@/m.test(text)) {
                         newMode = 'ace/mode/diff';
-                    
+
                     // 2. SVG — retiré de la branche HTML existante, testé avant elle
                     } else if (/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text)) {
                         newMode = 'ace/mode/svg';
-                    
+
                     // 3. HTML — inchangé, MOINS les tests <svg et <?xml (déplacés ci-dessus/dessous)
                     } else if (text.startsWith('<html') || text.startsWith('<!DOCTYPE') || text.startsWith('<body') ||
                              text.startsWith('<script') || text.startsWith('<head') || text.startsWith('<style') ||
                              text.startsWith('<div')) {
                         newMode = 'ace/mode/html';
-                    
+
                     // 4. XML générique (ex: <?xml sans balise <svg>)
                     } else if (text.startsWith('<?xml')) {
                         newMode = 'ace/mode/xml';
@@ -2782,7 +2811,7 @@
                             }
                         }
                     }
-                    
+
                     if (editor.session.$modeId !== newMode) {
                         editor.session.setMode(newMode, () => {
                             if (newMode === 'ace/mode/yaml' && window.FamousPluginCore?.YamlFolding) {
@@ -2792,7 +2821,7 @@
                         if (editor.session.bgTokenizer) editor.session.bgTokenizer.start(0);
                         if (editor.renderer) editor.renderer.updateFull(true);
                         setTimeout(updateUI, 10);
-                    }        
+                    }
                 }
             });
         }
@@ -2825,11 +2854,11 @@
             bindKey: { win: "Tab", mac: "Tab" },
             exec: function(editor) {
                 const ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
-                
+
                 const pos = editor.getCursorPosition();
                 const Range = ace.require('ace/range').Range;
                 const line = editor.session.getLine(pos.row);
-                
+
                 const textBefore = line.substring(0, pos.column);
                 const match = textBefore.match(/\/([a-zA-Z0-9_-]+)$/);
                 const coreSnippets = window.FamousPluginCore ? window.FamousPluginCore.Snippets : null;
@@ -2837,7 +2866,7 @@
                 if (match && coreSnippets) {
                     const word = match[1].toLowerCase();
                     const triggerLength = word.length + 1; // Word + '/'
-                    
+
                     // FEATURE: The /help command (Filtered by extension)
                     if (word === "help") {
                         let helpMsg = `MAGIC SNIPPETS FOR .${ext.toUpperCase()}:\n\n`;
@@ -2846,11 +2875,11 @@
                                 helpMsg += `/${key} ➔ ${data.help}\n`;
                             }
                         }
-                        alert(helpMsg); 
+                        alert(helpMsg);
                         editor.session.replace(new Range(pos.row, pos.column - triggerLength, pos.row, pos.column), "");
                         return;
                     }
-                    
+
                     // STANDARD SNIPPET EXPANSION
                     const snipData = coreSnippets[word];
 
@@ -2868,7 +2897,7 @@
                         }
 
                         const lines = snippet.split('\n');
-                        
+
                         let markerRow = -1;
                         let markerCol = -1;
 
@@ -2884,13 +2913,13 @@
 
                         const finalSnippet = lines.join('\n');
                         editor.session.replace(new Range(pos.row, pos.column - triggerLength, pos.row, pos.column), finalSnippet);
-                        
+
                         if (markerRow !== -1) {
                             const targetRow = pos.row + markerRow;
                             const targetCol = (markerRow === 0) ? (pos.column - triggerLength + markerCol) : markerCol;
                             editor.gotoLine(targetRow + 1, targetCol);
                         }
-                        return; 
+                        return;
                     }
                 }
                 // Fallback to standard indentation if no magic snippet matched
@@ -3025,7 +3054,7 @@
 
                         const file = await fileHandle.getFile();
                         const text = await file.text();
-                        
+
                         lastKnownModifiedTime = file.lastModified;
 
                         isInitialLoad = true;
@@ -3099,21 +3128,21 @@
                 }
             }
         });
-        
+
         // ﹥ INTERACTIVITY: WKS FILE FILTER
         wsSearchInput = document.getElementById("workspace-search");
         wsSearchClear = document.getElementById("workspace-search-clear");
-        
+
         if (wsSearchInput && wsSearchClear) {
             wsSearchInput.addEventListener("input", applyWorkspaceFilter);
-            
+
             wsSearchClear.addEventListener("click", () => {
                 wsSearchInput.value = "";
                 applyWorkspaceFilter();
                 wsSearchInput.focus();
             });
         }
-        
+
         /**
          * Builds the compact extension filter badges based on WORKSPACE_FILE_GROUPS.
          * Reuses the semantic CSS classes for UI color consistency.
@@ -3121,42 +3150,42 @@
         function initExtFilters() {
             const container = document.getElementById('workspace-ext-filters');
             if (!container) return;
-            
+
             WORKSPACE_FILE_GROUPS.forEach(group => {
                 const btn = document.createElement('button');
-                
+
                 // Combine base button style with the group's specific color class
                 btn.className = `fold-btn ${group.className}`;
                 btn.textContent = group.filter;
-                
+
                 const groupExts = Object.keys(group.types);
                 btn.title = "Filter: " + groupExts.join(', ').toUpperCase();
-                
+
                 btn.onclick = () => {
                     if (activeExtFilter === groupExts) {
                         // Toggle off
-                        activeExtFilter = null; 
+                        activeExtFilter = null;
                         btn.classList.remove('active-filter');
                     } else {
                         // Toggle on: reset others and activate current
                         document.querySelectorAll('#workspace-ext-filters .fold-btn').forEach(b => b.classList.remove('active-filter'));
-                        activeExtFilter = groupExts; 
+                        activeExtFilter = groupExts;
                         btn.classList.add('active-filter');
                     }
                     if (typeof applyWorkspaceFilter === 'function') applyWorkspaceFilter();
                 };
-                
+
                 container.appendChild(btn);
             });
         }
-        
+
         // Initialize filters on load
-        initExtFilters();   
-        
+        initExtFilters();
+
         // ﹥ RENAME LOGIC
         async function renameCurrentFile() {
             if (!fileHandle) return;
-            
+
             // Protection against I/O conflicts
             if (isModified) {
                 if (window.showToast) window.showToast("Save changes before renaming.", "warn");
@@ -3185,9 +3214,9 @@
                 };
 
                 const onSubmit = async (e) => {
-                    e.preventDefault(); 
+                    e.preventDefault();
                     const enteredName = input.value.trim();
-                    
+
                     if (!enteredName || enteredName === currentFileName) {
                         cleanUp();
                         resolve(null);
@@ -3235,18 +3264,18 @@
                         if (typeof fileHandle.move !== 'function') {
                             throw new Error("Browser lacks native move API support.");
                         }
-                        
+
                         // The 'submit' button click provides the FRESH User Activation context required by the OS!
                         await fileHandle.move(finalName);
-                        
+
                         // Update internal state
                         currentFileName = finalName;
                         applyNativeColoration(currentFileName);
                         updateUI();
-                        
+
                         if (window.currentWorkspaceHandle) refreshWorkspaceList();
                         if (window.showToast) window.showToast("Renamed to " + finalName, "success");
-                        
+
                         resolve(true);
                     } catch (err) {
                         // If it fails here, ChromeOS DriveFS physically rejected the specific rename operation
@@ -3257,10 +3286,10 @@
 
                 form.addEventListener('submit', onSubmit);
                 cancelBtn.addEventListener('click', onCancel);
-                
+
                 // Show native modal
                 dialog.showModal();
-                
+
                 // UX: Pre-select the file name without its extension
                 const dotIndex = currentFileName.lastIndexOf('.');
                 if (dotIndex > 0) {
@@ -3285,7 +3314,7 @@
 
         async function moveFile() {
             if (!editor || !fileHandle) return;
-            
+
             // Failsafe in case UI state is bypassed
             if (isModified) {
                 if (window.showToast) window.showToast("Save changes before moving.", "warn");
@@ -3293,7 +3322,7 @@
             }
 
             try {
-                // FIX: Request write permission on the source file FIRST, 
+                // FIX: Request write permission on the source file FIRST,
                 // while we still have the user activation from the button click.
                 if (await fileHandle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
                     const perm = await fileHandle.requestPermission({ mode: 'readwrite' });
@@ -3317,30 +3346,30 @@
                 // Refresh Workspace UI if open
                 if (window.currentWorkspaceHandle) refreshWorkspaceList();
                 if (window.showToast) window.showToast("Moved to " + dirHandle.name, "success");
-                
+
             } catch (err) {
                 if (err.name !== 'AbortError') alert("Move failed: " + err.message);
             }
         }
-        
+
         // Open HTML content in a new browser tab by injecting editor value
         async function openHtmlInNewTab(e) {
             e.stopPropagation(); // Prevent triggering other listeners
             if (!editor) return;
-            
+
             try {
                 // Retrieve current content directly from the editor (includes unsaved changes)
                 const content = editor.getValue();
-                
+
                 // Open a blank new tab
                 const newWindow = window.open('', '_blank');
-                
+
                 if (newWindow) {
                     // Inject the HTML content directly into the new document
                     newWindow.document.open();
                     newWindow.document.write(content);
                     newWindow.document.close();
-                    
+
                     if (window.showToast) window.showToast("Opened in new tab", "success");
                 } else {
                     // Fallback if popup blocker intercepts the action
@@ -3353,7 +3382,7 @@
 
         // ﹥ POST-MERGE & EXTERNAL SAVE SYNCHRONIZATION
         const syncChannel = new BroadcastChannel('famouskai_sync');
-        
+
         syncChannel.onmessage = async (event) => {
             // Messages are { type, sessionId, handle }. A bare string comes from an older Diffskai window: treat it as untargeted.
             const msg = (typeof event.data === 'string') ? { type: event.data } : (event.data || {});
@@ -3369,43 +3398,43 @@
                         && ownSessions.has(msg.sessionId) && ownSessions.get(msg.sessionId) === editor.getValue();
 
                     const diskFile = await fileHandle.getFile();
-                    
+
                     if (diskFile.lastModified > lastKnownModifiedTime) {
-                        
+
                         if (isModified && !isOwnMerge) {
                             if (!confirm("This file was just updated by Diffskai. Reload and lose your current unsaved changes?")) {
                                 return;
                             }
                         }
                         if (isOwnMerge) ownSessions.delete(msg.sessionId);
-                        
+
                         const text = await diskFile.text();
-                        
+
                         isInitialLoad = true; // Bloque les événements de frappe
                         const cursor = editor.getCursorPosition();
-                        
+
                         editor.setValue(text, -1);
                         editor.moveCursorToPosition(cursor);
                         editor.clearSelection();
-                        
+
                         // Update state with new timestamp
                         lastKnownModifiedTime = diskFile.lastModified;
                         isModified = false;
-                        
+
                         // 1. Release the change listener block safely to allow future edits
-                        setTimeout(() => { 
-                            isInitialLoad = false; 
+                        setTimeout(() => {
+                            isInitialLoad = false;
                             if (editor) editor.focus();
                         }, 50);
-                        
+
                         // 2. Inject message safely via innerHTML without hardcoded styles
                         const successMsg = msg.type === 'MERGE_COMPLETE' ? "Merge done" : "Auto-Synced";
                         const titleEl = document.getElementById("file-name");
                         titleEl.innerHTML = `<span class="sync-success-msg">${successMsg}</span>`;
-                        
+
                         // 3. Restore original UI state asynchronously
-                        setTimeout(() => { 
-                            updateUI(); 
+                        setTimeout(() => {
+                            updateUI();
                         }, 2000);
                     }
                 } catch (error) {
@@ -3427,22 +3456,22 @@
             const btn = document.getElementById("btn-preview");
             const btnFull = document.getElementById("btn-preview-full");
             const btnPrint = document.getElementById("btn-print");
-            
+
             let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
             if (!ext && editor) {
                 const modeId = editor.session.$modeId || "";
-                if (modeId.includes("markdown")) { 
+                if (modeId.includes("markdown")) {
                     ext = "md";
-                    
+
                 } else if (modeId.includes('diff')) {
                     ext = 'patch'; // pasted/unsaved diff content
                 }
             }
-            
+
             if (isPreviewOpen) {
                 pane.style.display = "flex";
                 mainArea.classList.add("preview-active");
-                
+
                 btn.classList.add("btn-active");
                 btn.textContent = "Close Preview";
                 btnFull.style.display = "inline-block";
@@ -3454,7 +3483,7 @@
                     const btnPreviewTheme = document.getElementById("btn-preview-theme");
                     if (btnPreviewTheme) btnPreviewTheme.style.display = "inline-block";
                 }
-                
+
                 updatePreviewContent();
 
                 // Apply default full preview if the setting is checked and not already active
@@ -3466,7 +3495,7 @@
                 pane.style.display = "none";
                 mainArea.classList.remove("preview-active", "preview-full");
                 isPreviewFull = false; // Safe manual state reset
-                
+
                 btn.classList.remove("btn-active");
                 btn.textContent = "Preview";
                 btnFull.style.display = "none";
@@ -3476,7 +3505,7 @@
                 if (btnExport) btnExport.style.display = "none";
                 const btnPreviewTheme = document.getElementById("btn-preview-theme");
                 if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
-                
+
                 // Restore sidebar if it was hidden by Full View
                 if (wasSidebarOpen) document.getElementById("sidebar-left").style.display = "flex";
             }
@@ -3489,18 +3518,18 @@
             const mainArea = document.getElementById("main-area");
             const btnFull = document.getElementById("btn-preview-full");
             const sidebar = document.getElementById("sidebar-left");
-            
+
             if (isPreviewFull) {
                 mainArea.classList.add("preview-full");
                 btnFull.classList.add("btn-active");
-                
+
                 // Hide sidebar and remember its state
                 wasSidebarOpen = (sidebar.style.display === "flex");
                 if (wasSidebarOpen) sidebar.style.display = "none";
             } else {
                 mainArea.classList.remove("preview-full");
                 btnFull.classList.remove("btn-active");
-                
+
                 // Restore sidebar
                 if (wasSidebarOpen) sidebar.style.display = "flex";
             }
@@ -3510,23 +3539,23 @@
             // other format, since their rendering never depended on isPreviewFull.
             let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
             if (!ext && editor) {
-                const modeId = editor.session.modeId;
+                const modeId = editor.session.$modeId || "";
                 if (modeId.includes('diff')) ext = 'patch';
             }
-            if (ext === 'patch' || ext === 'diff') updatePreviewContent();            
+            if (ext === 'patch' || ext === 'diff') updatePreviewContent();
         }
 
         function updatePreviewContent() {
             if (!isPreviewOpen || !editor) return;
-            
+
             const content = editor.getValue();
             let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
-            
+
             if (!ext) {
                 const modeId = editor.session.$modeId || "";
                 if (modeId.includes("markdown")) ext = "md";
             }
-            
+
             if (ext === 'md') {
                 const previewEl = document.getElementById('preview-render');
                 previewEl.classList.remove('d2h-body');
@@ -3544,19 +3573,19 @@
                 if (window.FamousPluginCore && window.FamousPluginCore.PreviewCode) {
                     window.FamousPluginCore.PreviewCode.process(previewEl);
                 }
-                
+
             } else if (ext === 'patch' || ext === 'diff') {
                 const previewEl = document.getElementById('preview-render');
                 previewEl.classList.remove('markdown-body');
                 previewEl.classList.add('d2h-body');
                 previewEl.style.display = 'block';
-            
+
                 const MAX_PRETTY_DIFF_SIZE = 2 * 1024 * 1024;
                 if (content.length > MAX_PRETTY_DIFF_SIZE) {
                     previewEl.textContent = content;
                     return;
                 }
-            
+
                 try {
                     if (typeof Diff2Html === 'undefined') throw new Error('diff2html library not loaded');
                     const renderer = Diff2Html.html || Diff2Html.getPrettyHtml;
@@ -3586,7 +3615,7 @@
                 }
             };
         }
-        
+
         document.getElementById("btn-preview").addEventListener("click", togglePreview);
         document.getElementById("btn-preview-full").addEventListener("click", toggleFullPreview);
         const btnPreviewTheme = document.getElementById("btn-preview-theme");
@@ -3659,7 +3688,7 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
-      
+
         function insertSnippetByKey(snipKey) {
             if (!window.editor) return;
 
@@ -3733,10 +3762,10 @@
             const filterTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
             if (clearBtn) clearBtn.style.display = filterTerm ? 'block' : 'none';
-            
+
             let html = `<div class="snippet-lexicon-row" data-snip-key="help"><span class="ext-snippets-key">/help</span>: Show alert list</div>`;
             let count = 0;
-            
+
             for (const [key, data] of Object.entries(coreSnippets)) {
                 if (!data.extensions || data.extensions.length === 0 || data.extensions.includes(currentExt)) {
                     if (activeSidebarSnippetFilter === 'custom' && !data.isCustom) continue;
@@ -3751,7 +3780,7 @@
                 }
             }
             if (count === 0) html += `<span class="ext-snippets-empty">No matching snippets for .${currentExt || 'txt'}</span><br>`;
-            
+
             html += `<div class="ext-snippets-separator"></div><i>Type keyword then press <b>Tab</b></i>`;
             container.innerHTML = html;
 
@@ -3885,7 +3914,7 @@
                         window.history.replaceState({}, document.title, window.location.pathname);
                         return;
                     }
-                    
+
                     isInitialLoad = true;
                     fileHandle = null; // Forces "Save As" since we don't have FileSystemAccess rights on shared Android intents
                     isModified = false;
@@ -3906,33 +3935,33 @@
                     applyNativeColoration(currentFileName);
                     emitFileOpen();
                     updateUI();
-                    
-                    setTimeout(() => { 
-                        if (editor) editor.focus(); 
-                        isInitialLoad = false; 
+
+                    setTimeout(() => {
+                        if (editor) editor.focus();
+                        isInitialLoad = false;
                     }, 50);
                 }
-                
+
                 // Clean the URL to prevent reloading the same shared file upon manual page refresh
                 window.history.replaceState({}, document.title, window.location.pathname);
-                
+
             } catch (err) {
                 console.error("Error reading shared content from IDB:", err);
             }
         }
-        
+
         // Trigger the check shortly after the UI and Ace editor are initialized
         setTimeout(checkSharedContent, 300);
-        
+
         updateUI();
-        
+
         // FORCE TOOL RENDERING AND AUTO-FOCUS AT STARTUP FOR "[New]" FILE
         // Use currentFileName, not "": a file opened from the OS file manager
         // (launchQueue) can already be loaded when this timer fires, and
         // resetting to "" would drop its syntax coloring until a manual reload.
-        setTimeout(() => { 
-            applyNativeColoration(currentFileName); 
-            if (editor) editor.focus(); 
+        setTimeout(() => {
+            applyNativeColoration(currentFileName);
+            if (editor) editor.focus();
         }, 100);
     </script>
 </body>
