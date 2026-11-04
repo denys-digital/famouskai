@@ -18,7 +18,7 @@
  *
  * -------------------------------------------------------------------------
  * COMMERCIAL LICENSE
- * For commercial integration without the AGPLv3 strict open-source 
+ * For commercial integration without the AGPLv3 strict open-source
  * restrictions, please contact the author to acquire a commercial license.
  * -------------------------------------------------------------------------
  *
@@ -46,7 +46,6 @@
     <title>Diffskai - Compare & Conflict Resolution</title>
     <link rel="icon" type="image/svg+xml" href="../icon.svg">
     <link rel="stylesheet" href="../style.css">
-    
 
     <!-- Local idb-keyval for offline PWA storage -->
     <script src="../vendor/idb-keyval/umd.min.js"></script>
@@ -65,7 +64,7 @@
                 <div class="divider" id="div-left"></div>
                 <span id="label-left" class="file-name-display">Original</span>
             </div>
-            
+
             <!-- RIGHT PANEL -->
             <div class="header-panel right">
                 <button id="btn-open-right" disabled>Open</button>
@@ -74,7 +73,7 @@
                 <span id="label-right" class="file-name-display">Modified</span>
             </div>
         </div>
-        
+
         <div id="diff-container"><div id="loader">Loading Diffskai...</div></div>
     </div>
 
@@ -107,14 +106,14 @@
         };
 
         require.config({ paths: { 'vs': '../vendor/monaco-editor' }});
-    
+
         let diffEditor, originalModel, modifiedModel;
         let originalHandle = null, modifiedHandle = null;
         let sourceHandle = null, sourceBaseline = 0;
         let leftListener = null, rightListener = null;
         let isConflictMode = false;
         let sessionId = null;
-        
+
         // One map for both entry points: the session record (ext or language name)
         // and files opened with the Open buttons (file extension).
         const LANGUAGE_BY_EXT = {
@@ -133,7 +132,7 @@
         // GLOBAL WORKSPACE: Asynchronous initialization (I/O)
         // =========================================================================
         window.currentWorkspaceHandle = null;
-        
+
         async function initWorkspace() {
             try {
                 const handle = await idbKeyval.get('default_workspace_handle');
@@ -154,7 +153,7 @@
             const labelId = side === 'left' ? 'label-left' : 'label-right';
             const btnId = side === 'left' ? 'btn-save-left' : 'btn-save-right';
             const handle = side === 'left' ? originalHandle : modifiedHandle;
-            
+
             const span = document.getElementById(labelId);
 
             // Build the label with DOM nodes, never innerHTML: a file name is user data
@@ -186,17 +185,39 @@
             document.getElementById(btnId).disabled = !(state.isModified || !handle || isConflictMode);
         }
 
+        // Monaco hides the unchanged regions once, then a full setValue counts as an
+        // edit on every line and reveals them all. After each load, re-apply the
+        // "Collapse unchanged" setting as soon as the new diff is computed.
+        function applyCollapseSetting() {
+            const toggle = document.getElementById('toggle-collapse');
+            if (!diffEditor || !toggle || !toggle.checked) return;
+            const sub = diffEditor.onDidUpdateDiff(() => {
+                sub.dispose();
+                clearTimeout(timer);
+                diffEditor.updateOptions({ hideUnchangedRegions: { enabled: false } });
+                diffEditor.updateOptions({ hideUnchangedRegions: { enabled: true } });
+            });
+            // No diff update (same text): drop the listener so a later edit is not collapsed.
+            const timer = setTimeout(() => sub.dispose(), 3000);
+        }
+
+        // Every way of loading text into a side goes through here.
+        function loadSideText(model, text) {
+            applyCollapseSetting();
+            model.setValue(text);
+        }
+
         function setupListeners() {
             if (leftListener) leftListener.dispose();
             if (rightListener) rightListener.dispose();
-            
+
             leftListener = originalModel.onDidChangeContent(() => {
                 if (!leftState.isInitialLoad && !leftState.isModified) {
                     leftState.isModified = true;
                     updateUI('left', leftState);
                 }
             });
-            
+
             rightListener = modifiedModel.onDidChangeContent(() => {
                 if (!rightState.isInitialLoad && !rightState.isModified) {
                     rightState.isModified = true;
@@ -235,7 +256,7 @@
 
             diffEditor = monaco.editor.createDiffEditor(document.getElementById('diff-container'), {
                 theme: 'famouskai-dark',
-                originalEditable: true, 
+                originalEditable: true,
                 automaticLayout: true,
                 renderSideBySide: true,
                 ignoreTrimWhitespace: true,
@@ -244,7 +265,7 @@
                 fontSize: 18,
                 minimap: { enabled: false },
                 hideUnchangedRegions: { enabled: true, contextLineCount: 3, minimumLineCount: 3, revealLineCount: 5 },
-                
+
                 // --- LARGE FILE CRASH FIX ---
                 maxComputationTime: 0, // Disable timeout (calculation will run to completion)
                 diffAlgorithm: 'legacy' // Use stable engine immune to lineRange.ts bug
@@ -258,7 +279,7 @@
             // =========================================================================
             const urlParams = new URLSearchParams(window.location.search);
             sessionId = urlParams.get('session');
-            
+
             let record = null;
             if (sessionId) {
                 try {
@@ -267,7 +288,7 @@
                     console.warn("Failed to load session record:", e);
                 }
             }
-            
+
             if (record) {
                 isConflictMode = (record.mode === 'conflict');
                 sourceHandle = record.handle || null;
@@ -296,8 +317,8 @@
                     // INVARIANT (do not swap): LEFT is the read-only disk snapshot,
                     // RIGHT is the editable buffer that "Save & Overwrite" will write
                     // back to `modifiedHandle` (the real on-disk FileSystemFileHandle).
-                    originalModel.setValue(record.diskText || '');  // LEFT  = disk (read-only)
-                    modifiedModel.setValue(record.buffer || '');    // RIGHT = user buffer (editable, saved)
+                    loadSideText(originalModel, record.diskText || '');  // LEFT  = disk (read-only)
+                    loadSideText(modifiedModel, record.buffer || '');    // RIGHT = user buffer (editable, saved)
 
                     leftState.name = record.filename || 'File';
                     rightState.name = record.filename || 'File';
@@ -314,7 +335,7 @@
                     // Compare mode
                     modifiedHandle = record.handle || null;
 
-                    modifiedModel.setValue(record.buffer || '');
+                    loadSideText(modifiedModel, record.buffer || '');
                     rightState.name = record.filename || 'Untitled_File';
                     rightState.isFamouskaiSource = true;
                     rightState.isModified = false;
@@ -344,16 +365,17 @@
             });
             document.getElementById('toggle-wordwrap').addEventListener('change', (e) => {
                 diffEditor.updateOptions({ wordWrap: e.target.checked ? "on" : "off" });
-            });            
+            });
 
             // SWAP ACTION
             document.getElementById('btn-swap').addEventListener('click', () => {
-                if (isConflictMode) return; 
+                if (isConflictMode) return;
 
                 const tempModel = originalModel;
                 originalModel = modifiedModel;
                 modifiedModel = tempModel;
-                
+
+                applyCollapseSetting();
                 diffEditor.setModel({ original: originalModel, modified: modifiedModel });
                 setupListeners();
 
@@ -364,11 +386,11 @@
                 const tempName = leftState.name;
                 const tempMod = leftState.isModified;
                 const tempSource = leftState.isFamouskaiSource;
-                
+
                 leftState.name = rightState.name;
                 leftState.isModified = rightState.isModified;
                 leftState.isFamouskaiSource = rightState.isFamouskaiSource;
-                
+
                 rightState.name = tempName;
                 rightState.isModified = tempMod;
                 rightState.isFamouskaiSource = tempSource;
@@ -382,10 +404,10 @@
             if (!diffEditor) return; // Monaco not ready yet (Open buttons are disabled until then)
             const state = side === 'left' ? leftState : rightState;
             const currentHandle = side === 'left' ? originalHandle : modifiedHandle;
-            
+
             try {
                 const pickerOptions = {};
-                
+
                 // Priority 1: Existing handle on the active panel
                 if (currentHandle) {
                     pickerOptions.startIn = currentHandle;
@@ -405,7 +427,7 @@
                 const [fileHandle] = await window.showOpenFilePicker(pickerOptions);
                 const file = await fileHandle.getFile();
                 const text = await file.text();
-                
+
                 if (side === 'left') originalHandle = fileHandle;
                 else modifiedHandle = fileHandle;
 
@@ -414,15 +436,15 @@
                 const lang = languageFor(file.name.split('.').pop());
                 // Read the model now, not at click time: Swap may run while the picker is open.
                 const modelToUpdate = side === 'left' ? originalModel : modifiedModel;
-                
+
                 state.isInitialLoad = true;
                 monaco.editor.setModelLanguage(modelToUpdate, lang);
-                modelToUpdate.setValue(text);
-                
+                loadSideText(modelToUpdate, text);
+
                 state.name = file.name;
                 state.isModified = false;
                 updateUI(side, state);
-                
+
                 setTimeout(() => { state.isInitialLoad = false; }, 50);
             } catch (err) {
                 if (err.name !== 'AbortError') alert("Error: " + err.message);
@@ -433,11 +455,11 @@
             const btnId = side === 'left' ? 'btn-save-left' : 'btn-save-right';
             const state = side === 'left' ? leftState : rightState;
             let handle = side === 'left' ? originalHandle : modifiedHandle;
-            
+
             try {
                 if (!handle) {
                     const opts = { suggestedName: state.name.includes("imported") ? "original.txt" : state.name };
-                    
+
                     if (sourceHandle) {
                         opts.startIn = sourceHandle;
                     } else if (window.currentWorkspaceHandle) {
@@ -446,13 +468,13 @@
                         }
                         opts.startIn = window.currentWorkspaceHandle;
                     }
-                    
+
                     handle = await window.showSaveFilePicker(opts);
                     if (side === 'left') originalHandle = handle;
                     else modifiedHandle = handle;
                     state.name = handle.name;
                 }
-                
+
                 // Permission check if handle exists
                 if (await handle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
                     const perm = await handle.requestPermission({ mode: 'readwrite' });
@@ -481,7 +503,7 @@
                 const writable = await handle.createWritable();
                 await writable.write(model.getValue());
                 await writable.close();
-                
+
                 // Update baseline timestamp if writing to the source handle
                 if (handle === sourceHandle) {
                     sourceBaseline = (await handle.getFile()).lastModified;
@@ -492,22 +514,22 @@
                     if (sessionId) {
                         await idbKeyval.del('diffskai_session_' + sessionId);
                     }
-                    
+
                     new BroadcastChannel('famouskai_sync').postMessage({ type: 'MERGE_COMPLETE', sessionId: sessionId, handle: handle });
-                    
+
                     alert("File successfully overwritten! The main editor has been updated.");
                     rightState.isModified = false; // saved: no close warning
                     window.close();
-                    return; 
+                    return;
                 }
-                
+
                 // --- BROADCAST SYNC SIGNAL IN NORMAL MODE ---
                 // Notify the main PWA that a file was saved to disk
                 new BroadcastChannel('famouskai_sync').postMessage({ type: 'DIFFSKAI_SAVED', sessionId: sessionId, handle: handle });
-        
+
                 state.isModified = false;
                 updateUI(side, state);
-                
+
                 const btn = document.getElementById(btnId);
                 const originalText = btn.textContent;
                 btn.textContent = "Saved";
@@ -520,7 +542,7 @@
 
         document.getElementById('btn-open-left').addEventListener('click', () => loadFile('left'));
         document.getElementById('btn-open-right').addEventListener('click', () => loadFile('right'));
-        
+
         document.getElementById('btn-save-left').addEventListener('click', () => saveFile(originalModel, 'left'));
         document.getElementById('btn-save-right').addEventListener('click', () => saveFile(modifiedModel, 'right'));
 
