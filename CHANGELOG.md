@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-05
+
 ### Changed
 
 - Contributing: new coding standard "No emoji": no pictographs in code, user
