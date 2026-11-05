@@ -174,6 +174,13 @@ All comments (HTML, JS, CSS, MD) are written in
 English, regardless of the contributor's native language, so the
 files read consistently for the whole open-source community.
 
+#### 2. No emoji
+
+No emoji (pictographs such as 🚀, ✅ or 📁) in code, user interface
+text, comments, commit messages or pull request titles. Plain
+typographic symbols are fine (☰, ➔, and the Famous Marks ﹥ • °):
+they are text characters, not pictures.
+
 ### CSS Style Guide
 
 No linter or formatter enforces these rules — they exist so every
