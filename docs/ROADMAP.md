@@ -1,23 +1,25 @@
 # Roadmap
 
-What comes after Famouskai 0.1.0 (Sankukai). There are no dates on purpose: each line says what changes for you, not when.
+What comes next for Famouskai. Each version line has a name: 0.1.x is Sankukai, 0.2.x is Osakai. There are no dates on purpose: each line says what changes for you, not when.
 
-## 0.1.x: fixes
+## 0.2.x: for contributors (Osakai)
 
-- Fixes for issues reported after the 0.1.0 release.
+Shipped in 0.2.0:
 
-## 0.2: for contributors
+- The main script is split into small files in `core/`, each with its own unit test page: easier to read, easier to change.
+- A Content Security Policy for the app and every HTML export.
+- An API to add sidebar tabs and drawers from an extension, each with its own color.
+- Mobkai: a minimal note mode on a phone.
 
-- Dynamic Magic Snippets, and click-to-insert from the snippet list.
+Already shipped in 0.1.x: relative paths for hosting in a sub-folder, a basic open/download fallback for Firefox and Safari, click-to-insert from the snippet list.
+
+Next (several are open good first issues):
+
+- Dynamic Magic Snippets.
 - Search inside the Markdown preview, with highlighted matches and next/previous.
 - Click a heading in the Outline to scroll the preview to it.
 - Markdown preview: GitHub and Obsidian style callouts (`> [!NOTE]`, `> [!WARNING]`…).
 - Change case of the selection: UPPER, lower, Title Case, camelCase.
-- Split the main script of `index.html` into smaller `core-*.js` files, easier to read and to change.
-- A Content Security Policy, once the inline script is split.
-- Relative paths in the Service Worker and the manifest, so Famouskai can be hosted in a sub-folder (for example GitHub Pages).
-- A basic open/download fallback for Firefox and Safari.
-- An API to add sidebar tabs and drawers from an extension, each with its own color.
 
 ## Later: ideas being explored
 

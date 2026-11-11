@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core File Operations (core-file.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core File Unit Tests (core/core-file.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        test("CF-01", "newFile() on a clean editor", "empty buffer, currentFileName empty, isModified false, title shows [New]", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const value = appWin.editor.getValue();
+            const filename = appWin.eval("currentFileName");
+            const modified = appWin.eval("isModified");
+            const title = appWin.document.title;
+            const fileNameEl = appWin.document.getElementById("file-name-text");
+            const fileNameText = fileNameEl ? fileNameEl.textContent : "";
+
+            if (value !== "") throw new Error(`Editor value expected empty, got '${value}'`);
+            if (filename !== "") throw new Error(`currentFileName expected '', got '${filename}'`);
+            if (modified !== false) throw new Error(`isModified expected false, got ${modified}`);
+            if (!title.includes("[New]")) throw new Error(`document.title expected to contain '[New]', got '${title}'`);
+            if (!fileNameText.includes("[New]")) throw new Error(`file-name-text expected to contain '[New]', got '${fileNameText}'`);
+        });
+
+        test("CF-02", "Type text after newFile()", "isModified becomes true", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(100);
+
+            appWin.editor.setValue("hello world", 1);
+
+            const modified = appWin.eval("isModified");
+            if (modified !== true) throw new Error(`isModified expected true after typing, got ${modified}`);
+        });
+
+        test("CF-03", "Open a mock handle notes.md via openFile()", "editor text equals file text, currentFileName is notes.md, Markdown mode set, isModified false", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const mock = mockFileHandle("notes.md", "# Hello Markdown\nFirst line", 1000);
+            appWin.confirm = () => true;
+            appWin.showOpenFilePicker = async () => [mock];
+
+            await appWin.openFile();
+            await delay(100);
+
+            const value = appWin.editor.getValue();
+            const filename = appWin.eval("currentFileName");
+            const modified = appWin.eval("isModified");
+            const modeId = appWin.editor.session.$modeId;
+
+            if (value !== "# Hello Markdown\nFirst line") throw new Error(`Editor value mismatch, got '${value}'`);
+            if (filename !== "notes.md") throw new Error(`currentFileName expected 'notes.md', got '${filename}'`);
+            if (modeId !== "ace/mode/markdown") throw new Error(`Mode expected 'ace/mode/markdown', got '${modeId}'`);
+            if (modified !== false) throw new Error(`isModified expected false, got ${modified}`);
+        });
+
+        test("CF-04", "Edit then saveFile()", "mock received exactly the editor text, isModified false afterwards", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const mock = mockFileHandle("notes.md", "# Hello Markdown", 1000);
+            appWin.confirm = () => true;
+            appWin.showOpenFilePicker = async () => [mock];
+            await appWin.openFile();
+            await delay(100);
+
+            appWin.editor.setValue("# Updated Markdown", 1);
+            await appWin.saveFile();
+
+            const modified = appWin.eval("isModified");
+
+            if (!mock.writes.includes("# Updated Markdown")) {
+                throw new Error(`Mock expected write '# Updated Markdown', recorded: ${JSON.stringify(mock.writes)}`);
+            }
+            if (mock._text !== "# Updated Markdown") {
+                throw new Error(`Mock _text expected '# Updated Markdown', got '${mock._text}'`);
+            }
+            if (modified !== false) throw new Error(`isModified expected false after save, got ${modified}`);
+        });
+
+        test("CF-05", "Conflict: mock lastModified changes after opening, then saveFile()", "file is NOT overwritten, conflict prompt ran", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const mock = mockFileHandle("notes.md", "# Hello Markdown", 1000);
+            appWin.confirm = () => true;
+            appWin.showOpenFilePicker = async () => [mock];
+            await appWin.openFile();
+            await delay(100);
+
+            // Simulate external disk modification
+            mock.lastModified = 2000;
+            appWin.editor.setValue("# Conflict Edit", 1);
+            mock.writes = [];
+
+            let confirmCalled = false;
+            appWin.confirm = (msg) => {
+                confirmCalled = true;
+                return false; // User declines opening Diffskai
+            };
+
+            // Ensure Diffskai prepareSession mock exists if needed
+            if (!appWin.FamousPluginCore.Diffskai) appWin.FamousPluginCore.Diffskai = {};
+            appWin.FamousPluginCore.Diffskai.prepareSession = async () => "test_conflict_id";
+
+            await appWin.saveFile();
+
+            if (mock.writes.length > 0) {
+                throw new Error(`Mock should NOT have received writes on conflict, but received ${JSON.stringify(mock.writes)}`);
+            }
+            if (!confirmCalled) {
+                throw new Error("Expected conflict confirm dialog to be called");
+            }
+        });
+
+        test("CF-06", "applyNativeColoration('a.json'), ('a.yml'), ('a.diff'), ('noext')", "Ace mode matches extension", async (appWin) => {
+            appWin.eval("applyNativeColoration('a.json')");
+            if (appWin.editor.session.$modeId !== "ace/mode/json") {
+                throw new Error(`a.json mode expected 'ace/mode/json', got '${appWin.editor.session.$modeId}'`);
+            }
+
+            appWin.eval("applyNativeColoration('a.yml')");
+            if (appWin.editor.session.$modeId !== "ace/mode/yaml") {
+                throw new Error(`a.yml mode expected 'ace/mode/yaml', got '${appWin.editor.session.$modeId}'`);
+            }
+
+            appWin.eval("applyNativeColoration('a.diff')");
+            if (appWin.editor.session.$modeId !== "ace/mode/diff") {
+                throw new Error(`a.diff mode expected 'ace/mode/diff', got '${appWin.editor.session.$modeId}'`);
+            }
+
+            appWin.eval("applyNativeColoration('noext')");
+            if (appWin.editor.session.$modeId !== "ace/mode/text") {
+                throw new Error(`noext mode expected 'ace/mode/text', got '${appWin.editor.session.$modeId}'`);
+            }
+        });
+
+        test("CF-08", "getSaveTypesFor(): the suggested file's own type comes first (Android Save picker)", "txt first for famous-untitled.txt, md first for notes.md, generic list only for an unknown extension", async (appWin) => {
+            const t1 = appWin.eval("getSaveTypesFor('famous-untitled.txt')");
+            if (t1.length !== 2 || JSON.stringify(t1[0].accept) !== JSON.stringify({ 'text/plain': ['.txt'] })) {
+                throw new Error(`txt: unexpected types ${JSON.stringify(t1)}`);
+            }
+            const t2 = appWin.eval("getSaveTypesFor('notes.md')");
+            if (JSON.stringify(t2[0].accept) !== JSON.stringify({ 'text/markdown': ['.md'] })) {
+                throw new Error(`md: unexpected first type ${JSON.stringify(t2[0])}`);
+            }
+            const t3 = appWin.eval("getSaveTypesFor('archive.zip')");
+            if (t3.length !== 1 || !t3[0].accept['text/*']) {
+                throw new Error(`zip: expected the generic list only, got ${JSON.stringify(t3)}`);
+            }
+        });
+
+        test("CF-09", "saveAsFile() in Mobkai passes no type list (Android keeps the typed name)", "desktop: types given; Mobkai: name asked first (default famous-untitled.md), then the picker gets that name and no types", async (appWin) => {
+            appWin.confirm = () => true;
+            appWin.eval("newFile()");
+            await delay(100);
+            let seen = null;
+            appWin.showSaveFilePicker = async (opts) => { seen = opts; return mockFileHandle("famous-untitled.md", "", 1000); };
+            await appWin.saveAsFile();
+            if (!seen || !Array.isArray(seen.types)) throw new Error(`desktop: expected a type list, got ${JSON.stringify(seen)}`);
+            const realIsMobkai = appWin.isMobkai;
+            const realAsk = appWin.askFileName;
+            appWin.isMobkai = () => true;
+            let asked = null;
+            appWin.askFileName = async (name) => { asked = name; return "note.txt"; };
+            try {
+                appWin.eval("newFile()");
+                await delay(100);
+                seen = null;
+                await appWin.saveAsFile();
+                if (!seen || 'types' in seen) throw new Error(`Mobkai: expected no type list, got ${JSON.stringify(seen)}`);
+                if (asked !== 'famous-untitled.md') throw new Error(`Mobkai: expected the name dialog with famous-untitled.md, got ${asked}`);
+                if (seen.suggestedName !== 'note.txt') throw new Error(`Mobkai: expected the picker to get the chosen name note.txt, got ${seen.suggestedName}`);
+            } finally {
+                appWin.isMobkai = realIsMobkai;
+                appWin.askFileName = realAsk;
+            }
+        });
+
+        test("CF-07", "reloadFile() after mock text changed", "editor shows new text, isModified false", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const mock = mockFileHandle("notes.md", "Original Content", 1000);
+            appWin.confirm = () => true;
+            appWin.showOpenFilePicker = async () => [mock];
+            await appWin.openFile();
+            await delay(100);
+
+            mock._text = "Disk Modified Content";
+            mock.lastModified = 2000;
+
+            await appWin.reloadFile();
+            await delay(100);
+
+            const value = appWin.editor.getValue();
+            const modified = appWin.eval("isModified");
+
+            if (value !== "Disk Modified Content") {
+                throw new Error(`Editor expected 'Disk Modified Content', got '${value}'`);
+            }
+            if (modified !== false) throw new Error(`isModified expected false after reload, got ${modified}`);
+        });
+
+        window.addEventListener("load", async () => {
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            }
+        });
+    </script>
+</body>
+</html>

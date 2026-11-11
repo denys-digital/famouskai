@@ -1,0 +1,3 @@
+# Never commit installed Node packages (the CI and Julius install playwright-core in the checkout)
+node_modules/
+npm-debug.log*

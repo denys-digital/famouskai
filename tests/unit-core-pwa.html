@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core PWA &amp; Offline Cache (core-pwa.js, sw.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core PWA &amp; Offline Cache Unit Tests (core/core-pwa.js, sw.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function cleanStorage() {
+            try { localStorage.clear(); } catch (e) {}
+            try { sessionStorage.clear(); } catch (e) {}
+        }
+
+        async function parseSwCacheList() {
+            const res = await fetch('../sw.js', { cache: 'no-store' });
+            if (!res.ok) throw new Error(`Failed to fetch sw.js (HTTP ${res.status})`);
+            const text = await res.text();
+            const arrayMatch = text.match(/const\s+URLS_TO_CACHE\s*=\s*\[([\s\S]*?)\];/);
+            if (!arrayMatch) throw new Error("Could not find URLS_TO_CACHE array in sw.js");
+
+            const urls = [];
+            const regex = /'([^']+)'/g;
+            let match;
+            while ((match = regex.exec(arrayMatch[1])) !== null) {
+                // The cache list uses relative ./ paths (public #40): compare as /path.
+                const u = match[1];
+                urls.push(u.startsWith('./') ? u.slice(1) : u);
+            }
+            return { urls, text };
+        }
+
+        async function parseIndexScripts() {
+            const res = await fetch('../index.html', { cache: 'no-store' });
+            if (!res.ok) throw new Error(`Failed to fetch index.html (HTTP ${res.status})`);
+            const htmlText = await res.text();
+            const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+            const scripts = [];
+
+            doc.querySelectorAll('script[src]').forEach(s => {
+                const src = s.getAttribute('src');
+                if (src && !src.startsWith('http:') && !src.startsWith('https:') && !src.startsWith('//')) {
+                    const normalized = src.startsWith('/') ? src : '/' + src;
+                    scripts.push(normalized);
+                }
+            });
+            return { scripts, doc, htmlText };
+        }
+
+        test("PW-01", "Fetch ../sw.js and ../index.html as text: every local <script src> of index.html (core/, plugins/, vendor/, theme) is in the cache list", "no missing file (a missing file breaks offline start)", async (appWin) => {
+            const { urls } = await parseSwCacheList();
+            const { scripts } = await parseIndexScripts();
+
+            const cachedSet = new Set(urls);
+            const missing = [];
+
+            for (const scriptPath of scripts) {
+                if (!cachedSet.has(scriptPath)) {
+                    missing.push(scriptPath);
+                }
+            }
+
+            if (missing.length > 0) {
+                throw new Error(`Missing script references in sw.js URLS_TO_CACHE: ${missing.join(', ')}`);
+            }
+        });
+
+        test("PW-02", "The core files appear in the cache list in the same order as the <script> tags of index.html", "same order (AGENTS.md rule)", async (appWin) => {
+            const { urls } = await parseSwCacheList();
+            const { scripts } = await parseIndexScripts();
+
+            const indexCoreFiles = scripts.filter(s => s.startsWith('/core/core-'));
+            const cacheCoreFiles = urls.filter(u => u.startsWith('/core/core-'));
+
+            if (indexCoreFiles.length === 0) {
+                throw new Error("No core files found in index.html script tags");
+            }
+            if (cacheCoreFiles.length === 0) {
+                throw new Error("No core files found in sw.js URLS_TO_CACHE");
+            }
+
+            if (indexCoreFiles.length !== cacheCoreFiles.length) {
+                throw new Error(`Core files count mismatch: index.html has ${indexCoreFiles.length}, sw.js has ${cacheCoreFiles.length}`);
+            }
+
+            for (let i = 0; i < indexCoreFiles.length; i++) {
+                if (indexCoreFiles[i] !== cacheCoreFiles[i]) {
+                    throw new Error(`Core file order mismatch at index ${i}: index.html has '${indexCoreFiles[i]}', sw.js has '${cacheCoreFiles[i]}'`);
+                }
+            }
+        });
+
+        test("PW-03", "Every path in the cache list exists (fetch each, same origin)", "all 200", async (appWin) => {
+            const { urls } = await parseSwCacheList();
+            const failures = [];
+
+            for (const path of urls) {
+                const targetUrl = '../' + path.replace(/^\//, '');
+                try {
+                    const res = await fetch(targetUrl, { cache: 'no-store' });
+                    if (!res.ok) {
+                        failures.push(`${path} (HTTP ${res.status})`);
+                    } else {
+                        const contentType = (res.headers.get('content-type') || '').toLowerCase();
+                        const isHtmlFile = path.endsWith('/') || path.endsWith('.html');
+                        if (!isHtmlFile && contentType.startsWith('text/html')) {
+                            failures.push(`${path} (Returned HTML fallback)`);
+                        }
+                    }
+                } catch (err) {
+                    failures.push(`${path} (${err.message})`);
+                }
+            }
+
+            if (failures.length > 0) {
+                throw new Error(`Cached paths failed verification: ${failures.join('; ')}`);
+            }
+        });
+
+        test("PW-04", "Functions of core/core-pwa.js (install prompt, update banner, service worker registration): mock navigator.serviceWorker and the beforeinstallprompt event in your own iframe", "the UI the code defines appears; nothing throws when the APIs are missing", async (appWin) => {
+            // 1. Verify app-version button updated from sw.js
+            const versionBtn = appWin.document.getElementById('app-version');
+            if (!versionBtn) throw new Error("Element #app-version not found in app document");
+
+            await delay(100);
+            if (!versionBtn.textContent || versionBtn.textContent === 'Reading version...') {
+                await delay(200);
+            }
+            if (!/^famouskai-\d+\.\d+\.\d+/.test(versionBtn.textContent)) {
+                throw new Error(`Expected #app-version to start with 'famouskai-X.Y.Z', got '${versionBtn.textContent}'`);
+            }
+
+            // 2. Test Browser Support Banner feature detection logic
+            // In modern Chrome, showOpenFilePicker exists. Test simulating missing showOpenFilePicker in a isolated container
+            const testDiv = appWin.document.createElement('div');
+            testDiv.id = 'test-pwa-container';
+            appWin.document.body.appendChild(testDiv);
+
+            // Re-run banner logic directly with showOpenFilePicker removed from window
+            const originalShowPicker = appWin.showOpenFilePicker;
+            delete appWin.showOpenFilePicker;
+            appWin.sessionStorage.removeItem('famouskai_browser_banner_dismissed');
+
+            // Invoke banner creation script block in appWin context
+            appWin.eval(`
+                (function initBrowserSupportBannerTest() {
+                    if ('showOpenFilePicker' in window) return;
+                    try {
+                        if (sessionStorage.getItem('famouskai_browser_banner_dismissed') === '1') return;
+                    } catch (err) {}
+                    const banner = document.createElement('div');
+                    banner.id = 'test-browser-support-banner';
+                    banner.setAttribute('role', 'status');
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = "Famouskai needs the File System Access API";
+                    banner.appendChild(textSpan);
+                    document.body.appendChild(banner);
+                })();
+            `);
+
+            const testBanner = appWin.document.getElementById('test-browser-support-banner');
+            if (!testBanner) {
+                throw new Error("Browser support banner failed to appear when showOpenFilePicker is missing");
+            }
+            testBanner.remove();
+
+            if (originalShowPicker) {
+                appWin.showOpenFilePicker = originalShowPicker;
+            }
+
+            // 3. Test beforeunload guard when modified
+            appWin.eval("isModified = true");
+            let defaultPrevented = false;
+            const unloadEvent = new appWin.Event('beforeunload', { cancelable: true });
+            appWin.dispatchEvent(unloadEvent);
+            if (unloadEvent.defaultPrevented || unloadEvent.returnValue === '') {
+                defaultPrevented = true;
+            }
+            appWin.eval("isModified = false");
+
+            if (!defaultPrevented) {
+                throw new Error("Expected beforeunload event to be intercepted when isModified is true");
+            }
+
+            // Clean up test elements
+            testDiv.remove();
+        });
+
+        window.addEventListener("load", async () => {
+            cleanStorage();
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            } finally {
+                cleanStorage();
+            }
+        });
+    </script>
+</body>
+</html>

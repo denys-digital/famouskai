@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Shortcuts (core-shortcuts.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Shortcuts Unit Tests (core/core-shortcuts.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        test("SH-01", "Execute editor commands (foldCustom, unfoldCustom, magicSnippets)", "Fold/unfold run without error, /fa magic snippet expands properly", async (appWin) => {
+            const editor = appWin.editor;
+
+            // 1. Fold / Unfold Custom
+            editor.setValue("function test() {\n  return true;\n}", 1);
+            editor.gotoLine(1, 0);
+
+            // Test foldCustom command
+            let foldCmd = editor.commands.commands["foldCustom"];
+            if (!foldCmd) throw new Error("foldCustom command not registered in editor");
+            editor.execCommand("foldCustom");
+
+            // Test unfoldCustom command
+            let unfoldCmd = editor.commands.commands["unfoldCustom"];
+            if (!unfoldCmd) throw new Error("unfoldCustom command not registered in editor");
+            editor.execCommand("unfoldCustom");
+
+            // 2. Magic Snippets command
+            let snippetCmd = editor.commands.commands["magicSnippets"];
+            if (!snippetCmd) throw new Error("magicSnippets command not registered in editor");
+
+            // Set currentFileName to code.js
+            appWin.eval("currentFileName = 'test.js'");
+            editor.setValue("/fa", 1);
+            // Position cursor right after /fa
+            editor.gotoLine(1, 3);
+
+            editor.execCommand("magicSnippets");
+
+            const val = editor.getValue();
+            if (!val.includes("﹥")) {
+                throw new Error(`Magic snippet /fa failed to expand into '﹥', got '${val}'`);
+            }
+        });
+
+        test("SH-02", "Dispatch global keydown shortcuts (Ctrl+S, Ctrl+O, Ctrl+N, Ctrl+F)", "Corresponding functions called and event prevented", async (appWin) => {
+            let called = {};
+
+            const origSaveFile = appWin.saveFile;
+            const origOpenFile = appWin.openFile;
+            const origNewFile = appWin.newFile;
+            const origToggleSearch = appWin.toggleSearch;
+
+            appWin.saveFile = () => { called.save = (called.save || 0) + 1; };
+            appWin.openFile = () => { called.open = (called.open || 0) + 1; };
+            appWin.newFile = () => { called.new = (called.new || 0) + 1; };
+            appWin.toggleSearch = () => { called.search = (called.search || 0) + 1; };
+
+            try {
+                const keys = [
+                    { key: 's', name: 'save' },
+                    { key: 'o', name: 'open' },
+                    { key: 'n', name: 'new' },
+                    { key: 'f', name: 'search' }
+                ];
+
+                for (const k of keys) {
+                    const evt = new appWin.KeyboardEvent('keydown', {
+                        key: k.key,
+                        ctrlKey: true,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    const dispatched = appWin.dispatchEvent(evt);
+                    if (dispatched !== false || !evt.defaultPrevented) {
+                        throw new Error(`Ctrl+${k.key.toUpperCase()} event was not defaultPrevented`);
+                    }
+                    if (called[k.name] !== 1) {
+                        throw new Error(`Expected ${k.name} handler to be called once for Ctrl+${k.key.toUpperCase()}, got ${called[k.name] || 0}`);
+                    }
+                }
+            } finally {
+                appWin.saveFile = origSaveFile;
+                appWin.openFile = origOpenFile;
+                appWin.newFile = origNewFile;
+                appWin.toggleSearch = origToggleSearch;
+            }
+        });
+
+        test("SH-03", "checkAndPatchSearchBox() with 3 matches in buffer", "Search box counter shows '1 of 3'", async (appWin) => {
+            const editor = appWin.editor;
+            editor.setValue("apple\napple\napple\nbanana", -1);
+
+            // Open search box
+            appWin.toggleSearch();
+            await delay(50);
+
+            let searchInput = appWin.document.querySelector('.ace_search_field');
+            if (!searchInput) {
+                // Try finding via editor.searchBox
+                if (editor.searchBox && editor.searchBox.searchInput) {
+                    searchInput = editor.searchBox.searchInput;
+                } else {
+                    throw new Error("Search input element not found in DOM or editor.searchBox");
+                }
+            }
+
+            searchInput.value = "apple";
+            // Dispatch input event to trigger search counter update
+            searchInput.dispatchEvent(new appWin.Event("input", { bubbles: true }));
+            appWin.checkAndPatchSearchBox();
+            await delay(50);
+
+            const counterEl = appWin.document.querySelector('.ace_search_counter');
+            if (!counterEl) throw new Error("Element .ace_search_counter not found in search box");
+
+            const text = counterEl.textContent.trim();
+            if (text !== "1 of 3") {
+                throw new Error(`Expected search box counter text '1 of 3', got '${text}'`);
+            }
+        });
+
+        test("SH-04", "Autosave debounce delay triples when 'Auto-cleanup on Save' is active", "1500ms by default, 4500ms when cleanup_on_save is enabled", async (appWin) => {
+            appWin.eval("isInitialLoad = false; isAutoSaveEnabled = true; fileHandle = { name: 'test.txt' };");
+            const recordedDelays = [];
+            const origSetTimeout = appWin.setTimeout;
+
+            appWin.setTimeout = function(fn, delay, ...args) {
+                if (typeof delay === 'number' && (delay === 1500 || delay === 4500)) {
+                    recordedDelays.push(delay);
+                }
+                return origSetTimeout.call(this, fn, delay, ...args);
+            };
+
+            try {
+                // 1. Default state: cleanup_on_save is false/undefined -> 1500ms
+                appWin.FamousPluginCore.Manager.setToolSetting("Tidy & Sanitize Text", "cleanup_on_save", false);
+                appWin.editor.session.insert({ row: 0, column: 0 }, "a");
+                await delay(20);
+
+                if (recordedDelays.length === 0 || recordedDelays[recordedDelays.length - 1] !== 1500) {
+                    throw new Error(`Expected autosave delay 1500ms when cleanup_on_save=false, got ${recordedDelays[recordedDelays.length - 1]}`);
+                }
+
+                // 2. Enabled state: cleanup_on_save is true -> 4500ms (x3)
+                appWin.FamousPluginCore.Manager.setToolSetting("Tidy & Sanitize Text", "cleanup_on_save", true);
+                appWin.editor.session.insert({ row: 0, column: 1 }, "b");
+                await delay(20);
+
+                if (recordedDelays.length < 2 || recordedDelays[recordedDelays.length - 1] !== 4500) {
+                    throw new Error(`Expected autosave delay 4500ms when cleanup_on_save=true, got ${recordedDelays[recordedDelays.length - 1]}`);
+                }
+            } finally {
+                appWin.setTimeout = origSetTimeout;
+                appWin.FamousPluginCore.Manager.setToolSetting("Tidy & Sanitize Text", "cleanup_on_save", false);
+                appWin.eval("fileHandle = null; isAutoSaveEnabled = false; isInitialLoad = true;");
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            }
+        });
+    </script>
+</body>
+</html>

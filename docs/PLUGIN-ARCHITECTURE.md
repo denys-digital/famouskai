@@ -19,6 +19,30 @@ Everything belongs to a single object: `window.FamousPluginCore`.
 
 ---
 
+## Where is what: the core files
+
+Famouskai's core code is split into classic JavaScript files in `core/` loaded by `index.html` in a fixed order, sharing one global scope without modules or build steps. A function defined in a later file can be called at run time by an earlier file (for instance when a user clicks a button), but not during the initial execution of its top-level code.
+
+| File | What it holds |
+| --- | --- |
+| `core/core-mobkai.js` | Mobkai, the minimal note mode on a phone: detection (and the `?mobkai=1` / `0` / `auto` override), loaded first in `<head>` so the desktop layout never flashes; status bar (Copy all, version) and draft recovery for the [New] note. |
+| `core/core-window.js` | Window context/layout helpers (`isPopupWindow`, `getPopupAppUrl`), auto window layout initialization, global toast notifications (`window.showToast`), `window.currentWorkspaceHandle`. |
+| `core/core-workspace-store.js` | Multi-workspace selector and storage (`getSavedWorkspaces`, `saveWorkspaceToStore`, `renderWorkspaceSelect`), workspace filter handler (`applyWorkspaceFilter`), recent files stack and list renderer (`addRecentFile`, `renderRecentFilesList`). |
+| `core/core-state.js` | Shared file state (`fileHandle`, `currentFileName`, `isModified`, `lastKnownModifiedTime`), file metadata accessor (`window.FamousPluginCore.getCurrentFile`), editor and autosave state, unified workspace file configuration and icons (`WORKSPACE_FILE_GROUPS`, `FILE_ICON_MAP`). |
+| `core/core-editor.js` | UI update logic (`updateUI`), Ace Editor setup and configuration, Famous Mark YAML fold mode patching (`initFamousMarkFolding`), cursor position LocalStorage LRU cleanup, active windows tracker (`renderActiveWindowsList`). |
+| `core/core-file.js` | Syntax coloration mode mapping (`applyNativeColoration`), file lifecycle operations (`newFile`, `openFile`, `saveFile`, `saveAsFile`, `reloadFile`), file open trigger emission (`emitFileOpen`), save indicator (`afficherSucces`). |
+| `core/core-workspace-tree.js` | Workspace list refresh (`refreshWorkspaceList`), file icon badge generator (`getFileIcon`), directory tree rendering with lazy loading (`renderDirectoryTree`). |
+| `core/core-settings.js` | Side menu toggle buttons, preferences persistence (`loadPreferences`, `savePreferences`), preview theme button state (`updatePreviewThemeUI`), tool settings injection (`FamousPluginCore.Manager.renderSettings`). |
+| `core/core-shortcuts.js` | Clickable links handler, editor change listener for autosave/outline refresh, toolbar action bindings (New, Open, Save, etc.), custom keyboard shortcuts, mode detection on paste, search box match counter patch. |
+| `core/core-pwa.js` | File System Access API browser support banner, Service Worker registration, PWA `launchQueue` file handling, version reading from `sw.js` (`#app-version`), accidental reload/closure guard (`beforeunload`). |
+| `core/core-file-actions.js` | Workspace title click handler, workspace file filter listeners (`initExtFilters`), file rename dialog (`renameCurrentFile`), file move/copy actions (`copyFileName`, `moveFile`), opening HTML in new tab (`openHtmlInNewTab`). |
+| `core/core-sync.js` | BroadcastChannel listener (`'famouskai_sync'`) for cross-window and Diffskai saves/merges, auto-reload and editor update on external file changes. |
+| `core/core-preview.js` | Live preview pane toggle and rendering (`togglePreview`, `updatePreviewContent`), full preview mode (`toggleFullPreview`), PDF print (`window.print`), standalone HTML export, preview dark theme switch, new window/tab toolbar button handler. |
+| `core/core-snippets.js` | Sidebar Magic Snippets UI filtering and display (`updateSnippetsUI`), click-to-insert snippet logic (`insertSnippetByKey`), HTML escaping helper (`escapeHtml`), snippet search input and filter buttons listeners. |
+| `core/core-boot.js` | Application startup initialization (`initWorkspace`), opening file passed via URL query parameter (`checkOpenFileInNewWindow`), Android Share Target API handling (`checkSharedContent`), initial UI update and editor focus. |
+
+---
+
 ## 2. The "What" & "Where": Directory Structure
 
 All custom logic, tools, and extensions are strictly encapsulated in the `/plugins/` directory.
@@ -196,7 +220,7 @@ window.FamousPluginCore.Manager.register({
 
 ##### UI Rendering and Storage Mechanics
 
-- **UI Location:** At startup, `index.html` calls `FamousPluginCore.Manager.renderSettings()` on the `#settings-container` element of the "Windows & Settings" sidebar tab. It adds one labeled checkbox per setting.
+- **UI Location:** At startup, `core/core-settings.js` (in `loadPreferences()`) calls `FamousPluginCore.Manager.renderSettings()` on the `#settings-container` element of the "Windows & Settings" sidebar tab. It adds one labeled checkbox per setting.
 - **LocalStorage Persistence:** User preferences are stored in LocalStorage under key `famouskai_tool_settings` as a JSON object grouped by tool name: `{ "Tool Name": { "setting_id": value } }`.
 - **API Methods:**
   - `FamousPluginCore.Manager.getToolSettings(toolName)`: Returns key-value setting object for the specified tool.
@@ -210,8 +234,8 @@ Like the Tools tab, `emit()` filters tools by their `extensions` list: a tool wi
 
 ##### Available Event Names & Sources
 
-- `onFileOpen`: Dispatched in `index.html` within `openFile()` (when loading a file via native file picker) and `reloadFile()` (when re-reading active file from disk). Only these two functions emit it: files opened from the Explorer tab, the recent files list, the operating system's file manager, a new window or shared content do not trigger `onFileOpen` in 0.1.0.
-- `onBeforeSave`: Dispatched in `index.html` within `saveFile()` and `saveAsFile()` right before write operations.
+- `onFileOpen`: Dispatched in `core/core-file.js` within `openFile()` (when loading a file via native file picker) and `reloadFile()` (when re-reading active file from disk). Only these two functions emit it: files opened from the Explorer tab, the recent files list, the operating system's file manager, a new window or shared content do not trigger `onFileOpen` in 0.1.0.
+- `onBeforeSave`: Dispatched in `core/core-file.js` within `saveFile()` and `saveAsFile()` right before write operations.
 
 ##### Handler Signature & Trigger Subscription
 
@@ -323,9 +347,9 @@ Locate the `<!-- ﹥ TOOLS LOADING + EXTENSIONS -->` section of `index.html` and
 
 ```
 
-### Step 4: Initialize it in `index.html`
+### Step 4: Initialize it in `core/core-editor.js`
 
-Your extension needs to be triggered when the app loads. Find the `DOMContentLoaded` event listener in the main `<script>` block of `index.html` and trigger your `init` method:
+Your extension needs to be triggered when the app loads. Find the `DOMContentLoaded` event listener in `core/core-editor.js` and trigger your `init` method:
 
 ```javascript
 window.addEventListener('DOMContentLoaded', () => {
@@ -352,6 +376,106 @@ Double-click `index.html` in your file explorer. Press **F12** (or Ctrl+Shift+I)
 * [ ] **Initialization:** Does `console.log()` confirm my `init()` function fired exactly once during startup?
 * [ ] **Event Binding:** Does my logic trigger correctly (e.g., on keystroke, on scroll) without throwing DevTools errors?
 * [ ] **Performance:** If my extension runs on every keystroke, did I check the DevTools Console to ensure it isn't causing infinite loops or massive UI lag?
+
+---
+
+## 4.a Add a sidebar tab (Sidebar Extension API & Side Drawer)
+
+> **Reference File:** For a reference implementation of a custom tab and side drawer overlay, refer to `plugins/ext-sidebar-demo.js` and its manual test suite `tests/manual-sidebar-extensions.md`.
+
+In addition to tools and editor extensions, Famouskai allows extensions to register custom top-level tabs in the sidebar navigation and open slide-out Side Drawer overlays via `window.FamousPluginCore.Sidebar`.
+
+### Registering a Sidebar Tab
+
+To add a new tab to the sidebar, call `FamousPluginCore.Sidebar.registerTab(descriptor)`:
+
+```javascript
+window.FamousPluginCore.Sidebar.registerTab({
+    // Unique identifier ([a-z0-9_-]+)
+    id: 'demo',
+
+    // Display title used for ARIA labels and button tooltip
+    title: 'Demo extension',
+
+    // 1-2 character text symbol (no SVGs, no icon fonts).
+    // If omitted, falls back to the first character of the title.
+    icon: 'D',
+
+    // CSS variable token (never raw hex like #ff0000).
+    // Uses tokens defined in style.css Layer 1 (e.g. var(--color-tab-tools), var(--fm-magenta)).
+    color: 'var(--color-tab-tools)',
+
+    // (Optional) Panel CSS display mode ('flex' or 'block', defaults to 'flex')
+    displayStyle: 'flex',
+
+    // (Optional) Lazy rendering callback called once when panel DOM element is first created
+    render: function(panelEl) {
+        // Build panel DOM inside panelEl
+    },
+
+    // (Optional) Lifecycle callback invoked whenever the tab becomes active
+    onShow: function(panelEl) {
+        // Run activation logic
+    },
+
+    // (Optional) Lifecycle callback invoked whenever switching away or closing the sidebar
+    onHide: function(panelEl) {
+        // Run cleanup / deactivation logic
+    }
+});
+```
+
+#### Tab Registration Rules & Constraints
+
+1. **Text Icons Only (1-2 characters):** Per Famouskai architecture, tab buttons strictly accept a 1- or 2-character text symbol (e.g., `'D'`, `'KB'`). SVGs, image files, and third-party icon fonts are forbidden for custom extension tabs.
+2. **CSS Token Colors Only:** Tab `color` must strictly be a CSS variable token (e.g. `'var(--color-tab-tools)'`, `'var(--fm-magenta)'`). Raw hex colors (such as `#ff0000`) throw an architectural validation error.
+3. **Zero Network:** Extensions must operate completely offline with zero CDN dependencies and zero network calls.
+4. **Accessible Navigation:** Dynamically registered tab buttons automatically participate in ARIA `tablist` / `tab` roles, roving `tabindex`, and arrow-key keyboard navigation (`ArrowRight`, `ArrowLeft`, `Home`, `End`).
+5. **Fallback Safety:** If an active extension tab is unregistered or unavailable, the sidebar automatically falls back to `'explorer'`.
+
+### Opening a Side Drawer Overlay
+
+Tabs and extensions can slide out an overlay panel next to the sidebar by calling `FamousPluginCore.Sidebar.openDrawer(title, content, options)`:
+
+```javascript
+const drawerContent = document.createElement('div');
+drawerContent.style.padding = '12px';
+drawerContent.textContent = 'Drawer body content';
+
+window.FamousPluginCore.Sidebar.openDrawer('Demo drawer', drawerContent, {
+    size: 'M',                         // 'S', 'M', 'L', or 'XL' (defaults to 'S')
+    color: 'var(--color-tab-tools)',   // (Optional) CSS variable for accent band
+    onClose: function() {              // (Optional) Callback fired when drawer closes
+        console.log('Drawer closed');
+    }
+});
+```
+
+#### Side Drawer Sizes & Behavior
+
+- **Sizes:**
+  - `'S'`: 1x sidebar width (260px).
+  - `'M'`: 2x sidebar width (520px).
+  - `'L'`: 3x sidebar width (780px).
+  - `'XL'`: 4x sidebar width (1040px on screens >= 1600px; automatically falls back to `'L'` on screens < 1600px).
+- **Responsive Fallback:** If the available space to the right of the sidebar is insufficient, `openDrawer` automatically steps down to the next smaller size.
+- **Single Drawer Instance:** Opening a drawer replaces any currently open drawer, firing the previous drawer's `onClose` callback cleanly.
+
+### Enabling the Demo Tab (`plugins/ext-sidebar-demo.js`)
+
+The demo tab is hidden by default so regular users never see it. Developers can activate it using a LocalStorage flag:
+
+1. Open DevTools Console (**F12** or Ctrl+Shift+I).
+2. Run:
+   ```javascript
+   localStorage.setItem('famouskai_dev_demo_tab', '1');
+   ```
+3. Reload the application (F5). The **D** tab will appear in the sidebar tab group.
+4. To disable it, run:
+   ```javascript
+   localStorage.removeItem('famouskai_dev_demo_tab');
+   ```
+   and reload.
 
 ---
 
@@ -394,6 +518,7 @@ Building zero-build apps is liberating, but it comes with its own set of rules. 
 
 - **The Service Worker Trap:** The number one reason your new code "isn't working" is that the browser is serving an old, cached version of your file. When testing locally, always perform a **Hard Reload** (Ctrl+Shift+R / Cmd+Shift+R) or check "Disable cache" in your browser's DevTools Network tab.
 - **Ace Editor API:** Famouskai relies heavily on Ace Editor. If you want to manipulate text, selections, or cursors, keep the [Ace Editor API documentation](https://ace.c9.io/#nav=api) handy.
+- **Content Security Policy:** the app is served with a strict CSP (`_headers`): every script must be a file of the repository loaded by a `<script src>` tag. No inline `<script>`, no `onclick="..."` attributes (use `addEventListener`), no `eval` or `new Function`, nothing loaded from another site. Check the DevTools console for "Content Security Policy" errors before you open a PR.
 - **Debugging:** Because there is no build step or minification in development, `console.log()` is your best friend. Errors will point directly to the exact line in your original file.
 
 ---

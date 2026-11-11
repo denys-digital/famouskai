@@ -39,6 +39,7 @@ Think of it as a reliable, editable post-it for your files rather than a heavywe
 ## Known limitations
 
 - **Desktop Chromium only** for saving files in place, workspaces and conflict detection. In Firefox and Safari, **Open** loads a file via the browser picker and **Save** downloads a copy instead of writing in place.
+- **On a phone, Famouskai opens Mobkai,** a minimal note mode (one file, the editor, the Markdown preview and a status bar). The full editor needs a desktop.
 - **Offline mode needs HTTP(S).** A Service Worker cannot run from `file://`, so a copy opened by double-clicking `index.html` works, but only while its files are reachable. Serve the folder over HTTPS or `localhost` for offline use.
 - **Diffskai offline:** its engine (Monaco Editor) is cached in the background after the first visit; open Diffskai once while online to be sure it is available offline. Monaco is pinned at 0.56.0 for this release.
 
@@ -84,6 +85,7 @@ in one of two well-known folders, both auto-detected by GitHub:
 famouskai/
 ├── index.html, sw.js, manifest.json, *.css      ← the app itself (no build step)
 ├── plugins/                                     ← extensions (ext-*.js) and tools (tool-*.js)
+├── core/                                        ← the app code, split by feature (core-*.js, loaded in order)
 ├── vendor/                                      ← local copies of every library (no CDN)
 ├── tests/                                       ← manual-*.md test plans, unit-*.html test pages, fixtures-* sample files
 ├── CHANGELOG.md                                 ← version history (release-adjacent, kept at root)

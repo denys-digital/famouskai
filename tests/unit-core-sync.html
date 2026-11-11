@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Sync (core-sync.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Sync Unit Tests (core/core-sync.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function cleanStorage() {
+            try { localStorage.clear(); } catch (e) {}
+            try { sessionStorage.clear(); } catch (e) {}
+        }
+
+        async function triggerSyncMessage(appWin, data) {
+            appWin._syncMsgData = data;
+            await appWin.eval("syncChannel.onmessage({ data: window._syncMsgData })");
+        }
+
+        test("SY-01", "Every message type core/core-sync.js handles (DIFFSKAI_SAVED, MERGE_COMPLETE, string messages)", "editor reloads/updates, lastKnownModifiedTime updates, isModified becomes false, status UI updated", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(50);
+
+            const mock = mockFileHandle("sync-file.txt", "Initial Content", 1000);
+            mock.isSameEntry = async (other) => true;
+
+            appWin.confirm = () => true;
+            appWin.fileHandle = mock;
+            appWin.editor.setValue("Initial Content", -1);
+            appWin.eval("fileHandle = window.fileHandle; lastKnownModifiedTime = 1000; isModified = false;");
+
+            // Sub-case A: DIFFSKAI_SAVED
+            mock._text = "Synced via Diffskai";
+            mock.lastModified = 2000;
+
+            await triggerSyncMessage(appWin, { type: 'DIFFSKAI_SAVED', handle: mock });
+            await delay(100);
+
+            let val = appWin.editor.getValue();
+            let lastMod = appWin.eval("lastKnownModifiedTime");
+            let isMod = appWin.eval("isModified");
+            let fileNameEl = appWin.document.getElementById("file-name");
+
+            if (val !== "Synced via Diffskai") throw new Error(`Expected editor text 'Synced via Diffskai', got '${val}'`);
+            if (lastMod !== 2000) throw new Error(`Expected lastKnownModifiedTime 2000, got ${lastMod}`);
+            if (isMod !== false) throw new Error(`Expected isModified false, got ${isMod}`);
+            if (!fileNameEl || !fileNameEl.textContent.includes("Auto-Synced")) {
+                throw new Error(`Expected status text 'Auto-Synced' in #file-name, got '${fileNameEl ? fileNameEl.textContent : ''}'`);
+            }
+
+            // Sub-case B: MERGE_COMPLETE
+            mock._text = "Merged via Diffskai";
+            mock.lastModified = 3000;
+
+            await triggerSyncMessage(appWin, { type: 'MERGE_COMPLETE', handle: mock });
+            await delay(100);
+
+            val = appWin.editor.getValue();
+            lastMod = appWin.eval("lastKnownModifiedTime");
+            fileNameEl = appWin.document.getElementById("file-name");
+
+            if (val !== "Merged via Diffskai") throw new Error(`Expected editor text 'Merged via Diffskai', got '${val}'`);
+            if (lastMod !== 3000) throw new Error(`Expected lastKnownModifiedTime 3000, got ${lastMod}`);
+            if (!fileNameEl || !fileNameEl.textContent.includes("Merge done")) {
+                throw new Error(`Expected status text 'Merge done' in #file-name, got '${fileNameEl ? fileNameEl.textContent : ''}'`);
+            }
+
+            // Sub-case C: String legacy message
+            mock._text = "String Legacy Sync";
+            mock.lastModified = 4000;
+
+            await triggerSyncMessage(appWin, "DIFFSKAI_SAVED");
+            await delay(100);
+
+            val = appWin.editor.getValue();
+            lastMod = appWin.eval("lastKnownModifiedTime");
+
+            if (val !== "String Legacy Sync") throw new Error(`Expected editor text 'String Legacy Sync', got '${val}'`);
+            if (lastMod !== 4000) throw new Error(`Expected lastKnownModifiedTime 4000, got ${lastMod}`);
+        });
+
+        test("SY-02", "Same message for another file handle (isSameEntry returns false)", "message is ignored, no changes to editor or state", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(50);
+
+            const mock = mockFileHandle("active.txt", "Active Content", 1000);
+            mock.isSameEntry = async (other) => false; // returns false for any other handle
+
+            const otherMock = mockFileHandle("other.txt", "Other Content", 2000);
+
+            appWin.fileHandle = mock;
+            appWin.editor.setValue("Active Content", -1);
+            appWin.eval("fileHandle = window.fileHandle; lastKnownModifiedTime = 1000; isModified = false;");
+
+            await triggerSyncMessage(appWin, { type: 'DIFFSKAI_SAVED', handle: otherMock });
+            await delay(100);
+
+            const val = appWin.editor.getValue();
+            const lastMod = appWin.eval("lastKnownModifiedTime");
+
+            if (val !== "Active Content") throw new Error(`Editor content changed when it should be ignored, got '${val}'`);
+            if (lastMod !== 1000) throw new Error(`lastKnownModifiedTime changed when it should be ignored, got ${lastMod}`);
+        });
+
+        test("SY-03", "Malformed message (missing fields, unknown type, null, or older timestamp)", "message ignored, no exception thrown", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(50);
+
+            const mock = mockFileHandle("file.txt", "Original Content", 5000);
+            mock.isSameEntry = async (other) => true;
+
+            appWin.fileHandle = mock;
+            appWin.editor.setValue("Original Content", -1);
+            appWin.eval("fileHandle = window.fileHandle; lastKnownModifiedTime = 5000; isModified = false;");
+
+            // Post unknown type
+            await triggerSyncMessage(appWin, { type: 'UNKNOWN_EVENT_TYPE', handle: mock });
+            await delay(50);
+
+            // Post empty object
+            await triggerSyncMessage(appWin, {});
+            await delay(50);
+
+            // Post null
+            await triggerSyncMessage(appWin, null);
+            await delay(50);
+
+            // Post message with timestamp not newer than lastKnownModifiedTime
+            mock._text = "Stale Content";
+            mock.lastModified = 3000; // <= 5000
+            await triggerSyncMessage(appWin, { type: 'DIFFSKAI_SAVED', handle: mock });
+            await delay(50);
+
+            const val = appWin.editor.getValue();
+            const lastMod = appWin.eval("lastKnownModifiedTime");
+
+            if (val !== "Original Content") throw new Error(`Editor content changed on malformed/stale message, got '${val}'`);
+            if (lastMod !== 5000) throw new Error(`lastKnownModifiedTime changed on malformed/stale message, got ${lastMod}`);
+        });
+
+        window.addEventListener("load", async () => {
+            cleanStorage();
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            } finally {
+                cleanStorage();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Mobkai: on a phone, Famouskai opens a minimal note mode: a touch-friendly
+  editor without the desktop menus, a status bar (Copy all, messages,
+  version) and recovery of an unsaved [New] note with a Restore button.
+- Side drawer: four sizes (S, M, L, XL), a colored band that matches its
+  tab, and full height.
+- Full view preview: the sidebar closes while the preview takes the whole
+  width, and a new setting "Outline open on preview" keeps the Outline open.
+- Extensions can add their own sidebar tabs and drawers, each with its own
+  color (`FamousPluginCore.Sidebar.registerTab`). A demo extension and the
+  "Add a sidebar tab" guide in docs/PLUGIN-ARCHITECTURE.md show how.
+- A Content Security Policy now protects the app and every HTML export:
+  no inline scripts, nothing loads from a third party.
+- Unit test pages for every core/ file, and tests/ci-browser-tests.mjs to
+  run them in a browser.
+
+### Changed
+
+- The main script of index.html is split into small files in core/ (no
+  behavior change). The "Where is what" table in docs/PLUGIN-ARCHITECTURE.md
+  lists what each file holds.
+- When both 'Autosave' and 'Auto-cleanup on Save' are turned on, the delay
+  before saving triples (4.5s instead of 1.5s) to avoid cleaning up trailing
+  spaces or empty lines while typing.
+- "Open HTML" opens the page in a new tab from a local copy, so the Content
+  Security Policy can stay strict.
+
+### Fixed
+
+- Magic Snippets: a click on a snippet in the Tools tab list now shows the
+  "Snippet inserted" message, as a click in the Manage Snippets drawer does.
+- Save As on Android no longer names new files `.txt.json`.
+
 ## [0.1.3] - 2026-11-05
 
 ### Changed

@@ -496,7 +496,6 @@ This PR adds or refreshes the local library assets and metadata.
 It must not yet change:
 
 - Application runtime paths.
-- CDN references.
 - HTML script tags.
 - Service Worker cache entries.
 - Product behavior.
@@ -522,8 +521,9 @@ Before merging a vendor update:
 
 - [ ] Confirm the exact upstream version.
 - [ ] Confirm the upstream license.
-- [ ] Update `_VENDOR-INFO.md`.
-- [ ] Append to `_vendor-update.log`.
+- [ ] Replace `_VENDOR-INFO.md`.
+- [ ] Replace `_vendor-update.log`.
+- [ ] Update `README.md`.
 - [ ] Update `THIRD-PARTY-NOTICES.md`.
 - [ ] Confirm no proprietary or incompatible asset was included.
 - [ ] Keep generated Monaco asset names unchanged unless the upstream build

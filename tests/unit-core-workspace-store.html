@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Workspace Store (core-workspace-store.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Workspace Store Unit Tests (core/core-workspace-store.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        let realAddRecentFile = null;
+
+        // In-memory idbKeyval mock helper:
+        // IndexedDB structuredClone cannot serialize plain mock object functions.
+        // Mocking idbKeyval in-memory allows testing store logic cleanly and isolated.
+        function setupInMemoryIdb(appWin) {
+            const memoryStore = new Map();
+            const originalIdb = appWin.idbKeyval;
+            appWin.idbKeyval = {
+                async get(key) {
+                    return memoryStore.has(key) ? memoryStore.get(key) : undefined;
+                },
+                async set(key, val) {
+                    memoryStore.set(key, val);
+                },
+                async del(key) {
+                    memoryStore.delete(key);
+                },
+                async clear() {
+                    memoryStore.clear();
+                }
+            };
+            return {
+                restore() {
+                    appWin.idbKeyval = originalIdb;
+                },
+                clear() {
+                    memoryStore.clear();
+                }
+            };
+        }
+
+        function cleanupStorage(appWin) {
+            try { localStorage.removeItem('famouskai_recent_filter_workspace'); } catch (e) {}
+            try { localStorage.removeItem('famouskai_workspaces'); } catch (e) {}
+            try { sessionStorage.clear(); } catch (e) {}
+            if (appWin) {
+                appWin.window.currentWorkspaceHandle = null;
+            }
+        }
+
+        test("WS-01", "saveWorkspaceToStore(dirMock) twice with the same handle, then getSavedWorkspaces()", "listed once (no duplicate)", async (appWin) => {
+            const dir = mockDirectoryHandle("my-workspace");
+            await appWin.saveWorkspaceToStore(dir);
+            await appWin.saveWorkspaceToStore(dir);
+
+            const saved = await appWin.getSavedWorkspaces();
+            if (saved.length !== 1) {
+                throw new Error(`Expected 1 saved workspace, got ${saved.length}`);
+            }
+            if (saved[0].name !== "my-workspace") {
+                throw new Error(`Expected workspace name 'my-workspace', got '${saved[0].name}'`);
+            }
+        });
+
+        test("WS-02", "renderWorkspaceSelect() with 2 saved workspaces", "the select shows both names", async (appWin) => {
+            const dir1 = mockDirectoryHandle("workspace-alpha");
+            const dir2 = mockDirectoryHandle("workspace-beta");
+
+            await appWin.saveWorkspaceToStore(dir1);
+            await appWin.saveWorkspaceToStore(dir2);
+
+            await appWin.renderWorkspaceSelect();
+
+            const selectEl = appWin.document.getElementById("workspace-select");
+            if (!selectEl) throw new Error("#workspace-select element not found");
+
+            const optionTexts = Array.from(selectEl.options).map(opt => opt.textContent);
+            if (!optionTexts.includes("workspace-alpha")) {
+                throw new Error(`Expected options to include 'workspace-alpha', got: ${JSON.stringify(optionTexts)}`);
+            }
+            if (!optionTexts.includes("workspace-beta")) {
+                throw new Error(`Expected options to include 'workspace-beta', got: ${JSON.stringify(optionTexts)}`);
+            }
+        });
+
+        test("WS-03", "addRecentFile(fileMock) 3 times with different files, then getRecentFiles()", "most recent first; same file added again moves to top, no duplicate", async (appWin) => {
+            if (realAddRecentFile) appWin.addRecentFile = realAddRecentFile;
+
+            const f1 = mockFileHandle("a.md");
+            const f2 = mockFileHandle("b.js");
+            const f3 = mockFileHandle("c.html");
+
+            await appWin.addRecentFile(f1);
+            await appWin.addRecentFile(f2);
+            await appWin.addRecentFile(f3);
+
+            let recents = await appWin.getRecentFiles();
+            if (recents.length !== 3) throw new Error(`Expected 3 recent files, got ${recents.length}`);
+            if (recents[0].name !== "c.html" || recents[1].name !== "b.js" || recents[2].name !== "a.md") {
+                throw new Error(`Expected order [c.html, b.js, a.md], got: ${JSON.stringify(recents.map(r => r.name))}`);
+            }
+
+            // Re-adding f1 moves it to top
+            await appWin.addRecentFile(f1);
+            recents = await appWin.getRecentFiles();
+
+            if (recents.length !== 3) throw new Error(`Expected 3 recent files after adding existing file, got ${recents.length}`);
+            if (recents[0].name !== "a.md" || recents[1].name !== "c.html" || recents[2].name !== "b.js") {
+                throw new Error(`Expected reordered top [a.md, c.html, b.js], got: ${JSON.stringify(recents.map(r => r.name))}`);
+            }
+        });
+
+        test("WS-04", "Recent list limit (read the max in the code)", "oldest entries dropped beyond the max", async (appWin) => {
+            if (realAddRecentFile) appWin.addRecentFile = realAddRecentFile;
+
+            const max = appWin.eval("MAX_RECENT_FILES") || 50;
+            const totalToAdd = max + 5;
+
+            for (let i = 1; i <= totalToAdd; i++) {
+                await appWin.addRecentFile(mockFileHandle(`file_${i}.txt`));
+            }
+
+            const recents = await appWin.getRecentFiles();
+            if (recents.length !== max) {
+                throw new Error(`Expected recent files count capped at ${max}, got ${recents.length}`);
+            }
+
+            if (recents[0].name !== `file_${totalToAdd}.txt`) {
+                throw new Error(`Top item expected 'file_${totalToAdd}.txt', got '${recents[0].name}'`);
+            }
+            if (recents[recents.length - 1].name !== `file_6.txt`) {
+                throw new Error(`Bottom item expected 'file_6.txt', got '${recents[recents.length - 1].name}'`);
+            }
+        });
+
+        test("WS-05", "applyWorkspaceFilter() and isRecentWorkspaceFilterActive() with the filter on and off", "the list shows only matching items", async (appWin) => {
+            // Test isRecentWorkspaceFilterActive()
+            localStorage.setItem("famouskai_recent_filter_workspace", "1");
+            if (!appWin.isRecentWorkspaceFilterActive()) {
+                throw new Error("isRecentWorkspaceFilterActive() expected true when LocalStorage is '1'");
+            }
+            localStorage.setItem("famouskai_recent_filter_workspace", "0");
+            if (appWin.isRecentWorkspaceFilterActive()) {
+                throw new Error("isRecentWorkspaceFilterActive() expected false when LocalStorage is '0'");
+            }
+
+            // Test applyWorkspaceFilter() DOM filtering
+            const container = appWin.document.getElementById("workspace-file-list");
+            if (!container) throw new Error("#workspace-file-list not found");
+
+            container.innerHTML = `
+                <div class="workspace-file-item" data-ext="md">readme.md</div>
+                <div class="workspace-file-item" data-ext="js">app.js</div>
+            `;
+
+            const searchInput = appWin.document.getElementById("workspace-search");
+            if (searchInput) {
+                searchInput.value = "readme";
+                appWin.applyWorkspaceFilter();
+
+                const items = container.querySelectorAll(".workspace-file-item");
+                if (items[0].style.display === "none") {
+                    throw new Error("Expected 'readme.md' to be visible");
+                }
+                if (items[1].style.display !== "none") {
+                    throw new Error("Expected 'app.js' to be hidden when searching 'readme'");
+                }
+
+                searchInput.value = "";
+                appWin.applyWorkspaceFilter();
+            }
+
+            container.innerHTML = "";
+        });
+
+        test("WS-06", "initWorkspace() with a saved default handle whose permission is 'prompt'", "no exception, the UI shows the reconnect state the code defines", async (appWin) => {
+            const promptHandle = mockDirectoryHandle("prompt-dir");
+            promptHandle.queryPermission = async () => "prompt";
+
+            await appWin.idbKeyval.set("default_workspace_handle", promptHandle);
+            appWin.window.currentWorkspaceHandle = null;
+
+            await appWin.initWorkspace();
+
+            if (appWin.window.currentWorkspaceHandle !== null) {
+                throw new Error("currentWorkspaceHandle should remain null when permission is 'prompt'");
+            }
+
+            const selectEl = appWin.document.getElementById("workspace-select");
+            if (!selectEl) throw new Error("#workspace-select not found");
+
+            const firstOptText = selectEl.options[0] ? selectEl.options[0].textContent : "";
+            if (!firstOptText.includes("Select Workspace") && !firstOptText.includes("No saved workspaces")) {
+                throw new Error(`Select expected to show reconnect/select option, got '${firstOptText}'`);
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            let idbHelper = null;
+            try {
+                const appWin = await loadApp();
+                realAddRecentFile = appWin.addRecentFile;
+                cleanupStorage(appWin);
+                idbHelper = setupInMemoryIdb(appWin);
+
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            } finally {
+                if (idbHelper) idbHelper.restore();
+                cleanupStorage(window);
+            }
+        });
+    </script>
+</body>
+</html>

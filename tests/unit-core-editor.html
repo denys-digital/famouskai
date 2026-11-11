@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Editor Operations (core-editor.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <!--
+    Main behaviors of core/core-editor.js:
+    - updateUI(): updates document title, modified marker, button enabled/disabled states, snippet UI, and preview button visibility based on file extension.
+    - Ace Editor initialization and configuration (theme, options, base paths).
+    - Famous Mark universal folding (initFamousMarkFolding): patches fold modes to create fold widgets on U+FE65 ("﹥") lines across code/text modes, while explicitly excluding YAML.
+    - LocalStorage cursor position tracking & LRU cleanup (cleanupCursorLocalStorage, cursor_<filename> persistence on changeCursor, cursor restoration on file open).
+    - Editor change event handling: sets isModified = true on document mutations.
+    - Clickable link handling: opens URLs on click when #toggle-links option is checked.
+    - Active Windows Tracker: multi-window heartbeat and focus handling over BroadcastChannel.
+    - Screen layout controls: window.moveTo/resizeTo tile helpers.
+
+    Untested behaviors & gaps in core/core-editor.js:
+    - Active Windows Tracker BroadcastChannel heartbeats: requires multiple open window contexts and timer ticks.
+    - Screen layout controls (applyScreenLayout): window.moveTo and window.resizeTo are restricted or blocked by modern browser security models in automated/iframe contexts.
+    - DOM element click re-binding inside updateUI() (renameCurrentFile, copyFileName, openHtmlInNewTab): tested in core-file suite / requires user clipboard and window.open permissions.
+    - Search box match counter patch (checkAndPatchSearchBox): requires dynamic injection of Ace SearchBox DOM nodes via Ctrl+F command.
+    -->
+
+    <h1>Core Editor Unit Tests (core/core-editor.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function cleanupStorage(appWin) {
+            try {
+                if (appWin) {
+                    appWin.confirm = () => true;
+                    appWin.eval("fileHandle = null; currentFileName = ''; isModified = false; isInitialLoad = false;");
+                    if (appWin.localStorage) {
+                        const keysToRemove = [];
+                        for (let i = 0; i < appWin.localStorage.length; i++) {
+                            const k = appWin.localStorage.key(i);
+                            if (k && (k.startsWith('cursor_') || k.startsWith('famouskai_'))) {
+                                keysToRemove.push(k);
+                            }
+                        }
+                        keysToRemove.forEach(k => appWin.localStorage.removeItem(k));
+                    }
+                    if (appWin.sessionStorage) {
+                        appWin.sessionStorage.clear();
+                    }
+                }
+            } catch (e) {
+                console.warn("Cleanup storage warning:", e);
+            }
+        }
+
+        test("CE-01", "Paste JSON / HTML / unified diff / CSV / JavaScript into empty new file", "Ace mode switches to detected language", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+
+            // 1. JSON paste
+            const jsonText = '{\n  "name": "famouskai",\n  "version": "1.0.0"\n}';
+            appWin.editor._emit("paste", { text: jsonText });
+            await delay(150);
+            let mode = appWin.editor.session.$modeId;
+            if (mode !== "ace/mode/json") throw new Error(`Expected ace/mode/json for JSON paste, got '${mode}'`);
+
+            // Reset
+            appWin.eval("newFile()");
+            await delay(100);
+
+            // 2. HTML paste
+            const htmlText = '<!DOCTYPE html>\n<html>\n<head><title>Test</title></head>\n<body></body>\n</html>';
+            appWin.editor._emit("paste", { text: htmlText });
+            await delay(150);
+            mode = appWin.editor.session.$modeId;
+            if (mode !== "ace/mode/html") throw new Error(`Expected ace/mode/html for HTML paste, got '${mode}'`);
+
+            // Reset
+            appWin.eval("newFile()");
+            await delay(100);
+
+            // 3. Unified diff paste
+            const diffText = '--- a/file.js\n+++ b/file.js\n@@ -1,3 +1,3 @@\n-const a = 1;\n+const a = 2;';
+            appWin.editor._emit("paste", { text: diffText });
+            await delay(150);
+            mode = appWin.editor.session.$modeId;
+            if (mode !== "ace/mode/diff") throw new Error(`Expected ace/mode/diff for diff paste, got '${mode}'`);
+
+            // Reset
+            appWin.eval("newFile()");
+            await delay(100);
+
+            // 4. CSV paste
+            const csvText = 'id,name,role\n1,Denys,Author\n2,Jules,Agent\n3,Claude,Assistant';
+            appWin.editor._emit("paste", { text: csvText });
+            await delay(150);
+            mode = appWin.editor.session.$modeId;
+            if (mode !== "ace/mode/csv") throw new Error(`Expected ace/mode/csv for CSV paste, got '${mode}'`);
+
+            // Reset
+            appWin.eval("newFile()");
+            await delay(100);
+
+            // 5. JavaScript paste
+            const jsText = 'function calculateSum(a, b) {\n    const total = a + b;\n    return total;\n}';
+            appWin.editor._emit("paste", { text: jsText });
+            await delay(150);
+            mode = appWin.editor.session.$modeId;
+            if (mode !== "ace/mode/javascript") throw new Error(`Expected ace/mode/javascript for JS paste, got '${mode}'`);
+        });
+
+        test("CE-02", "Paste into a file that already has a name or content", "No mode switch", async (appWin) => {
+            cleanupStorage(appWin);
+
+            // Scenario A: File already has a name
+            appWin.eval("newFile()");
+            await delay(100);
+            appWin.eval("currentFileName = 'script.py'");
+            appWin.editor.session.setMode("ace/mode/python");
+            await delay(100);
+
+            const jsonText = '{\n  "key": "value"\n}';
+            appWin.editor._emit("paste", { text: jsonText });
+            await delay(150);
+
+            let mode = appWin.editor.session.$modeId;
+            if (mode !== "ace/mode/python") {
+                throw new Error(`Mode switched to '${mode}' despite file having name 'script.py'`);
+            }
+
+            // Scenario B: File has existing filename and content
+            appWin.eval("newFile()");
+            await delay(100);
+            appWin.eval("currentFileName = 'notes.txt'");
+            appWin.editor.session.setMode("ace/mode/text");
+            appWin.editor.setValue("Existing plain text line\n", 1);
+            await delay(100);
+
+            const htmlText = '<div>HTML Fragment</div>';
+            appWin.editor._emit("paste", { text: htmlText });
+            await delay(150);
+
+            mode = appWin.editor.session.$modeId;
+            if (mode !== "ace/mode/text") {
+                throw new Error(`Mode switched to '${mode}' despite buffer having existing filename and content`);
+            }
+        });
+
+        test("CE-03", "updateUI() after newFile(), after an edit, after a save (mock handle)", "title, modified marker and buttons reflect the state", async (appWin) => {
+            cleanupStorage(appWin);
+
+            // 1. After newFile()
+            appWin.eval("newFile()");
+            await delay(100);
+
+            let title = appWin.document.title;
+            let fileNameEl = appWin.document.getElementById("file-name");
+            let btnReload = appWin.document.getElementById("btn-reload");
+            let btnMove = appWin.document.getElementById("btn-move");
+
+            if (!title.includes("[New]")) throw new Error(`Expected title to contain '[New]', got '${title}'`);
+            if (title.startsWith("*")) throw new Error(`Title should not have modified star initially, got '${title}'`);
+            if (fileNameEl.classList.contains("is-modified")) throw new Error("file-name element should not have 'is-modified' class initially");
+            if (!btnReload.disabled) throw new Error("Reload button should be disabled for unsaved file");
+            if (!btnMove.disabled) throw new Error("Move button should be disabled for unsaved file");
+
+            // 2. After an edit
+            appWin.editor.setValue("Edited content", 1);
+            appWin.eval("updateUI()");
+            await delay(50);
+
+            title = appWin.document.title;
+            if (!title.startsWith("*")) throw new Error(`Expected title to start with '*' when modified, got '${title}'`);
+            if (!fileNameEl.classList.contains("is-modified")) throw new Error("file-name element should have 'is-modified' class when modified");
+
+            // 3. After save with mock handle
+            const mock = mockFileHandle("doc.txt", "Edited content", Date.now());
+            appWin._testMockHandle = mock;
+            appWin.eval("fileHandle = window._testMockHandle");
+            appWin.eval("currentFileName = 'doc.txt'");
+            appWin.eval("isModified = false");
+            appWin.eval("updateUI()");
+            await delay(50);
+
+            title = appWin.document.title;
+            if (title.startsWith("*")) throw new Error(`Title should not have '*' after save, got '${title}'`);
+            if (!title.includes("doc.txt")) throw new Error(`Title should include 'doc.txt', got '${title}'`);
+            if (fileNameEl.classList.contains("is-modified")) throw new Error("file-name element should not have 'is-modified' class after save");
+            if (btnReload.disabled) throw new Error("Reload button should be enabled when fileHandle exists");
+            if (btnMove.disabled) throw new Error("Move button should be enabled when fileHandle exists and not modified");
+        });
+
+        test("CE-04", "Famous Mark folding: a .js buffer with // \uFE65 Section lines", "fold widgets exist on those rows; folding hides the section body", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const jsContent = [
+                "// \uFE65 Section 1",
+                "const x = 10;",
+                "const y = 20;",
+                "// \uFE65 Section 2",
+                "const z = 30;"
+            ].join("\n");
+
+            appWin.editor.setValue(jsContent, -1);
+            appWin.editor.session.setMode("ace/mode/javascript");
+            await delay(150);
+
+            const widget0 = appWin.editor.session.getFoldWidget(0);
+            if (widget0 !== "start") {
+                throw new Error(`Expected fold widget 'start' on row 0 (Famous Mark), got '${widget0}'`);
+            }
+
+            const range = appWin.editor.session.getFoldWidgetRange(0);
+            if (!range) {
+                throw new Error("Expected valid fold widget range for Famous Mark on row 0, got null");
+            }
+            if (range.start.row !== 0 || range.end.row !== 2) {
+                throw new Error(`Expected fold range from row 0 to 2, got start row ${range.start.row}, end row ${range.end.row}`);
+            }
+
+            // Perform fold action
+            const fold = appWin.editor.session.addFold("...", range);
+            const isFolded1 = appWin.editor.session.isRowFolded(1);
+            if (!isFolded1) {
+                throw new Error("Expected row 1 (section body) to be folded after adding fold");
+            }
+
+            // Unfold
+            appWin.editor.session.removeFold(fold);
+            const isFolded1After = appWin.editor.session.isRowFolded(1);
+            if (isFolded1After) {
+                throw new Error("Expected row 1 to be unfolded after removing fold");
+            }
+        });
+
+        test("CE-05", "YAML buffer (tests/fixtures-syntax-sample.yml)", "Famous Mark folding is skipped, native YAML folding only", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const yamlContent = [
+                "server:",
+                "  port: 8080",
+                "  host: localhost",
+                "# \uFE65 Famous Mark comment in YAML",
+                "database:",
+                "  name: test_db"
+            ].join("\n");
+
+            appWin.editor.setValue(yamlContent, -1);
+            appWin.editor.session.setMode("ace/mode/yaml");
+            await delay(150);
+
+            // Row 3 has `# ﹥ Famous Mark comment in YAML`
+            // In YAML mode, Famous Mark folding is explicitly skipped.
+            // Check that fold widget range for row 3 is not returning a Famous Mark section range across line 3-5.
+            const range3 = appWin.editor.session.getFoldWidgetRange(3);
+
+            if (range3) {
+                // Native YAML folding shouldn't produce a multi-line section fold starting on a comment line
+                if (range3.end.row > 3) {
+                    throw new Error(`Famous Mark fold was applied on row 3 in YAML mode (range end row: ${range3.end.row}), but YAML should be excluded`);
+                }
+            }
+
+            // Verify native YAML folding works on parent section (row 0 "server:")
+            const range0 = appWin.editor.session.getFoldWidgetRange(0);
+            if (!range0) {
+                throw new Error("Native YAML fold range missing for row 0 'server:'");
+            }
+        });
+
+        test("CE-06", "Cursor position memory: open a mock file, move the cursor, open another file, reopen the first", "cursor returns to saved row and column", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const file1Content = "Line 1\nLine 2\nLine 3\nLine 4";
+            const file2Content = "Alpha\nBeta\nGamma";
+
+            const mock1 = mockFileHandle("doc1.txt", file1Content, 1000);
+            const mock2 = mockFileHandle("doc2.txt", file2Content, 2000);
+
+            // Open doc1.txt
+            appWin.confirm = () => true;
+            appWin.showOpenFilePicker = async () => [mock1];
+            await appWin.openFile();
+            await delay(100);
+
+            // Move cursor to row 2, column 3 (Line 3)
+            appWin.editor.gotoLine(3, 3);
+            await delay(100);
+
+            const storedDataRaw = appWin.localStorage.getItem("cursor_doc1.txt");
+            if (!storedDataRaw) {
+                throw new Error("cursor_doc1.txt key was not saved in LocalStorage on changeCursor");
+            }
+            const storedData = JSON.parse(storedDataRaw);
+            if (storedData.row !== 2 || storedData.column !== 3) {
+                throw new Error(`Expected saved cursor position {row: 2, column: 3}, got ${JSON.stringify(storedData)}`);
+            }
+
+            // Open doc2.txt
+            appWin.showOpenFilePicker = async () => [mock2];
+            await appWin.openFile();
+            await delay(100);
+
+            // Reopen doc1.txt
+            appWin.showOpenFilePicker = async () => [mock1];
+            await appWin.openFile();
+            await delay(100);
+
+            const restoredCursor = appWin.editor.getCursorPosition();
+            if (restoredCursor.row !== 2 || restoredCursor.column !== 3) {
+                throw new Error(`Expected restored cursor at row 2, column 3, got row ${restoredCursor.row}, column ${restoredCursor.column}`);
+            }
+        });
+
+        test("CE-07", "Every editor change by code (editor.setValue, a tool action)", "isModified becomes true: nothing changes silently", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+
+            appWin.eval("isInitialLoad = false");
+            appWin.eval("isModified = false");
+
+            // 1. programmatic editor.setValue
+            appWin.editor.setValue("New text via code", 1);
+            await delay(50);
+
+            let modified = appWin.eval("isModified");
+            if (modified !== true) {
+                throw new Error("isModified expected true after editor.setValue by code");
+            }
+
+            // Reset
+            appWin.eval("isModified = false");
+
+            // 2. programmatic editor.insert
+            appWin.editor.insert("\nAppended text");
+            await delay(50);
+
+            modified = appWin.eval("isModified");
+            if (modified !== true) {
+                throw new Error("isModified expected true after editor.insert by code");
+            }
+        });
+
+        test("CE-08", "Clickable links option on: a line with https://example.com", "link marker or handler is present; Ctrl+click calls window.open (mocked)", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+
+            // Enable clickable links option
+            const toggleLinks = appWin.document.getElementById("toggle-links");
+            toggleLinks.checked = true;
+
+            appWin.editor.setValue("Visit https://example.com for details", -1);
+            await delay(50);
+
+            let openedUrl = null;
+            appWin.open = (url, target) => {
+                openedUrl = url;
+            };
+
+            // Dispatch click event on the editor line with URL
+            appWin.editor._emit("click", {
+                getDocumentPosition: () => ({ row: 0, column: 10 })
+            });
+
+            if (openedUrl !== "https://example.com") {
+                throw new Error(`Expected window.open to be called with 'https://example.com', got '${openedUrl}'`);
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            }
+        });
+    </script>
+</body>
+</html>

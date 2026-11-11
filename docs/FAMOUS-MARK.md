@@ -59,7 +59,7 @@ Developers and contributors must access all Famous Mark features through `window
 ### Extension Rules
 
 - **Single Source of Truth**: Never redefine a custom regex for Famous Marks elsewhere in the codebase.
-- **Load Order**: `plugins/ext-famous-core.js` must load before `plugins/ext-outline.js`, `plugins/ext-snippets.js`, and the main `index.html` inline script.
+- **Load Order**: `plugins/ext-famous-core.js` must load before `plugins/ext-outline.js`, `plugins/ext-snippets.js`, and the `core/` scripts.
 - **Adding Markers**: Adding a fourth mark requires adding a single entry to `MARKS` inside `plugins/ext-famous-core.js`.
 - **Testing**: Run `tests/unit-famous-mark.html` in a web browser to verify all unit tests pass after making any changes.
 

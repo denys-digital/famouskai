@@ -1,4 +1,4 @@
-# Manual Test Plan — Paste Language Detection (`index.html`)
+# Manual Test Plan — Paste Language Detection (`core/core-shortcuts.js`)
 
 ## Overview
 Verify that pasting text into an empty, unsaved document (`[New]`) selects the matching Ace syntax mode, including YAML documents and Markdown files with YAML front matter.
