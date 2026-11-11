@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Boot (core-boot.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Boot Unit Tests (core/core-boot.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function loadAppWithQuery(queryString) {
+            return new Promise((resolve, reject) => {
+                const iframe = document.createElement('iframe');
+                iframe.src = '../index.html' + queryString;
+                iframe.style.position = 'absolute';
+                iframe.style.left = '-10000px';
+                iframe.style.top = '0';
+                iframe.style.width = '1200px';
+                iframe.style.height = '800px';
+                iframe.style.border = '0';
+                document.body.appendChild(iframe);
+
+                const start = Date.now();
+                const timer = setInterval(() => {
+                    try {
+                        const win = iframe.contentWindow;
+                        if (win && win.document && win.document.readyState === 'complete' && win.editor && win.idbKeyval && typeof win.checkSharedContent === 'function') {
+                            clearInterval(timer);
+                            resolve({ win, iframe });
+                            return;
+                        }
+                    } catch (e) {
+                        // Ignore transiting errors
+                    }
+                    if (Date.now() - start > 10000) {
+                        clearInterval(timer);
+                        document.body.removeChild(iframe);
+                        reject(new Error("App iframe with query failed to boot within 10s"));
+                    }
+                }, 50);
+            });
+        }
+
+        test("BO-01", "checkSharedContent(): shared text in IndexedDB famouskai_shared_text loaded via ?shared=true", "text loaded in editor, key deleted, fileHandle null", async (appWin) => {
+            await appWin.idbKeyval.set('famouskai_shared_text', 'Hello from shared text!');
+
+            const { win: bootWin, iframe: bootIframe } = await loadAppWithQuery("?shared=true");
+            try {
+                // Wait for checkSharedContent timer / execution
+                await delay(400);
+
+                const editorVal = bootWin.editor.getValue();
+                const handle = bootWin.eval("fileHandle");
+                const currentName = bootWin.eval("currentFileName");
+                const storedTextAfter = await bootWin.idbKeyval.get('famouskai_shared_text');
+
+                if (editorVal !== 'Hello from shared text!') {
+                    throw new Error(`Editor content expected 'Hello from shared text!', got '${editorVal}'`);
+                }
+                if (handle !== null) {
+                    throw new Error(`fileHandle expected null (Save As forced), got ${handle}`);
+                }
+                if (currentName !== 'shared_snippet.txt') {
+                    throw new Error(`currentFileName expected 'shared_snippet.txt', got '${currentName}'`);
+                }
+                if (storedTextAfter !== undefined) {
+                    throw new Error(`famouskai_shared_text expected deleted, but got '${storedTextAfter}'`);
+                }
+            } finally {
+                await appWin.idbKeyval.del('famouskai_shared_text');
+                if (bootIframe && bootIframe.parentNode) {
+                    bootIframe.parentNode.removeChild(bootIframe);
+                }
+            }
+        });
+
+        test("BO-02", "checkSharedContent(): shared File in IndexedDB famouskai_shared_file loaded via ?shared=true", "content and name loaded in editor, key deleted, fileHandle null", async (appWin) => {
+            const sharedFile = new File(["Shared File Content"], "shared_doc.md", { type: "text/markdown" });
+            await appWin.idbKeyval.set('famouskai_shared_file', sharedFile);
+
+            const { win: bootWin, iframe: bootIframe } = await loadAppWithQuery("?shared=true");
+            try {
+                await delay(400);
+
+                const editorVal = bootWin.editor.getValue();
+                const handle = bootWin.eval("fileHandle");
+                const currentName = bootWin.eval("currentFileName");
+                const storedFileAfter = await bootWin.idbKeyval.get('famouskai_shared_file');
+
+                if (editorVal !== 'Shared File Content') {
+                    throw new Error(`Editor content expected 'Shared File Content', got '${editorVal}'`);
+                }
+                if (handle !== null) {
+                    throw new Error(`fileHandle expected null, got ${handle}`);
+                }
+                if (currentName !== 'shared_doc.md') {
+                    throw new Error(`currentFileName expected 'shared_doc.md', got '${currentName}'`);
+                }
+                if (storedFileAfter !== undefined) {
+                    throw new Error(`famouskai_shared_file expected deleted, but got ${storedFileAfter}`);
+                }
+            } finally {
+                await appWin.idbKeyval.del('famouskai_shared_file');
+                if (bootIframe && bootIframe.parentNode) {
+                    bootIframe.parentNode.removeChild(bootIframe);
+                }
+            }
+        });
+
+        test("BO-03", "checkSharedContent() when current buffer is modified and confirm returns false", "buffer content preserved, key kept", async (appWin) => {
+            await appWin.idbKeyval.set('famouskai_shared_text', 'Unwanted Shared Content');
+
+            try {
+                appWin.editor.setValue("Dirty Unsaved Buffer", 1);
+                appWin.eval("isModified = true");
+                appWin.confirm = () => false; // User declines replacing unsaved changes
+
+                // Set URL search parameter in app iframe window
+                appWin.history.replaceState({}, appWin.document.title, "?shared=true");
+
+                await appWin.checkSharedContent();
+
+                const editorVal = appWin.editor.getValue();
+                const storedTextAfter = await appWin.idbKeyval.get('famouskai_shared_text');
+
+                if (editorVal !== 'Dirty Unsaved Buffer') {
+                    throw new Error(`Editor content expected 'Dirty Unsaved Buffer', got '${editorVal}'`);
+                }
+                if (storedTextAfter !== 'Unwanted Shared Content') {
+                    throw new Error(`famouskai_shared_text expected to be preserved, got '${storedTextAfter}'`);
+                }
+            } finally {
+                await appWin.idbKeyval.del('famouskai_shared_text');
+                appWin.eval("newFile()");
+            }
+        });
+
+        test("BO-04", "checkOpenFileInNewWindow(): stored handle loaded via ?open_file_id=<id>", "file handle, name and content loaded in new window", async (appWin) => {
+            const openFileId = "test_open_id_123";
+            const mock = mockFileHandle("opened_in_new_win.txt", "Content from new window handle");
+
+            // Mock idbKeyval in memory for the iframe because plain JS mock handles cannot be cloned into real IndexedDB
+            const key = 'famouskai_open_file_' + openFileId;
+
+            const { win: bootWin, iframe: bootIframe } = await loadAppWithQuery(`?open_file_id=${openFileId}`);
+            try {
+                bootWin.addRecentFile = async () => {};
+                // Override idbKeyval.get to return our mock handle for key
+                const origGet = bootWin.idbKeyval.get;
+                const origDel = bootWin.idbKeyval.del;
+                bootWin.idbKeyval.get = async (k) => (k === key ? mock : origGet.call(bootWin.idbKeyval, k));
+                let deletedKey = null;
+                bootWin.idbKeyval.del = async (k) => { deletedKey = k; };
+
+                await bootWin.checkOpenFileInNewWindow();
+                await delay(100);
+
+                const editorVal = bootWin.editor.getValue();
+                const currentName = bootWin.eval("currentFileName");
+
+                if (editorVal !== "Content from new window handle") {
+                    throw new Error(`Editor content expected 'Content from new window handle', got '${editorVal}'`);
+                }
+                if (currentName !== "opened_in_new_win.txt") {
+                    throw new Error(`currentFileName expected 'opened_in_new_win.txt', got '${currentName}'`);
+                }
+                if (deletedKey !== key) {
+                    throw new Error(`Expected IDB key '${key}' to be deleted, recorded: '${deletedKey}'`);
+                }
+            } finally {
+                if (bootIframe && bootIframe.parentNode) {
+                    bootIframe.parentNode.removeChild(bootIframe);
+                }
+            }
+        });
+
+        test("BO-05", "handleAssetError() & retryAssetWithCacheBuster(): link and script error handling", "retries asset with ?v= timestamp, calls showError on ace error", async (appWin) => {
+            // Test 1: Link stylesheet error triggers retry with cache-buster
+            const link = appWin.document.createElement('link');
+            link.rel = 'stylesheet';
+            link.setAttribute('href', 'style.css');
+            appWin.document.head.appendChild(link);
+
+            const linkRetried = appWin.eval('retryAssetWithCacheBuster')(link, 'href');
+            if (!linkRetried) {
+                throw new Error("Expected retryAssetWithCacheBuster to return true for link");
+            }
+            if (!link.getAttribute('href').includes('style.css?v=')) {
+                throw new Error(`Expected href to include 'style.css?v=', got '${link.getAttribute('href')}'`);
+            }
+
+            // Test 2: Calling retry again on same element does not re-bust (idempotency guard)
+            const secondRetry = appWin.eval('retryAssetWithCacheBuster')(link, 'href');
+            if (secondRetry !== false) {
+                throw new Error("Expected second retryAssetWithCacheBuster to return false");
+            }
+
+            // Test 2b: a script is retried with a NEW element (a script element never loads twice)
+            const holder = appWin.document.createElement('div');
+            appWin.document.body.appendChild(holder);
+            const failed = appWin.document.createElement('script');
+            failed.setAttribute('src', 'vendor/missing-test-asset.js');
+            holder.appendChild(failed);
+            if (!appWin.eval('retryAssetWithCacheBuster')(failed, 'src')) {
+                throw new Error("Expected retryAssetWithCacheBuster to return true for script");
+            }
+            const fresh = failed.nextElementSibling;
+            if (!fresh || fresh.tagName !== 'SCRIPT' || !fresh.getAttribute('src').includes('missing-test-asset.js?v=')) {
+                throw new Error("Expected a new script element with a ?v= cache-buster after the failed one");
+            }
+            if (failed.getAttribute('src') !== 'vendor/missing-test-asset.js') {
+                throw new Error("The failed script element should keep its original src");
+            }
+            holder.remove();
+
+            // Test 3: Script ace.js error triggers showError()
+            const errorMsgEl = appWin.document.getElementById('error-msg');
+            errorMsgEl.style.display = 'none';
+
+            const aceScript = appWin.document.createElement('script');
+            aceScript.setAttribute('src', 'vendor/ace-builds/ace.js');
+            appWin.eval('handleAssetError')({ target: aceScript });
+
+            if (errorMsgEl.style.display !== 'block') {
+                throw new Error("Expected #error-msg style.display to be 'block' after ace.js error");
+            }
+
+            // Cleanup
+            errorMsgEl.style.display = 'none';
+            link.remove();
+        });
+
+        window.addEventListener("load", async () => {
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            }
+        });
+    </script>
+</body>
+</html>

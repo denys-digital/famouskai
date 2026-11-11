@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Active Windows Tracker (core-editor.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Active Windows Tracker Unit Tests (core/core-editor.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        test("WT-01", "Receive HEARTBEAT message from another window", "Window is stored with receiver local timestamp and listed in DOM", async (appWin) => {
+            const tracker = appWin._testWindowTracker;
+            if (!tracker) throw new Error("window._testWindowTracker hook not found");
+
+            const fakeId = "win_test_peer_1";
+            const senderClockSkewedTimestamp = Date.now() - 500000; // Sender clock is skewed
+            const beforeTime = Date.now();
+
+            const peerChannel = new BroadcastChannel("famouskai_window_tracker");
+            peerChannel.postMessage({
+                type: "HEARTBEAT",
+                id: fakeId,
+                title: "doc1.txt - Famouskai",
+                timestamp: senderClockSkewedTimestamp
+            });
+
+            await delay(100);
+            peerChannel.close();
+
+            const entry = tracker.activeInstances.get(fakeId);
+            if (!entry) throw new Error("Peer window not found in activeInstances");
+            if (entry.title !== "doc1.txt - Famouskai") throw new Error(`Unexpected title: ${entry.title}`);
+
+            // Must use receiver's local clock, NOT sender's timestamp
+            const afterTime = Date.now();
+            if (entry.timestamp < beforeTime || entry.timestamp > afterTime) {
+                throw new Error(`Expected receiver timestamp between ${beforeTime} and ${afterTime}, got ${entry.timestamp}`);
+            }
+
+            const listEl = appWin.document.getElementById("active-windows-list");
+            if (!listEl.textContent.includes("doc1.txt - Famouskai")) {
+                throw new Error("Peer window title not rendered in active-windows-list DOM");
+            }
+        });
+
+        test("WT-02", "Window last seen 60 seconds ago", "Window is still listed because prune threshold is 75s", async (appWin) => {
+            const tracker = appWin._testWindowTracker;
+            const fakeId = "win_test_peer_throttled";
+
+            // Simulate window seen 60s ago
+            const sixtySecondsAgo = Date.now() - 60000;
+            tracker.activeInstances.set(fakeId, {
+                title: "background.md - Famouskai",
+                timestamp: sixtySecondsAgo
+            });
+
+            tracker.renderActiveWindowsList();
+
+            if (!tracker.activeInstances.has(fakeId)) {
+                throw new Error("Window seen 60s ago was pruned prematurely");
+            }
+
+            const listEl = appWin.document.getElementById("active-windows-list");
+            if (!listEl.textContent.includes("background.md - Famouskai")) {
+                throw new Error("Window seen 60s ago is not rendered in active-windows-list DOM");
+            }
+        });
+
+        test("WT-03", "Window silent for over 75 seconds", "Window is pruned from active instances and removed from DOM", async (appWin) => {
+            const tracker = appWin._testWindowTracker;
+            const fakeId = "win_test_peer_stale";
+
+            // Simulate window seen 76s ago
+            const staleTime = Date.now() - 76000;
+            tracker.activeInstances.set(fakeId, {
+                title: "stale.md - Famouskai",
+                timestamp: staleTime
+            });
+
+            tracker.renderActiveWindowsList();
+
+            if (tracker.activeInstances.has(fakeId)) {
+                throw new Error("Stale window (>75s) was not pruned from activeInstances");
+            }
+
+            const listEl = appWin.document.getElementById("active-windows-list");
+            if (listEl.textContent.includes("stale.md - Famouskai")) {
+                throw new Error("Stale window (>75s) is still rendered in active-windows-list DOM");
+            }
+        });
+
+        test("WT-04", "Window sends BYE message", "Window is immediately removed without waiting for timeout", async (appWin) => {
+            const tracker = appWin._testWindowTracker;
+            const fakeId = "win_test_peer_closing";
+
+            // Register active window
+            tracker.activeInstances.set(fakeId, {
+                title: "closing.js - Famouskai",
+                timestamp: Date.now()
+            });
+            tracker.renderActiveWindowsList();
+
+            if (!tracker.activeInstances.has(fakeId)) {
+                throw new Error("Setup failed: closing window not in activeInstances");
+            }
+
+            // Post BYE message
+            const peerChannel = new BroadcastChannel("famouskai_window_tracker");
+            peerChannel.postMessage({
+                type: "BYE",
+                id: fakeId
+            });
+
+            await delay(100);
+            peerChannel.close();
+
+            if (tracker.activeInstances.has(fakeId)) {
+                throw new Error("Window was not removed from activeInstances after BYE message");
+            }
+
+            const listEl = appWin.document.getElementById("active-windows-list");
+            if (listEl.textContent.includes("closing.js - Famouskai")) {
+                throw new Error("Closed window is still rendered in active-windows-list DOM after BYE message");
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            }
+        });
+    </script>
+</body>
+</html>

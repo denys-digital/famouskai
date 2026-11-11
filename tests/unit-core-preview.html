@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Preview (core-preview.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Preview Unit Tests (core/core-preview.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function cleanupPreviewState(appWin) {
+            if (appWin && appWin.eval("isPreviewOpen")) {
+                appWin.togglePreview();
+            }
+            if (appWin && appWin.eval("isPreviewFull")) {
+                appWin.toggleFullPreview();
+            }
+        }
+
+        test("CP-01", "Open a mock a.md with headings, a list and a fenced code block, togglePreview()", "preview pane visible and contains rendered HTML (h1, li, code)", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            appWin.eval("newFile()");
+            appWin.eval("currentFileName = 'a.md'");
+            appWin.applyNativeColoration("a.md");
+
+            const mdContent = "# Heading 1\n\n- Item 1\n- Item 2\n\n```javascript\nconst x = 42;\n```";
+            appWin.editor.setValue(mdContent, 1);
+
+            appWin.togglePreview();
+            await delay(100);
+
+            const pane = appWin.document.getElementById("preview-pane");
+            const mainArea = appWin.document.getElementById("main-area");
+            const renderEl = appWin.document.getElementById("preview-render");
+
+            if (pane.style.display === "none") {
+                throw new Error("Preview pane display expected to be visible, got 'none'");
+            }
+            if (!mainArea.classList.contains("preview-active")) {
+                throw new Error("main-area expected to have class 'preview-active'");
+            }
+
+            const h1 = renderEl.querySelector("h1");
+            const li = renderEl.querySelector("li");
+            const code = renderEl.querySelector("code");
+
+            if (!h1 || !h1.textContent.includes("Heading 1")) {
+                throw new Error(`Expected h1 with 'Heading 1', render innerHTML: ${renderEl.innerHTML}`);
+            }
+            if (!li || !li.textContent.includes("Item 1")) {
+                throw new Error(`Expected li with 'Item 1', render innerHTML: ${renderEl.innerHTML}`);
+            }
+            if (!code || !code.textContent.includes("const x = 42;")) {
+                throw new Error(`Expected code block with 'const x = 42;', render innerHTML: ${renderEl.innerHTML}`);
+            }
+        });
+
+        test("CP-02", "Edit the text while the preview is open", "the preview updates (follow how updatePreviewContent() is triggered; wait for any debounce)", async (appWin) => {
+            appWin.eval("currentFileName = 'a.md'");
+            appWin.applyNativeColoration("a.md");
+
+            if (!appWin.eval("isPreviewOpen")) {
+                appWin.togglePreview();
+                await delay(100);
+            }
+
+            appWin.editor.setValue("# Updated Title\n\n- Updated Item", 1);
+            await delay(400); // Allow shortcut debounce timer (300ms) to fire
+
+            const renderEl = appWin.document.getElementById("preview-render");
+            const h1 = renderEl.querySelector("h1");
+            const li = renderEl.querySelector("li");
+
+            if (!h1 || !h1.textContent.includes("Updated Title")) {
+                throw new Error(`Expected updated h1 'Updated Title', got: ${renderEl.innerHTML}`);
+            }
+            if (!li || !li.textContent.includes("Updated Item")) {
+                throw new Error(`Expected updated li 'Updated Item', got: ${renderEl.innerHTML}`);
+            }
+        });
+
+        test("CP-03", "Mock a.diff / a.patch with the fixture tests/fixtures-syntax-sample.diff", "the diff2html view is rendered", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            const diffRes = await fetch("../tests/fixtures-syntax-sample.diff");
+            const diffText = await diffRes.text();
+
+            appWin.eval("newFile()");
+            appWin.eval("currentFileName = 'a.diff'");
+            appWin.applyNativeColoration("a.diff");
+            appWin.editor.setValue(diffText, 1);
+
+            appWin.togglePreview();
+            await delay(100);
+
+            const renderEl = appWin.document.getElementById("preview-render");
+
+            if (!renderEl.classList.contains("d2h-body")) {
+                throw new Error("preview-render element expected to have class 'd2h-body'");
+            }
+            if (!renderEl.innerHTML.includes("d2h-") && !renderEl.innerHTML.includes("diff")) {
+                throw new Error(`Expected rendered diff2html content, got: ${renderEl.innerHTML.slice(0, 200)}`);
+            }
+        });
+
+        test("CP-04", "toggleFullPreview() on and off", "the layout classes or styles the code sets are applied then removed", async (appWin) => {
+            appWin.eval("currentFileName = 'a.md'");
+            appWin.applyNativeColoration("a.md");
+
+            if (!appWin.eval("isPreviewOpen")) {
+                appWin.togglePreview();
+                await delay(100);
+            }
+
+            const mainArea = appWin.document.getElementById("main-area");
+            const btnFull = appWin.document.getElementById("btn-preview-full");
+
+            // Turn full preview ON
+            appWin.toggleFullPreview();
+            await delay(50);
+
+            if (!appWin.eval("isPreviewFull")) {
+                throw new Error("isPreviewFull expected to be true after toggleFullPreview()");
+            }
+            if (!mainArea.classList.contains("preview-full")) {
+                throw new Error("main-area expected to have class 'preview-full'");
+            }
+            if (!btnFull.classList.contains("btn-active")) {
+                throw new Error("btn-preview-full expected to have class 'btn-active'");
+            }
+
+            // Turn full preview OFF
+            appWin.toggleFullPreview();
+            await delay(50);
+
+            if (appWin.eval("isPreviewFull")) {
+                throw new Error("isPreviewFull expected to be false after second toggleFullPreview()");
+            }
+            if (mainArea.classList.contains("preview-full")) {
+                throw new Error("main-area expected NOT to have class 'preview-full'");
+            }
+            if (btnFull.classList.contains("btn-active")) {
+                throw new Error("btn-preview-full expected NOT to have class 'btn-active'");
+            }
+        });
+
+        test("CP-05", "Regression of issue 231: newFile() (unsaved, no name), diff mode, open the preview, toggleFullPreview()", "no exception (wrap the call and listen to appWin.onerror)", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            appWin.eval("newFile()"); // currentFileName is empty / unsaved
+            appWin.editor.session.setMode("ace/mode/diff");
+            appWin.editor.setValue("--- a/sample.txt\n+++ b/sample.txt\n@@ -1 +1 @@\n-hello\n+world", 1);
+
+            let uncaughtError = null;
+            const originalOnError = appWin.onerror;
+            appWin.onerror = (msg) => {
+                uncaughtError = msg;
+                return true;
+            };
+
+            try {
+                appWin.togglePreview();
+                await delay(50);
+
+                appWin.toggleFullPreview();
+                await delay(50);
+
+                if (uncaughtError) {
+                    throw new Error(`Uncaught exception encountered: ${uncaughtError}`);
+                }
+                if (!appWin.eval("isPreviewFull")) {
+                    throw new Error("toggleFullPreview() failed to enable isPreviewFull in unsaved diff mode");
+                }
+            } finally {
+                appWin.onerror = originalOnError;
+            }
+        });
+
+        test("CP-06", "Markdown with a <script> tag or an onerror= attribute in the text", "nothing is executed in the app window (check a global flag the payload would set)", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            appWin.eval("newFile()");
+            appWin.eval("currentFileName = 'security.md'");
+            appWin.applyNativeColoration("security.md");
+            appWin.eval("window.XSS_FLAG = false;");
+
+            const maliciousMd = "# Security Test\n<script>window.XSS_FLAG = true;</" + "script>\n<img src='invalid.png' onerror='window.XSS_FLAG = true;'>";
+            appWin.editor.setValue(maliciousMd, 1);
+
+            appWin.togglePreview();
+            await delay(200);
+
+            const xssFlag = appWin.eval("window.XSS_FLAG");
+            if (xssFlag === true) {
+                throw new Error("XSS vulnerability detected! Malicious payload was executed in app window context.");
+            }
+
+            const renderEl = appWin.document.getElementById("preview-render");
+            if (renderEl.innerHTML.includes("<script>")) {
+                throw new Error("Raw script tag found in preview render innerHTML");
+            }
+        });
+
+        test("CP-07", "Close the preview", "pane hidden, editor still usable", async (appWin) => {
+            if (!appWin.eval("isPreviewOpen")) {
+                appWin.togglePreview();
+                await delay(50);
+            }
+
+            appWin.togglePreview();
+            await delay(50);
+
+            const pane = appWin.document.getElementById("preview-pane");
+            const mainArea = appWin.document.getElementById("main-area");
+
+            if (pane.style.display !== "none") {
+                throw new Error(`Preview pane style.display expected 'none', got '${pane.style.display}'`);
+            }
+            if (mainArea.classList.contains("preview-active")) {
+                throw new Error("main-area expected NOT to have class 'preview-active'");
+            }
+
+            // Verify editor is still functional
+            appWin.editor.setValue("Editor working properly", 1);
+            if (appWin.editor.getValue() !== "Editor working properly") {
+                throw new Error("Editor is not usable after closing preview");
+            }
+        });
+
+        test("CP-08", "Full View with previewOutline off closes sidebar via Sidebar API and deselects tabs", "Sidebar.isOpen is false, no tab is active, leaving Full View restores sidebar and tab", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            const outlineToggle = appWin.document.getElementById("toggle-preview-outline");
+            if (outlineToggle) outlineToggle.checked = false;
+
+            appWin.eval("currentFileName = 'doc.md'");
+            appWin.applyNativeColoration("doc.md");
+
+            const sidebar = appWin.FamousPluginCore.Sidebar;
+            // Open sidebar on Tools tab
+            sidebar.switchTab("tools", true);
+            await delay(50);
+
+            if (!sidebar.isOpen || sidebar.activeTab !== "tools") {
+                throw new Error("Sidebar was expected to be open on tools tab");
+            }
+
+            // Open preview
+            appWin.togglePreview();
+            await delay(50);
+
+            // Toggle Full View
+            appWin.toggleFullPreview();
+            await delay(50);
+
+            // Sidebar must be closed and no tab active
+            if (sidebar.isOpen) {
+                throw new Error("Sidebar.isOpen expected to be false in Full View");
+            }
+            const activeBtns = appWin.document.querySelectorAll(".sidebar-tab-btn.is-active");
+            if (activeBtns.length > 0) {
+                throw new Error(`Expected 0 active tab buttons in Full View, found ${activeBtns.length}`);
+            }
+            const selectedTabs = appWin.document.querySelectorAll(".sidebar-tab-btn[aria-selected='true']");
+            if (selectedTabs.length > 0) {
+                throw new Error(`Expected 0 tabs with aria-selected='true', found ${selectedTabs.length}`);
+            }
+
+            // Exit Full View -> sidebar restored on tools tab
+            appWin.toggleFullPreview();
+            await delay(50);
+
+            if (!sidebar.isOpen) {
+                throw new Error("Sidebar expected to be reopened after exiting Full View");
+            }
+            if (sidebar.activeTab !== "tools") {
+                throw new Error(`Sidebar expected activeTab 'tools', got '${sidebar.activeTab}'`);
+            }
+            const toolsBtn = appWin.document.getElementById("tab-tools");
+            if (!toolsBtn.classList.contains("is-active")) {
+                throw new Error("Tools tab button expected to have 'is-active'");
+            }
+
+            // Re-enter Full View, then close preview completely -> should also restore sidebar
+            appWin.toggleFullPreview();
+            await delay(50);
+            if (sidebar.isOpen) {
+                throw new Error("Sidebar.isOpen expected to be false after re-entering Full View");
+            }
+
+            appWin.togglePreview(); // Close preview
+            await delay(50);
+            if (!sidebar.isOpen) {
+                throw new Error("Sidebar expected to be restored after closing preview from Full View");
+            }
+            if (sidebar.activeTab !== "tools") {
+                throw new Error(`Sidebar expected activeTab 'tools' after preview close, got '${sidebar.activeTab}'`);
+            }
+
+            cleanupPreviewState(appWin);
+        });
+
+        test("CP-09", "Sidebar width in Full View stays constant across tabs (flex-shrink: 0)", "#sidebar-left has flex-shrink: 0 and computed width is constant", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            appWin.eval("currentFileName = 'doc.md'");
+            appWin.applyNativeColoration("doc.md");
+
+            const sidebar = appWin.FamousPluginCore.Sidebar;
+            const sidebarEl = appWin.document.getElementById("sidebar-left");
+
+            const compStyle = appWin.getComputedStyle(sidebarEl);
+            if (compStyle.flexShrink !== "0") {
+                throw new Error(`Expected #sidebar-left flex-shrink to be '0', got '${compStyle.flexShrink}'`);
+            }
+
+            // Open preview and Full View
+            appWin.togglePreview();
+            appWin.toggleFullPreview();
+            await delay(50);
+
+            // Open sidebar across Explorer, Outline, Tools, Settings tabs in Full View
+            const widths = {};
+            for (const tabId of ["explorer", "outline", "tools", "settings"]) {
+                sidebar.switchTab(tabId, true);
+                await delay(30);
+                widths[tabId] = sidebarEl.getBoundingClientRect().width;
+            }
+
+            const baseWidth = widths["explorer"];
+            for (const tabId of ["outline", "tools", "settings"]) {
+                if (Math.abs(widths[tabId] - baseWidth) > 1) {
+                    throw new Error(`Sidebar width discrepancy in Full View: explorer=${baseWidth}px, ${tabId}=${widths[tabId]}px`);
+                }
+            }
+
+            cleanupPreviewState(appWin);
+        });
+
+        test("CP-10", "Setting 'Outline open on preview' checked: opening preview opens sidebar on Outline, Full View does not close it", "Outline tab opens automatically and sidebar stays open in Full View", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            const outlineToggle = appWin.document.getElementById("toggle-preview-outline");
+            if (outlineToggle) outlineToggle.checked = true;
+
+            const sidebar = appWin.FamousPluginCore.Sidebar;
+            sidebar.closeSidebar();
+            await delay(50);
+
+            appWin.eval("currentFileName = 'doc.md'");
+            appWin.applyNativeColoration("doc.md");
+
+            // Open preview
+            appWin.togglePreview();
+            await delay(50);
+
+            // Sidebar should have automatically opened on outline
+            if (!sidebar.isOpen) {
+                throw new Error("Sidebar expected to be open after opening preview with previewOutline setting checked");
+            }
+            if (sidebar.activeTab !== "outline") {
+                throw new Error(`Sidebar activeTab expected 'outline', got '${sidebar.activeTab}'`);
+            }
+
+            // Full View should NOT close the sidebar
+            appWin.toggleFullPreview();
+            await delay(50);
+
+            if (!sidebar.isOpen) {
+                throw new Error("Sidebar expected to remain open in Full View when previewOutline setting is checked");
+            }
+            if (sidebar.activeTab !== "outline") {
+                throw new Error(`Sidebar activeTab expected 'outline' in Full View, got '${sidebar.activeTab}'`);
+            }
+
+            cleanupPreviewState(appWin);
+            if (outlineToggle) outlineToggle.checked = false;
+        });
+
+        test("CP-11", "Full View with previewOutline off ensures active tab button is deselected", "all .sidebar-tab-btn have is-active removed and aria-selected='false'", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            const outlineToggle = appWin.document.getElementById("toggle-preview-outline");
+            if (outlineToggle) outlineToggle.checked = false;
+
+            appWin.eval("currentFileName = 'doc.md'");
+            appWin.applyNativeColoration("doc.md");
+
+            const sidebar = appWin.FamousPluginCore.Sidebar;
+            sidebar.switchTab("outline", true);
+            await delay(50);
+
+            // Open preview and switch to Full View
+            appWin.togglePreview();
+            appWin.toggleFullPreview();
+            await delay(50);
+
+            // Ensure no tab button is selected or active
+            const allTabBtns = appWin.document.querySelectorAll(".sidebar-tab-btn");
+            allTabBtns.forEach(btn => {
+                if (btn.classList.contains("is-active")) {
+                    throw new Error(`Tab button ${btn.id} should NOT have 'is-active' in Full View`);
+                }
+                if (btn.getAttribute("aria-selected") === "true") {
+                    throw new Error(`Tab button ${btn.id} should NOT have aria-selected='true' in Full View`);
+                }
+            });
+
+            // Toggle Full View off restores previous tab
+            appWin.toggleFullPreview();
+            await delay(50);
+
+            const outlineBtn = appWin.document.getElementById("tab-outline");
+            if (!outlineBtn.classList.contains("is-active") || outlineBtn.getAttribute("aria-selected") !== "true") {
+                throw new Error("Outline tab button was expected to be active and selected after exiting Full View");
+            }
+
+            cleanupPreviewState(appWin);
+        });
+
+        window.addEventListener("load", async () => {
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            }
+        });
+    </script>
+</body>
+</html>

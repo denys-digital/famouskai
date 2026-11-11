@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core File Actions (core-file-actions.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core File Actions Unit Tests (core/core-file-actions.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function cleanStorage() {
+            try { localStorage.clear(); } catch (e) {}
+            try { sessionStorage.clear(); } catch (e) {}
+        }
+
+        test("FA-01", "renameCurrentFile() with prompt/dialog returning new.md on a mock handle that has move()", "move called with new.md, currentFileName updated, title updated", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(50);
+
+            const mock = mockFileHandle("old.md", "Content", 1000);
+            let movedTo = null;
+            mock.move = async (newName) => {
+                movedTo = newName;
+                mock.name = newName;
+            };
+
+            appWin.fileHandle = mock;
+            appWin.eval("fileHandle = window.fileHandle; currentFileName = 'old.md'; isModified = false;");
+
+            const promise = appWin.renameCurrentFile();
+
+            const input = appWin.document.getElementById("rename-input");
+            const form = appWin.document.getElementById("rename-form");
+            if (!input || !form) throw new Error("Rename UI elements not found");
+
+            input.value = "new.md";
+            form.dispatchEvent(new appWin.Event("submit", { cancelable: true }));
+
+            const res = await promise;
+
+            if (res !== true) throw new Error(`Expected renameCurrentFile to resolve true, got ${res}`);
+            if (movedTo !== "new.md") throw new Error(`Expected move called with 'new.md', got '${movedTo}'`);
+            if (appWin.eval("currentFileName") !== "new.md") throw new Error(`Expected currentFileName 'new.md', got '${appWin.eval("currentFileName")}'`);
+            if (!appWin.document.title.includes("new.md")) throw new Error(`Expected document.title to include 'new.md', got '${appWin.document.title}'`);
+        });
+
+        test("FA-02", "Rename with a name without extension (submit 'new')", "the original extension .md is kept (new.md)", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(50);
+
+            const mock = mockFileHandle("old.md", "Content", 1000);
+            let movedTo = null;
+            mock.move = async (newName) => {
+                movedTo = newName;
+                mock.name = newName;
+            };
+
+            appWin.fileHandle = mock;
+            appWin.eval("fileHandle = window.fileHandle; currentFileName = 'old.md'; isModified = false;");
+
+            const promise = appWin.renameCurrentFile();
+
+            const input = appWin.document.getElementById("rename-input");
+            const form = appWin.document.getElementById("rename-form");
+            if (!input || !form) throw new Error("Rename UI elements not found");
+
+            input.value = "new";
+            form.dispatchEvent(new appWin.Event("submit", { cancelable: true }));
+
+            const res = await promise;
+
+            if (res !== true) throw new Error(`Expected renameCurrentFile to resolve true, got ${res}`);
+            if (movedTo !== "new.md") throw new Error(`Expected move called with 'new.md', got '${movedTo}'`);
+            if (appWin.eval("currentFileName") !== "new.md") throw new Error(`Expected currentFileName 'new.md', got '${appWin.eval("currentFileName")}'`);
+        });
+
+        test("FA-03", "Rename cancelled (cancel button clicked) or empty name submitted", "nothing changes, no exception, returns null", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(50);
+
+            const mock = mockFileHandle("stay.md", "Content", 1000);
+            let movedTo = null;
+            mock.move = async (newName) => { movedTo = newName; };
+
+            appWin.fileHandle = mock;
+            appWin.eval("fileHandle = window.fileHandle; currentFileName = 'stay.md'; isModified = false;");
+
+            // Sub-case A: Cancel button clicked
+            const promise1 = appWin.renameCurrentFile();
+            const cancelBtn = appWin.document.getElementById("rename-cancel");
+            if (!cancelBtn) throw new Error("rename-cancel button not found");
+            cancelBtn.click();
+
+            const res1 = await promise1;
+            if (res1 !== null) throw new Error(`Expected res1 to be null on cancel, got ${res1}`);
+            if (movedTo !== null) throw new Error(`Move should not be called on cancel, got '${movedTo}'`);
+            if (appWin.eval("currentFileName") !== "stay.md") throw new Error(`currentFileName should remain 'stay.md', got '${appWin.eval("currentFileName")}'`);
+
+            // Sub-case B: Empty name submitted
+            const promise2 = appWin.renameCurrentFile();
+            const input = appWin.document.getElementById("rename-input");
+            const form = appWin.document.getElementById("rename-form");
+            input.value = "   ";
+            form.dispatchEvent(new appWin.Event("submit", { cancelable: true }));
+
+            const res2 = await promise2;
+            if (res2 !== null) throw new Error(`Expected res2 to be null on empty input, got ${res2}`);
+            if (movedTo !== null) throw new Error(`Move should not be called on empty input, got '${movedTo}'`);
+            if (appWin.eval("currentFileName") !== "stay.md") throw new Error(`currentFileName should remain 'stay.md', got '${appWin.eval("currentFileName")}'`);
+        });
+
+        test("FA-04", "Rename on an unsaved new file (no handle or isModified true)", "returns undefined immediately, no exception", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(50);
+
+            // Case A: fileHandle is null
+            appWin.eval("fileHandle = null; isModified = false;");
+            const res1 = await appWin.renameCurrentFile();
+            if (res1 !== undefined) throw new Error(`Expected undefined when fileHandle is null, got ${res1}`);
+
+            // Case B: isModified is true
+            const mock = mockFileHandle("unsaved.md", "Content", 1000);
+            appWin.fileHandle = mock;
+            appWin.eval("fileHandle = window.fileHandle; isModified = true;");
+            const res2 = await appWin.renameCurrentFile();
+            if (res2 !== undefined) throw new Error(`Expected undefined when isModified is true, got ${res2}`);
+        });
+
+        test("FA-05", "copyFileName() with a mocked navigator.clipboard.writeText", "the file name is copied, success feedback shown", async (appWin) => {
+            const origClipboard = appWin.navigator.clipboard;
+            let copiedText = null;
+
+            Object.defineProperty(appWin.navigator, "clipboard", {
+                value: { writeText: async (text) => { copiedText = text; } },
+                configurable: true,
+                writable: true
+            });
+
+            try {
+                appWin.eval("currentFileName = 'sample.js';");
+                await appWin.copyFileName(new appWin.Event("click"));
+
+                if (copiedText !== "sample.js") throw new Error(`Expected 'sample.js' copied to clipboard, got '${copiedText}'`);
+
+                // Test ignored for [New]
+                copiedText = null;
+                appWin.eval("currentFileName = '[New]';");
+                await appWin.copyFileName(new appWin.Event("click"));
+                if (copiedText !== null) throw new Error(`Expected no clipboard write for '[New]', got '${copiedText}'`);
+            } finally {
+                Object.defineProperty(appWin.navigator, "clipboard", {
+                    value: origClipboard,
+                    configurable: true,
+                    writable: true
+                });
+            }
+        });
+
+        test("FA-06", "moveFile() with mocked showDirectoryPicker and handle move()", "move called with target folder; cancel = nothing changes", async (appWin) => {
+            const origShowDir = appWin.showDirectoryPicker;
+
+            const mockFile = mockFileHandle("doc.md", "Content", 1000);
+            mockFile.queryPermission = async () => 'granted';
+            let movedToDir = null;
+            mockFile.move = async (dirHandle) => { movedToDir = dirHandle; };
+
+            const mockDir = { kind: 'directory', name: 'MyFolder' };
+
+            appWin.fileHandle = mockFile;
+            appWin.eval("fileHandle = window.fileHandle; isModified = false;");
+
+            try {
+                // Sub-case A: Successful move
+                appWin.showDirectoryPicker = async () => mockDir;
+                await appWin.moveFile();
+
+                if (movedToDir !== mockDir) throw new Error("Expected move to be called with mockDir");
+
+                // Sub-case B: Cancel move (AbortError)
+                movedToDir = null;
+                appWin.showDirectoryPicker = async () => {
+                    const err = new Error("User aborted");
+                    err.name = "AbortError";
+                    throw err;
+                };
+
+                await appWin.moveFile();
+                if (movedToDir !== null) throw new Error("Expected move NOT to be called when user aborts");
+            } finally {
+                appWin.showDirectoryPicker = origShowDir;
+            }
+        });
+
+        test("FA-07", "openHtmlInNewTab() on an .html buffer with Blob URL and revocation", "window.open called with blob URL, URL revoked", async (appWin) => {
+            const origOpen = appWin.open;
+            const origCreateObjectURL = appWin.URL.createObjectURL;
+            const origRevokeObjectURL = appWin.URL.revokeObjectURL;
+
+            let openedUrl = null;
+            let openedTarget = null;
+            let createdBlob = null;
+            let revokedUrl = null;
+
+            appWin.URL.createObjectURL = (blob) => {
+                createdBlob = blob;
+                return "blob:famouskai-test-preview";
+            };
+
+            appWin.URL.revokeObjectURL = (url) => {
+                revokedUrl = url;
+            };
+
+            const listeners = {};
+            const mockWin = {
+                addEventListener: (evt, handler) => {
+                    listeners[evt] = handler;
+                }
+            };
+
+            appWin.open = (url, target) => {
+                openedUrl = url;
+                openedTarget = target;
+                return mockWin;
+            };
+
+            try {
+                appWin.editor.setValue("<h1>Test HTML Page</h1>", 1);
+                await appWin.openHtmlInNewTab(new appWin.Event("click"));
+
+                if (!createdBlob) throw new Error("Expected URL.createObjectURL to be called with a Blob");
+                if (createdBlob.type !== "text/html;charset=utf-8") throw new Error(`Expected Blob type 'text/html;charset=utf-8', got '${createdBlob.type}'`);
+                const blobText = await createdBlob.text();
+                if (blobText !== "<h1>Test HTML Page</h1>") throw new Error(`Expected Blob content '<h1>Test HTML Page</h1>', got '${blobText}'`);
+                if (openedUrl !== "blob:famouskai-test-preview") throw new Error(`Expected window.open called with blob URL, got '${openedUrl}'`);
+                if (openedTarget !== "_blank") throw new Error(`Expected window.open target '_blank', got '${openedTarget}'`);
+
+                // Trigger load event on mock window to test revocation
+                if (typeof listeners["load"] === "function") {
+                    listeners["load"]();
+                }
+                if (revokedUrl !== "blob:famouskai-test-preview") throw new Error(`Expected URL.revokeObjectURL to be called with blob URL, got '${revokedUrl}'`);
+            } finally {
+                appWin.open = origOpen;
+                appWin.URL.createObjectURL = origCreateObjectURL;
+                appWin.URL.revokeObjectURL = origRevokeObjectURL;
+            }
+        });
+
+        test("FA-08", "initExtFilters()", "extension filter buttons are built from WORKSPACE_FILE_GROUPS and toggle active filter", async (appWin) => {
+            appWin.initExtFilters();
+
+            const container = appWin.document.getElementById("workspace-ext-filters");
+            if (!container) throw new Error("Container #workspace-ext-filters not found");
+
+            const buttons = container.querySelectorAll(".fold-btn");
+            const expectedCount = appWin.WORKSPACE_FILE_GROUPS ? appWin.WORKSPACE_FILE_GROUPS.length : 0;
+
+            if (buttons.length < expectedCount) {
+                throw new Error(`Expected at least ${expectedCount} filter buttons, found ${buttons.length}`);
+            }
+
+            // Test clicking the first filter button to toggle on
+            const firstBtn = buttons[0];
+            firstBtn.click();
+
+            if (!firstBtn.classList.contains("active-filter")) {
+                throw new Error("First filter button should have 'active-filter' class after click");
+            }
+            if (!appWin.eval("activeExtFilter")) {
+                throw new Error("activeExtFilter should be set after clicking filter button");
+            }
+
+            // Toggle off
+            firstBtn.click();
+            if (firstBtn.classList.contains("active-filter")) {
+                throw new Error("First filter button should not have 'active-filter' class after toggle off");
+            }
+            if (appWin.eval("activeExtFilter") !== null) {
+                throw new Error("activeExtFilter should be null after toggle off");
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            cleanStorage();
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            } finally {
+                cleanStorage();
+            }
+        });
+    </script>
+</body>
+</html>

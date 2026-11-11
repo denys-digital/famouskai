@@ -38,6 +38,23 @@ const URLS_TO_CACHE = [
     './icon.svg',
     './manifest.json',
 
+    // Core (core/), in load order (core-mobkai.js loads first, in <head>)
+    './core/core-mobkai.js',
+    './core/core-window.js',
+    './core/core-workspace-store.js',
+    './core/core-state.js',
+    './core/core-editor.js',
+    './core/core-file.js',
+    './core/core-workspace-tree.js',
+    './core/core-settings.js',
+    './core/core-shortcuts.js',
+    './core/core-pwa.js',
+    './core/core-file-actions.js',
+    './core/core-sync.js',
+    './core/core-preview.js',
+    './core/core-snippets.js',
+    './core/core-boot.js',
+
     // Vendor: Ace Editor
     './vendor/ace-builds/ace.js',
     './vendor/ace-builds/ext-searchbox.js',
@@ -90,6 +107,7 @@ const URLS_TO_CACHE = [
     // Core & Extensions
     './plugins/tools.js',
     './plugins/ext-sidebar.js',
+    './plugins/ext-sidebar-demo.js',
     './plugins/ext-famous-core.js',
     './plugins/ext-outline.js',
     './plugins/ext-snippets.js',
@@ -108,7 +126,8 @@ const URLS_TO_CACHE = [
 
     // Diffskai (Monaco is lazy-loaded, so not pre-cached here to save startup bandwidth)
     './plugins/tool-diffskai.js',
-    './plugins/tool-diffskai.html'
+    './plugins/tool-diffskai.html',
+    './plugins/tool-diffskai-window.js'
 ];
 
 // Installation with Cloudflare "Response Washing"
