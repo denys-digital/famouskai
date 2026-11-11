@@ -35,6 +35,7 @@
     - 2.a. Global Layout & Foundations
     - 2.b. Toolbar
     - 2.c. Sidebar & Settings
+    - 2.d. Mobkai (minimal mobile note mode)
 
    LAYER 3: CORE UI COMPONENTS (The Design System)
     - 3.a. Buttons (Flat Design UI)
@@ -238,6 +239,227 @@
    ========================================================================== */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* --------------------------------------------------------------------------
+ * Editor Search Form - Dark Theme Patch (Pixel-Perfect Cloud9 Style)
+ * ----------------------------------------------------------------------- */
+.ace_search {
+    background-color: var(--color-bg-app);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-top: 0 none;
+    overflow: hidden;
+    margin: 0;
+    padding: 4px 6px 4px 4px;
+    position: absolute;
+    top: 0;
+    z-index: 99;
+    white-space: normal;
+    min-width: 340px;
+}
+
+.ace_search.left {
+    border-left: 0 none;
+    border-radius: 0px 0px var(--radius-lg) 0px;
+    left: 0;
+}
+
+.ace_search.right {
+    border-radius: 0px 0px 0px var(--radius-lg);
+    border-right: 0 none;
+    right: 0;
+}
+
+.ace_search_form,
+.ace_replace_form {
+    margin: 0 25px 4px 0;
+    overflow: hidden;
+    line-height: 1.9;
+    display: flex;
+}
+
+.ace_replace_form {
+    margin-right: 0;
+}
+
+.ace_search_form.ace_nomatch {
+    outline: 1px solid var(--color-status-error);
+}
+
+.ace_search_field {
+    flex: 1;
+    border-radius: 0;
+    background-color: var(--fm-dark);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-right: 0 none;
+    outline: 0;
+    padding: 0 8px;
+    font-size: inherit;
+    margin: 0;
+    line-height: inherit;
+    min-width: 17em;
+    vertical-align: top;
+    min-height: 1.8em;
+    box-sizing: content-box;
+    font-family: inherit;
+}
+
+.ace_search_field::placeholder {
+    color: var(--color-border-subtle);
+}
+
+.ace_search_form button,
+.ace_replace_form button,
+.ace_searchbtn {
+    background: var(--fm-dark);
+    order: 2 !important;
+    border: 1px solid var(--color-border) !important;
+    border-right: 0 none !important;
+    border-radius: 0;
+    color: var(--color-text-primary);
+    line-height: inherit;
+    display: inline-block;
+    padding: 0 8px;
+    margin: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    box-sizing: content-box;
+    min-height: 1.8em;
+}
+
+.ace_search_form .ace_search_field {
+    order: 1 !important;
+}
+
+.ace_search_form .ace_searchbtn.prev {
+    order: 2;
+}
+
+.ace_search_form .ace_searchbtn.next {
+    order: 3;
+}
+
+.ace_search_form button:last-child {
+    order: 4;
+}
+
+.ace_replace_form .ace_search_field {
+    order: 1 !important;
+}
+
+.ace_replace_form button:nth-child(2) {
+    order: 2;
+}
+
+.ace_replace_form button:last-child {
+    order: 3;
+}
+
+.ace_search_form button:hover,
+.ace_replace_form button:hover,
+.ace_searchbtn:hover {
+    background-color: var(--color-bg-panel);
+}
+
+.ace_search_form button:disabled,
+.ace_replace_form button:disabled,
+.ace_searchbtn:disabled {
+    color: var(--color-border-subtle);
+    cursor: default;
+    background: var(--fm-dark);
+}
+
+.ace_searchbtn.prev,
+.ace_searchbtn.next {
+    padding: 0px 0.7em;
+}
+
+.ace_searchbtn.prev:after,
+.ace_searchbtn.next:after {
+    content: "";
+    border: solid 1px var(--color-border-subtle);
+    width: 0.5em;
+    height: 0.5em;
+    display: inline-block;
+    transform: rotate(-45deg);
+}
+
+.ace_searchbtn.prev:after {
+    border-width: 1px 0 0 1px;
+}
+
+.ace_searchbtn.next:after {
+    border-width: 0 1px 1px 0;
+}
+
+.ace_searchbtn_close {
+    position: absolute !important;
+    right: 7px;
+    top: 9px;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAcCAYAAABRVo5BAAAAZ0lEQVR42u2SUQrAMAhDvazn8OjZBilCkYVVxiis8H4CT0VrAJb4WHT3C5xU2a2IQZXJjiQIRMdkEoJ5Q2yMqpfDIo+XY4k6h+YXOyKqTIj5REaxloNAd0xiKmAtsTHqW8sR2W5f7gCu5nWFUpVjZwAAAABJRU5ErkJggg==) no-repeat 50% 0;
+    border: 0 none !important;
+    border-radius: 50% !important;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    font: 16px/16px Arial;
+    padding: 0 !important;
+    height: 14px;
+    width: 14px;
+    filter: invert(0.6);
+    min-height: auto;
+    order: 99 !important;
+}
+
+.ace_searchbtn_close:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    background-position: 50% 100%;
+    filter: invert(1);
+}
+
+.ace_search_options {
+    margin-top: 3px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    user-select: none;
+}
+
+.ace_search_counter {
+    margin-right: auto;
+    font-family: inherit;
+    color: var(--color-text-secondary);
+    padding-left: 6px;
+}
+
+.ace_button {
+    margin-left: 2px;
+    cursor: pointer;
+    user-select: none;
+    overflow: hidden;
+    opacity: 0.6;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 2px 6px;
+    box-sizing: border-box !important;
+    color: var(--color-text-primary);
+    font-family: inherit;
+    display: inline-block;
+}
+
+.ace_button:hover {
+    background-color: var(--color-bg-panel);
+    border-color: var(--color-border);
+    opacity: 1;
+}
+
+.ace_button.checked {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    opacity: 1;
+    background: rgba(138, 180, 248, 0.1);
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -255,6 +477,10 @@ body {
     flex: 1;
     height: calc(100vh - 40px);
     overflow: hidden;
+}
+
+#mobkai-status-bar {
+    display: none;
 }
 
 #editor {
@@ -296,12 +522,25 @@ body {
     justify-content: center;
     border-radius: var(--radius-sm);
     transition: background-color var(--transition-fast), color var(--transition-fast);
+    min-width: 28px;
+    height: 24px;
+    box-sizing: border-box;
 }
 
 .sidebar-tab-btn:hover,
 .sidebar-tab-btn.is-active {
     color: var(--color-text-on-accent) !important;
     background: var(--sidebar-tab-color, var(--color-accent)) !important;
+}
+
+.sidebar-tab-icon-text {
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    user-select: none;
 }
 
 #btn-menu {
@@ -383,6 +622,7 @@ body {
    ========================================================================== */
 #sidebar-left {
     width: 260px;
+    flex-shrink: 0;
     background: var(--color-bg-panel);
     border-right: 1px solid var(--color-border);
     border-top: var(--sidebar-tab-line) solid var(--sidebar-active-color, var(--color-accent));
@@ -434,11 +674,13 @@ body {
 /* Side Drawer Overlay (Extensible Framework) */
 #sidebar-drawer {
     position: absolute;
-    top: 0;
-    left: 100%;
+    top: calc(-1 * var(--sidebar-tab-line));
+    left: calc(100% + 1px);
     width: 300px;
-    height: 100%;
+    height: calc(100% + var(--sidebar-tab-line));
+    box-sizing: border-box;
     background: var(--color-bg-panel);
+    border-top: var(--sidebar-tab-line) solid var(--sidebar-drawer-color, var(--sidebar-active-color, var(--color-accent)));
     border-right: 1px solid var(--color-border);
     box-shadow: 4px 0 10px rgba(0,0,0,0.3);
     z-index: 100;
@@ -603,6 +845,231 @@ body {
 #app-version:hover:not(:disabled) {
     background: var(--color-bg-hover);
     color: var(--color-text-primary);
+}
+
+/* ==========================================================================
+   ﹥ 2.d. Mobkai (minimal mobile note mode)
+   Active only when core/core-mobkai.js puts the "mobkai" class on <html>.
+   Keeps the menu bar (New, Open, Save, As...), the file name, the editor and
+   the Markdown preview. Spec: docs-lab/MOBKAI-SPEC.md (sections 4, 13, 14).
+   ========================================================================== */
+html.mobkai #sidebar-tab-group,
+html.mobkai #btn-menu,
+html.mobkai #btn-menu + .divider,
+html.mobkai #sidebar-left,
+html.mobkai #sidebar-drawer,
+html.mobkai #btn-new-window,
+html.mobkai #btn-move,
+html.mobkai #btn-reload,
+html.mobkai #btn-reload + .divider,
+html.mobkai #file-name-copy,
+html.mobkai #file-name-open-ext,
+html.mobkai #toolbar-plugins,
+html.mobkai #toolbar-plugins-divider,
+html.mobkai #btn-print,
+html.mobkai #btn-export-html,
+html.mobkai #btn-preview-theme,
+html.mobkai #btn-preview-full,
+html.mobkai #app-version,
+html.mobkai #browser-support-banner {
+    display: none !important;
+}
+
+/* Editor and preview take the full width; the preview replaces the editor */
+html.mobkai body {
+    height: 100dvh;
+}
+
+html.mobkai #main-area {
+    height: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+html.mobkai #editor-wrapper {
+    flex: 1;
+    width: 100%;
+}
+
+html.mobkai #preview-pane {
+    width: 100% !important;
+    border-left: none !important;
+}
+
+html.mobkai #main-area.preview-active #editor-wrapper { display: none !important; }
+
+/* No Ace mobile menu: hide floating context menu so native OS selection and handles work */
+html.mobkai .ace_mobile-menu {
+    display: none !important;
+}
+
+/* Menu bar for touch, two lines: the file name alone on top, then the buttons
+   (>= 44x44px targets, fits 360px). */
+html.mobkai #toolbar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 0 4px 2px;
+    gap: 2px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+html.mobkai #toolbar button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* Touch screens keep :hover after a tap: no hover highlight on the Mobkai bars */
+@media (hover: none) {
+    html.mobkai #toolbar button:hover:not(:disabled),
+    html.mobkai #mobkai-status-bar button:hover:not(:disabled) {
+        background: transparent;
+        color: var(--color-text-secondary);
+    }
+}
+
+html.mobkai #toolbar .divider {
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+html.mobkai #file-name {
+    order: -1;
+    flex: 0 0 100%;
+    max-width: none;
+    min-width: 0;
+    height: 36px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0;
+    padding: 0 8px;
+    box-sizing: border-box;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+}
+
+html.mobkai #file-name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-white);
+}
+
+html.mobkai #file-name.is-modified #file-name-text {
+    color: var(--color-status-modified);
+}
+
+html.mobkai #toolbar-right {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+html.mobkai #toolbar-right #btn-preview {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 8px;
+}
+
+/* Bottom status bar in Mobkai (Copy all on left, toasts and version on right) */
+html.mobkai #mobkai-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 45px;
+    flex: 0 0 45px;
+    padding: 0 8px;
+    background: var(--color-bg-panel);
+    border-top: 1px solid var(--color-border);
+    box-sizing: border-box;
+    user-select: none;
+}
+
+html.mobkai #btn-copy-all {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 16px;
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+/* Restore: same place and size as Copy all, in the unsaved yellow of the file name */
+html.mobkai #btn-restore-draft {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-size: 16px;
+    font-weight: bold;
+    flex-shrink: 0;
+    color: var(--color-status-modified);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+html.mobkai #mobkai-status-bar button[hidden] {
+    display: none;
+}
+
+/* Hover only on real pointers: on touch, :hover sticks after a tap */
+@media (hover: hover) {
+    html.mobkai #btn-copy-all:hover {
+        background: var(--color-bg-hover);
+        color: var(--color-text-primary);
+    }
+}
+
+html.mobkai #toast-msg {
+    position: static;
+    flex: 1;
+    min-width: 0;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: none;
+    transition: none;
+    display: none;
+    padding: 4px 8px;
+}
+
+html.mobkai #toast-msg.show {
+    display: block;
+}
+
+html.mobkai #mobkai-status-version {
+    margin-left: auto;
+    font-size: 12px;
+    opacity: 0.7;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+}
+
+html.mobkai #toast-msg.show ~ #mobkai-status-version {
+    display: none;
 }
 
 /*

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - Dynamic Tab Registry (Sidebar Lot 1)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="../plugins/ext-sidebar.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - Dynamic Tab Registry (Sidebar Lot 1)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+
+    <!-- Minimal DOM structure for Sidebar testing -->
+    <div id="toolbar">
+        <div id="sidebar-tab-group" role="tablist" aria-label="Sidebar">
+            <button class="sidebar-tab-btn" id="tab-explorer" role="tab" aria-controls="panel-explorer" aria-selected="false" data-tab="explorer" title="Explorer">Exp</button>
+            <button class="sidebar-tab-btn" id="tab-outline" role="tab" aria-controls="panel-outline" aria-selected="false" data-tab="outline" title="Outline">Out</button>
+            <button class="sidebar-tab-btn" id="tab-tools" role="tab" aria-controls="panel-tools" aria-selected="false" data-tab="tools" title="Tools">Tool</button>
+            <button class="sidebar-tab-btn" id="tab-settings" role="tab" aria-controls="panel-settings" aria-selected="false" data-tab="settings" title="Settings">Set</button>
+        </div>
+    </div>
+
+    <div id="sidebar-left" style="width: 260px; position: relative;">
+        <div class="sidebar-inner">
+            <div id="panel-explorer" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-explorer">Explorer Panel</div>
+            <div id="panel-outline" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-outline">Outline Panel</div>
+            <div id="panel-tools" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-tools">Tools Panel</div>
+            <div id="panel-settings" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-settings">Settings Panel</div>
+        </div>
+        <div id="sidebar-drawer">
+            <div id="sidebar-drawer-title"></div>
+            <button id="sidebar-drawer-close"></button>
+            <div id="sidebar-drawer-body"></div>
+        </div>
+        <button id="btn-hide-sidebar"></button>
+        <button id="btn-hide-drawer"></button>
+    </div>
+
+    <script>
+        (function() {
+            const Sidebar = window.FamousPluginCore.Sidebar;
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+
+            localStorage.removeItem('famouskai_active_sidebar_tab');
+            localStorage.removeItem('famouskai_prefs');
+
+            Sidebar.init();
+
+            const testCases = [];
+
+            // Case 1: Core tabs registration
+            testCases.push({
+                name: "Core tabs are registered in TABS on init()",
+                run: function() {
+                    const ids = Sidebar.TABS.map(t => t.id);
+                    const expected = ['explorer', 'outline', 'tools', 'settings'];
+                    const pass = expected.every(id => ids.includes(id));
+                    return { pass, detail: `Got ids: [${ids.join(', ')}]` };
+                }
+            });
+
+            // Case 2: Register a dynamic tab
+            testCases.push({
+                name: "registerTab creates button and panel with correct attributes",
+                run: function() {
+                    Sidebar.registerTab({
+                        id: 'kanban',
+                        title: 'Kanban Board',
+                        color: 'var(--fm-magenta)',
+                        icon: 'KB'
+                    });
+
+                    const btn = document.getElementById('tab-kanban');
+                    const panel = document.getElementById('panel-kanban');
+
+                    const btnOk = btn &&
+                        btn.getAttribute('role') === 'tab' &&
+                        btn.getAttribute('aria-controls') === 'panel-kanban' &&
+                        btn.dataset.tab === 'kanban' &&
+                        btn.title === 'Kanban Board' &&
+                        btn.textContent.trim() === 'KB' &&
+                        btn.style.getPropertyValue('--sidebar-tab-color') === 'var(--fm-magenta)';
+
+                    const panelOk = panel &&
+                        panel.getAttribute('role') === 'tabpanel' &&
+                        panel.getAttribute('aria-labelledby') === 'tab-kanban' &&
+                        panel.style.display === 'none';
+
+                    const inTabs = Sidebar.getTab('kanban') !== undefined;
+
+                    return { pass: !!(btnOk && panelOk && inTabs), detail: `btnOk: ${btnOk}, panelOk: ${panelOk}, inTabs: ${inTabs}` };
+                }
+            });
+
+            // Case 3: Duplicate id throws
+            testCases.push({
+                name: "registerTab throws on duplicate id",
+                run: function() {
+                    let threw = false;
+                    try {
+                        Sidebar.registerTab({
+                            id: 'kanban',
+                            title: 'Duplicate Kanban',
+                            color: 'var(--fm-sky)'
+                        });
+                    } catch (e) {
+                        threw = true;
+                    }
+                    return { pass: threw, detail: `threw was ${threw}` };
+                }
+            });
+
+            // Case 4: Raw hex color throws
+            testCases.push({
+                name: "registerTab throws on raw hex color",
+                run: function() {
+                    let threw = false;
+                    try {
+                        Sidebar.registerTab({
+                            id: 'git',
+                            title: 'Git Version Control',
+                            color: '#ff0000'
+                        });
+                    } catch (e) {
+                        threw = true;
+                    }
+                    return { pass: threw, detail: `threw was ${threw}` };
+                }
+            });
+
+            // Case 5: Missing required fields throws
+            testCases.push({
+                name: "registerTab throws on missing required fields",
+                run: function() {
+                    let missingId = false;
+                    let missingTitle = false;
+                    let missingColor = false;
+
+                    try { Sidebar.registerTab({ title: 'T', color: 'var(--fm-sky)' }); } catch (e) { missingId = true; }
+                    try { Sidebar.registerTab({ id: 'bad1', color: 'var(--fm-sky)' }); } catch (e) { missingTitle = true; }
+                    try { Sidebar.registerTab({ id: 'bad2', title: 'T' }); } catch (e) { missingColor = true; }
+
+                    const pass = missingId && missingTitle && missingColor;
+                    return { pass, detail: `missingId: ${missingId}, missingTitle: ${missingTitle}, missingColor: ${missingColor}` };
+                }
+            });
+
+            // Case 6: Invalid icon length throws (must be 1 or 2 characters)
+            testCases.push({
+                name: "registerTab throws if icon is longer than 2 characters",
+                run: function() {
+                    let threw = false;
+                    try {
+                        Sidebar.registerTab({
+                            id: 'toolong',
+                            title: 'Too Long Icon',
+                            color: 'var(--fm-sky)',
+                            icon: 'TOOLONG'
+                        });
+                    } catch (e) {
+                        threw = true;
+                    }
+                    return { pass: threw, detail: `threw was ${threw}` };
+                }
+            });
+
+            // Case 7: Icon fallback to title first letter
+            testCases.push({
+                name: "registerTab falls back to title first letter when icon omitted",
+                run: function() {
+                    Sidebar.registerTab({
+                        id: 'notes',
+                        title: 'Notes & Scratchpad',
+                        color: 'var(--fm-yellow)'
+                    });
+
+                    const btn = document.getElementById('tab-notes');
+                    const text = btn ? btn.textContent.trim() : '';
+                    return { pass: text === 'N', detail: `Got icon text '${text}', expected 'N'` };
+                }
+            });
+
+            // Case 8: Switching to dynamic tab activates panel, applies active color, calls render and onShow
+            testCases.push({
+                name: "switchTab triggers lazy render, onShow, and updates ARIA",
+                run: function() {
+                    let renderCalled = 0;
+                    let showCalled = 0;
+
+                    Sidebar.registerTab({
+                        id: 'lifecycle',
+                        title: 'Lifecycle Test',
+                        color: 'var(--fm-green)',
+                        render: (panel) => { renderCalled++; panel.textContent = 'Rendered!'; },
+                        onShow: (panel) => { showCalled++; }
+                    });
+
+                    Sidebar.switchTab('lifecycle', true);
+
+                    const panel = document.getElementById('panel-lifecycle');
+                    const btn = document.getElementById('tab-lifecycle');
+                    const sidebar = document.getElementById('sidebar-left');
+
+                    const isPanelVisible = panel && panel.style.display !== 'none';
+                    const isBtnActive = btn && btn.classList.contains('is-active') && btn.getAttribute('aria-selected') === 'true';
+                    const activeColor = sidebar.style.getPropertyValue('--sidebar-active-color');
+
+                    // Switch again to check lazy render is not invoked repeatedly
+                    Sidebar.switchTab('lifecycle', true);
+
+                    const pass = isPanelVisible && isBtnActive &&
+                                 renderCalled === 1 && showCalled === 2 &&
+                                 activeColor === 'var(--fm-green)';
+
+                    return {
+                        pass,
+                        detail: `visible: ${isPanelVisible}, btnActive: ${isBtnActive}, renderCalled: ${renderCalled}, showCalled: ${showCalled}, color: ${activeColor}`
+                    };
+                }
+            });
+
+            // Case 9: Switching away calls onHide
+            testCases.push({
+                name: "Switching away or closing sidebar triggers onHide",
+                run: function() {
+                    let hideCalled = 0;
+
+                    Sidebar.registerTab({
+                        id: 'hidetest',
+                        title: 'Hide Test',
+                        color: 'var(--fm-purple)',
+                        onHide: (panel) => { hideCalled++; }
+                    });
+
+                    Sidebar.switchTab('hidetest', true);
+                    Sidebar.switchTab('explorer', true);
+
+                    return { pass: hideCalled === 1, detail: `hideCalled was ${hideCalled}` };
+                }
+            });
+
+            // Case 10: Keyboard navigation across tab buttons
+            testCases.push({
+                name: "Arrow-key navigation cycles focus across tab buttons",
+                run: function() {
+                    const tabGroup = document.getElementById('sidebar-tab-group');
+                    const buttons = Array.from(tabGroup.querySelectorAll('.sidebar-tab-btn'));
+                    if (buttons.length < 2) return { pass: false, detail: 'Not enough buttons' };
+
+                    buttons[0].focus();
+                    let activeBefore = document.activeElement;
+
+                    tabGroup.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+                    let activeAfterRight = document.activeElement;
+
+                    tabGroup.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+                    let activeAfterLeft = document.activeElement;
+
+                    const pass = (activeBefore === buttons[0]) &&
+                                 (activeAfterRight === buttons[1]) &&
+                                 (activeAfterLeft === buttons[0]);
+
+                    return {
+                        pass,
+                        detail: `before: ${activeBefore.id}, right: ${activeAfterRight.id}, left: ${activeAfterLeft.id}`
+                    };
+                }
+            });
+
+            // Case 11: Unregister inactive tab removes DOM and TABS entry
+            testCases.push({
+                name: "unregisterTab removes inactive tab DOM elements and registry entry",
+                run: function() {
+                    Sidebar.registerTab({
+                        id: 'removable',
+                        title: 'Removable Tab',
+                        color: 'var(--fm-cyan)'
+                    });
+
+                    const inTabsBefore = Sidebar.getTab('removable') !== undefined;
+                    const btnBefore = document.getElementById('tab-removable') !== null;
+                    const panelBefore = document.getElementById('panel-removable') !== null;
+
+                    const unregResult = Sidebar.unregisterTab('removable');
+
+                    const inTabsAfter = Sidebar.getTab('removable') !== undefined;
+                    const btnAfter = document.getElementById('tab-removable') !== null;
+                    const panelAfter = document.getElementById('panel-removable') !== null;
+
+                    const pass = unregResult === true &&
+                                 inTabsBefore && btnBefore && panelBefore &&
+                                 !inTabsAfter && !btnAfter && !panelAfter;
+
+                    return { pass, detail: `unregResult: ${unregResult}, inTabsAfter: ${inTabsAfter}, btnAfter: ${btnAfter}` };
+                }
+            });
+
+            // Case 12: Unregister active tab falls back to explorer
+            testCases.push({
+                name: "unregisterTab falls back to explorer when removing active tab",
+                run: function() {
+                    let hideCalled = false;
+                    Sidebar.registerTab({
+                        id: 'active_remove',
+                        title: 'Active Removable',
+                        color: 'var(--fm-orange)',
+                        onHide: () => { hideCalled = true; }
+                    });
+
+                    Sidebar.switchTab('active_remove', true);
+                    const activeBefore = Sidebar.activeTab;
+
+                    Sidebar.unregisterTab('active_remove');
+
+                    const activeAfter = Sidebar.activeTab;
+                    const explorerPanel = document.getElementById('panel-explorer');
+                    const isExplorerVisible = explorerPanel && explorerPanel.style.display !== 'none';
+                    const explorerBtn = document.getElementById('tab-explorer');
+                    const isExplorerActive = explorerBtn && explorerBtn.classList.contains('is-active');
+
+                    const pass = (activeBefore === 'active_remove') &&
+                                 (activeAfter === 'explorer') &&
+                                 hideCalled &&
+                                 isExplorerVisible &&
+                                 isExplorerActive;
+
+                    return {
+                        pass,
+                        detail: `activeBefore: ${activeBefore}, activeAfter: ${activeAfter}, hide: ${hideCalled}, visible: ${isExplorerVisible}`
+                    };
+                }
+            });
+
+            // Case 13: One drawer at a time: opening a drawer replaces previous drawer
+            testCases.push({
+                name: "Opening a drawer replaces previous drawer content and triggers onClose",
+                run: function() {
+                    let firstClosed = false;
+                    Sidebar.openDrawer("First Drawer", "<div id='drawer-1'>1</div>", {
+                        onClose: () => { firstClosed = true; }
+                    });
+
+                    const title1 = document.getElementById('sidebar-drawer-title').textContent;
+
+                    Sidebar.openDrawer("Second Drawer", "<div id='drawer-2'>2</div>");
+
+                    const title2 = document.getElementById('sidebar-drawer-title').textContent;
+                    const hasDrawer1 = document.getElementById('drawer-1') !== null;
+                    const hasDrawer2 = document.getElementById('drawer-2') !== null;
+
+                    Sidebar.closeDrawer();
+
+                    const pass = (firstClosed === true) &&
+                                 (title1 === "First Drawer") &&
+                                 (title2 === "Second Drawer") &&
+                                 (!hasDrawer1) &&
+                                 (hasDrawer2);
+
+                    return { pass, detail: `firstClosed: ${firstClosed}, title2: ${title2}, hasDrawer1: ${hasDrawer1}, hasDrawer2: ${hasDrawer2}` };
+                }
+            });
+
+            // Case 14: Demo extension tab registers only when famouskai_dev_demo_tab === '1'
+            testCases.push({
+                name: "Demo extension tab registers only with famouskai_dev_demo_tab flag",
+                run: function() {
+                    // Part 1: By default without flag, demo tab is not registered
+                    const tabBeforeFlag = Sidebar.getTab('demo');
+
+                    // Part 2: Simulate enabling flag and loading/evaluating demo registration logic
+                    localStorage.setItem('famouskai_dev_demo_tab', '1');
+                    let registeredWithFlag = false;
+
+                    let isFlagOn = false;
+                    try {
+                        isFlagOn = (localStorage.getItem('famouskai_dev_demo_tab') === '1');
+                    } catch (e) {
+                        isFlagOn = false;
+                    }
+
+                    if (isFlagOn) {
+                        Sidebar.registerTab({
+                            id: 'demo',
+                            title: 'Demo extension',
+                            icon: 'D',
+                            color: 'var(--color-tab-tools)',
+                            render: function(panelEl) {
+                                const btn = document.createElement('button');
+                                btn.id = 'btn-open-demo-drawer';
+                                btn.addEventListener('click', function() {
+                                    Sidebar.openDrawer('Demo drawer', '<div>Demo drawer content</div>', { size: 'M' });
+                                });
+                                panelEl.appendChild(btn);
+                            }
+                        });
+                        registeredWithFlag = true;
+                    }
+
+                    const tabWithFlag = Sidebar.getTab('demo');
+                    const demoBtn = document.getElementById('tab-demo');
+                    const demoPanel = document.getElementById('panel-demo');
+
+                    // Trigger render by switching to demo
+                    Sidebar.switchTab('demo', true);
+                    const btnInPanel = document.getElementById('btn-open-demo-drawer');
+
+                    // Open drawer in size M
+                    if (btnInPanel) btnInPanel.click();
+                    const drawer = document.getElementById('sidebar-drawer');
+                    const drawerTitle = document.getElementById('sidebar-drawer-title');
+                    const drawerSize = drawer ? drawer.dataset.size : null;
+                    const drawerTitleText = drawerTitle ? drawerTitle.textContent : '';
+
+                    Sidebar.closeDrawer();
+                    Sidebar.unregisterTab('demo');
+                    localStorage.removeItem('famouskai_dev_demo_tab');
+
+                    const pass = (tabBeforeFlag === undefined) &&
+                                 (registeredWithFlag === true) &&
+                                 (tabWithFlag !== undefined) &&
+                                 (tabWithFlag.icon === 'D') &&
+                                 (tabWithFlag.color === 'var(--color-tab-tools)') &&
+                                 (drawerSize === 'M') &&
+                                 (drawerTitleText === 'Demo drawer');
+
+                    return {
+                        pass,
+                        detail: `tabBefore: ${tabBeforeFlag}, registered: ${registeredWithFlag}, drawerSize: ${drawerSize}, drawerTitle: ${drawerTitleText}`
+                    };
+                }
+            });
+
+            testCases.push({
+                name: "A tab registered before init opens on ONE click (no second click handler)",
+                run: function() {
+                    if (Sidebar.isOpen) Sidebar.closeSidebar();
+                    Sidebar.registerTab({ id: 'oneclick', title: 'One click', icon: '1', color: 'var(--color-tab-tools)' });
+                    // init() binds the toolbar buttons again; the registered button must not get a 2nd handler
+                    Sidebar.bindToolbarTabs();
+                    document.getElementById('tab-oneclick').click();
+                    const opened = Sidebar.isOpen && Sidebar.activeTab === 'oneclick';
+                    Sidebar.closeSidebar();
+                    Sidebar.unregisterTab('oneclick');
+                    return { pass: opened, detail: `isOpen after one click: ${opened}` };
+                }
+            });
+
+            // Execute test cases
+            let passedCount = 0;
+            testCases.forEach((tc, idx) => {
+                let res;
+                try {
+                    res = tc.run();
+                } catch (e) {
+                    res = { pass: false, detail: 'Threw exception: ' + e.message };
+                }
+
+                if (res.pass) passedCount++;
+
+                const card = document.createElement('div');
+                card.className = `test-case ${res.pass ? 'pass' : 'fail'}`;
+
+                const badge = document.createElement('span');
+                badge.className = `badge ${res.pass ? 'pass' : 'fail'}`;
+                badge.textContent = res.pass ? 'PASS' : 'FAIL';
+
+                const title = document.createElement('span');
+                title.textContent = `Case ${idx + 1}: ${tc.name}`;
+
+                card.appendChild(badge);
+                card.appendChild(title);
+
+                if (!res.pass) {
+                    const diff = document.createElement('div');
+                    diff.className = 'diff-details';
+                    diff.textContent = res.detail;
+                    card.appendChild(diff);
+                }
+
+                container.appendChild(card);
+            });
+
+            const summaryText = `${passedCount}/${testCases.length} passed`;
+            summaryEl.className = `summary ${passedCount === testCases.length ? 'passed' : 'failed'}`;
+            summaryEl.textContent = summaryText;
+
+            console.log(`Unit Tests - Dynamic Tab Registry: ${summaryText}`);
+        })();
+    </script>
+</body>
+</html>

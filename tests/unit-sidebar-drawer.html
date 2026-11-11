@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - Side Drawer v2</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="../plugins/ext-sidebar.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - Side Drawer v2</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+
+    <!-- Minimal DOM structure required by Sidebar -->
+    <div id="sidebar-left" style="width: 260px; position: relative;">
+        <div id="sidebar-drawer">
+            <div id="sidebar-drawer-title"></div>
+            <button id="sidebar-drawer-close"></button>
+            <div id="sidebar-drawer-body"></div>
+        </div>
+        <button id="btn-hide-drawer"></button>
+    </div>
+
+    <script>
+        (function() {
+            const Sidebar = window.FamousPluginCore.Sidebar;
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+            const drawer = document.getElementById('sidebar-drawer');
+            const sidebar = document.getElementById('sidebar-left');
+
+            Sidebar.initSideDrawer();
+
+            const testCases = [];
+
+            // Test 1: Band color from active tab (tools)
+            testCases.push({
+                name: "Band color matches active tab (tools)",
+                run: function() {
+                    Sidebar.activeTab = 'tools';
+                    Sidebar.openDrawer("Tools Test", "Content");
+                    const color = drawer.style.getPropertyValue('--sidebar-drawer-color');
+                    const expected = 'var(--color-tab-tools)';
+                    return { pass: color === expected, detail: `Got ${color}, expected ${expected}` };
+                }
+            });
+
+            // Test 2: Band color from active tab (outline)
+            testCases.push({
+                name: "Band color matches active tab (outline)",
+                run: function() {
+                    Sidebar.activeTab = 'outline';
+                    Sidebar.openDrawer("Outline Test", "Content");
+                    const color = drawer.style.getPropertyValue('--sidebar-drawer-color');
+                    const expected = 'var(--color-tab-outline)';
+                    return { pass: color === expected, detail: `Got ${color}, expected ${expected}` };
+                }
+            });
+
+            // Test 3: options.color overrides active tab color (CSS token)
+            testCases.push({
+                name: "options.color overrides active tab color",
+                run: function() {
+                    Sidebar.activeTab = 'explorer';
+                    Sidebar.openDrawer("Custom Color", "Content", { color: 'var(--fm-magenta)' });
+                    const color = drawer.style.getPropertyValue('--sidebar-drawer-color');
+                    const expected = 'var(--fm-magenta)';
+                    return { pass: color === expected, detail: `Got ${color}, expected ${expected}` };
+                }
+            });
+
+            // Test 4: options.color ignores raw hex and falls back to tab color
+            testCases.push({
+                name: "options.color rejects raw hex",
+                run: function() {
+                    Sidebar.activeTab = 'settings';
+                    Sidebar.openDrawer("Hex Reject", "Content", { color: '#ff0000' });
+                    const color = drawer.style.getPropertyValue('--sidebar-drawer-color');
+                    const expected = 'var(--color-tab-settings)';
+                    return { pass: color === expected, detail: `Got ${color}, expected ${expected}` };
+                }
+            });
+
+            // Test 5: Default size is S when options omitted (2 arguments)
+            testCases.push({
+                name: "Calling openDrawer(title, content) defaults to size S",
+                run: function() {
+                    Sidebar.openDrawer("Default Size", "Content");
+                    const size = drawer.dataset.size;
+                    const width = drawer.style.width;
+                    return { pass: size === 'S' && width === '260px', detail: `size: ${size}, width: ${width}` };
+                }
+            });
+
+            // Test 6: S, M, L sizes (1x, 2x, 3x sidebar width)
+            testCases.push({
+                name: "Size S, M, L multipliers",
+                run: function() {
+                    Sidebar.openDrawer("Size M", "Content", { size: 'M' });
+                    const mWidth = drawer.style.width;
+                    const mSize = drawer.dataset.size;
+
+                    Sidebar.openDrawer("Size L", "Content", { size: 'L' });
+                    const lWidth = drawer.style.width;
+                    const lSize = drawer.dataset.size;
+
+                    // With 260px base width, M = 520px, L = 780px (assuming window fits >= 1040px)
+                    const pass = (mSize === 'M' && mWidth === '520px') &&
+                                 (lSize === 'L' && (window.innerWidth >= 1040 ? lWidth === '780px' : true));
+                    return { pass, detail: `M: ${mSize} (${mWidth}), L: ${lSize} (${lWidth})` };
+                }
+            });
+
+            // Test 7: XL under 1600 px behaves as L
+            testCases.push({
+                name: "XL behaves as L when window is narrower than 1600 px",
+                run: function() {
+                    const origInnerWidth = window.innerWidth;
+                    try {
+                        Object.defineProperty(window, 'innerWidth', { value: 1400, configurable: true });
+                        Sidebar.openDrawer("Size XL test", "Content", { size: 'XL' });
+                        const size = drawer.dataset.size;
+                        const width = drawer.style.width;
+                        const pass = (size === 'L' && width === '780px');
+                        return { pass, detail: `size: ${size}, width: ${width}` };
+                    } finally {
+                        Object.defineProperty(window, 'innerWidth', { value: origInnerWidth, configurable: true });
+                    }
+                }
+            });
+
+            // Test 8: XL on large screen (>= 1600 px) resolves to XL (4x sidebar width)
+            testCases.push({
+                name: "XL behaves as XL on >= 1600 px screens when space permits",
+                run: function() {
+                    const origInnerWidth = window.innerWidth;
+                    try {
+                        Object.defineProperty(window, 'innerWidth', { value: 1920, configurable: true });
+                        Sidebar.openDrawer("Size XL test", "Content", { size: 'XL' });
+                        const size = drawer.dataset.size;
+                        const width = drawer.style.width;
+                        const pass = (size === 'XL' && width === '1040px');
+                        return { pass, detail: `size: ${size}, width: ${width}` };
+                    } finally {
+                        Object.defineProperty(window, 'innerWidth', { value: origInnerWidth, configurable: true });
+                    }
+                }
+            });
+
+            // Test 9: Size fallback when space to right of sidebar is constrained
+            testCases.push({
+                name: "Size falls back to next smaller size when space is constrained",
+                run: function() {
+                    const origInnerWidth = window.innerWidth;
+                    try {
+                        // sidebar right = 260. If innerWidth = 900, availableSpace = 640.
+                        // XL -> L (780 > 640) -> falls back to M (520 <= 640).
+                        Object.defineProperty(window, 'innerWidth', { value: 900, configurable: true });
+                        Sidebar.openDrawer("Constrained L", "Content", { size: 'L' });
+                        const size = drawer.dataset.size;
+                        const width = drawer.style.width;
+                        const pass = (size === 'M' && width === '520px');
+                        return { pass, detail: `size: ${size}, width: ${width}` };
+                    } finally {
+                        Object.defineProperty(window, 'innerWidth', { value: origInnerWidth, configurable: true });
+                    }
+                }
+            });
+
+            // Test 10: onClose callback fired on closeDrawer
+            testCases.push({
+                name: "onClose callback is invoked on closeDrawer()",
+                run: function() {
+                    let closed = false;
+                    Sidebar.openDrawer("Close Test", "Content", {
+                        onClose: () => { closed = true; }
+                    });
+                    Sidebar.closeDrawer();
+                    return { pass: closed === true, detail: `closed was ${closed}` };
+                }
+            });
+
+            // Test 11: String and HTMLElement content
+            testCases.push({
+                name: "Accepts string and HTMLElement content",
+                run: function() {
+                    const bodyEl = document.getElementById('sidebar-drawer-body');
+                    Sidebar.openDrawer("String Content", "<div id='string-child'>hello</div>");
+                    const stringChild = bodyEl.querySelector('#string-child');
+
+                    const domNode = document.createElement('div');
+                    domNode.id = 'dom-child';
+                    domNode.textContent = 'world';
+                    Sidebar.openDrawer("Element Content", domNode);
+                    const domChild = bodyEl.querySelector('#dom-child');
+
+                    const pass = (stringChild !== null) && (domChild === domNode);
+                    return { pass, detail: `String: ${!!stringChild}, DOM: ${domChild === domNode}` };
+                }
+            });
+
+            // Execute all tests
+            let passedCount = 0;
+            testCases.forEach((tc, idx) => {
+                let res;
+                try {
+                    res = tc.run();
+                } catch (e) {
+                    res = { pass: false, detail: 'Threw exception: ' + e.message };
+                }
+
+                if (res.pass) passedCount++;
+
+                const card = document.createElement('div');
+                card.className = `test-case ${res.pass ? 'pass' : 'fail'}`;
+
+                const badge = document.createElement('span');
+                badge.className = `badge ${res.pass ? 'pass' : 'fail'}`;
+                badge.textContent = res.pass ? 'PASS' : 'FAIL';
+
+                const title = document.createElement('span');
+                title.textContent = `Case ${idx + 1}: ${tc.name}`;
+
+                card.appendChild(badge);
+                card.appendChild(title);
+
+                if (!res.pass) {
+                    const diff = document.createElement('div');
+                    diff.className = 'diff-details';
+                    diff.textContent = res.detail;
+                    card.appendChild(diff);
+                }
+
+                container.appendChild(card);
+            });
+
+            const summaryText = `${passedCount}/${testCases.length} passed`;
+            summaryEl.className = `summary ${passedCount === testCases.length ? 'passed' : 'failed'}`;
+            summaryEl.textContent = summaryText;
+
+            console.log(`Unit Tests - Side Drawer v2: ${summaryText}`);
+        })();
+    </script>
+</body>
+</html>

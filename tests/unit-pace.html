@@ -129,7 +129,9 @@
                 { name: 'toEvents: bot reminder marker is read', got: () => P.toEvents([{ event: 'commented', created_at: ago(1), user: { login: 'github-actions[bot]' }, body: P.MARKER_REMIND + '\nHi' }], 'issue', C)[0].marker, expected: 'reminder' },
                 { name: 'toEvents: a human copying the marker is not a reminder', got: () => String(P.toEvents([{ event: 'commented', created_at: ago(1), user: { login: C }, body: P.MARKER_REMIND }], 'issue', C)[0].marker), expected: 'undefined' },
                 { name: 'toEvents: labels are not activity', got: () => P.toEvents([{ event: 'labeled', created_at: ago(1), actor: { login: ME } }], 'issue', C).length, expected: 0 },
-                { name: 'reminder text names the contributor and the days left', got: () => /@contrib-a[\s\S]*within 4 days/.test(P.reminderText(C, 'issue', 8, 4, 4)), expected: true }
+                { name: 'reminder text names the contributor and the days left', got: () => /@contrib-a[\s\S]*within 4 days/.test(P.reminderText(C, 'issue', 8, 4, 4)), expected: true },
+                { name: 'takeover text names the contributor and the maintainer, credits co-author', got: () => { const t = P.takeoverText('contrib-a', 'pr', 'denys-digital'); return t.startsWith(P.MARKER_TAKEOVER + '\n') && t.includes('@contrib-a') && t.includes('@denys-digital takes it over') && t.includes('pull request') && t.includes('`Co-authored-by`'); }, expected: true },
+                { name: 'takeover text says issue for an issue', got: () => { const t = P.takeoverText('contrib-a', 'issue', 'denys-digital'); return t.includes('this issue') && !t.includes('pull request'); }, expected: true }
             ];
 
             let passed = 0;

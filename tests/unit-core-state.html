@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core State (core-state.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core State Unit Tests (core/core-state.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function cleanStorage() {
+            try { localStorage.clear(); } catch (e) {}
+            try { sessionStorage.clear(); } catch (e) {}
+        }
+
+        test("ST-01", "WORKSPACE_FILE_GROUPS and the generated FILE_ICON_MAP, WORKSPACE_ALLOWED_EXT, WORKSPACE_IGNORED_DIRS", "every extension of every group has an icon and is allowed; no extension in two groups; ignored dirs include .git and node_modules", async (appWin) => {
+            const groups = appWin.eval("WORKSPACE_FILE_GROUPS");
+            const iconMap = appWin.eval("FILE_ICON_MAP");
+            const allowedExt = appWin.eval("WORKSPACE_ALLOWED_EXT");
+            const ignoredDirs = appWin.eval("WORKSPACE_IGNORED_DIRS");
+
+            if (!Array.isArray(groups)) throw new Error("WORKSPACE_FILE_GROUPS is not an array");
+            if (!iconMap || typeof iconMap !== "object") throw new Error("FILE_ICON_MAP is missing or invalid");
+            if (!Array.isArray(allowedExt)) throw new Error("WORKSPACE_ALLOWED_EXT is not an array");
+            if (!Array.isArray(ignoredDirs)) throw new Error("WORKSPACE_IGNORED_DIRS is not an array");
+
+            const seenExtensions = new Set();
+
+            for (const group of groups) {
+                if (!group.types || typeof group.types !== "object") {
+                    throw new Error(`Group filter '${group.filter}' has invalid types definition`);
+                }
+                for (const ext of Object.keys(group.types)) {
+                    if (seenExtensions.has(ext)) {
+                        throw new Error(`Extension '${ext}' appears in more than one group`);
+                    }
+                    seenExtensions.add(ext);
+
+                    if (!iconMap[ext] || !iconMap[ext].label || !iconMap[ext].className) {
+                        throw new Error(`Extension '${ext}' lacks icon mapping in FILE_ICON_MAP`);
+                    }
+
+                    if (!allowedExt.includes(ext)) {
+                        throw new Error(`Extension '${ext}' is missing from WORKSPACE_ALLOWED_EXT`);
+                    }
+                }
+            }
+
+            if (!ignoredDirs.includes('.git')) {
+                throw new Error("WORKSPACE_IGNORED_DIRS does not include '.git'");
+            }
+            if (!ignoredDirs.includes('node_modules')) {
+                throw new Error("WORKSPACE_IGNORED_DIRS does not include 'node_modules'");
+            }
+        });
+
+        test("ST-02", "FamousPluginCore.getCurrentFile() after newFile() and after opening a mock file", "returns the name, extension and content the code defines", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(50);
+
+            const fileNew = appWin.FamousPluginCore.getCurrentFile();
+            if (fileNew.handle !== null) throw new Error(`Expected fileNew.handle to be null, got ${fileNew.handle}`);
+            if (fileNew.name !== "") throw new Error(`Expected fileNew.name to be '', got '${fileNew.name}'`);
+
+            const mockTime = 1700000000000;
+            const mock = mockFileHandle("script.js", "const x = 42;", mockTime);
+            appWin.confirm = () => true;
+            appWin.showOpenFilePicker = async () => [mock];
+
+            await appWin.openFile();
+            await delay(100);
+
+            const fileOpened = appWin.FamousPluginCore.getCurrentFile();
+            if (fileOpened.handle !== mock) throw new Error("fileOpened.handle does not match open mock handle");
+            if (fileOpened.name !== "script.js") throw new Error(`Expected fileOpened.name 'script.js', got '${fileOpened.name}'`);
+            if (fileOpened.lastModified !== mockTime) throw new Error(`Expected fileOpened.lastModified ${mockTime}, got ${fileOpened.lastModified}`);
+            if (fileOpened.ext !== "javascript") throw new Error(`Expected fileOpened.ext 'javascript', got '${fileOpened.ext}'`);
+        });
+
+        test("ST-03", "showError()", "the #error-msg element becomes visible", async (appWin) => {
+            const errEl = appWin.document.getElementById("error-msg");
+            if (!errEl) throw new Error("Element #error-msg not found in DOM");
+
+            const originalDisplay = errEl.style.display;
+            errEl.style.display = "none";
+
+            appWin.showError();
+
+            const newDisplay = errEl.style.display;
+            errEl.style.display = originalDisplay;
+
+            if (newDisplay !== "block") {
+                throw new Error(`Expected #error-msg display 'block', got '${newDisplay}'`);
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            cleanStorage();
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            } finally {
+                cleanStorage();
+            }
+        });
+    </script>
+</body>
+</html>

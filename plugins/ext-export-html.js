@@ -145,6 +145,7 @@ window.FamousPluginCore.ExportHTML = {
         return `<!DOCTYPE html>
 <html lang="${docLang}">
 <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; font-src data:">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
@@ -248,11 +249,23 @@ window.FamousPluginCore.ExportHTML = {
         if (saved) {
             // Automatically open exported HTML in new tab for preview
             try {
-                const newWin = window.open('', '_blank');
+                const previewBlob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+                const previewUrl = URL.createObjectURL(previewBlob);
+                const newWin = window.open(previewUrl, '_blank');
                 if (newWin) {
-                    newWin.document.open();
-                    newWin.document.write(fullHTML);
-                    newWin.document.close();
+                    let revoked = false;
+                    const revoke = () => {
+                        if (!revoked) {
+                            revoked = true;
+                            URL.revokeObjectURL(previewUrl);
+                        }
+                    };
+                    try {
+                        newWin.addEventListener('load', revoke, { once: true });
+                    } catch (_) {}
+                    setTimeout(revoke, 5000);
+                } else {
+                    URL.revokeObjectURL(previewUrl);
                 }
             } catch (err) {
                 console.warn("Auto-opening preview tab was blocked:", err);

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Window (core-window.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Window Unit Tests (core/core-window.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function loadAppWithQuery(queryString) {
+            return new Promise((resolve, reject) => {
+                const iframe = document.createElement('iframe');
+                iframe.src = '../index.html' + queryString;
+                iframe.style.position = 'absolute';
+                iframe.style.left = '-10000px';
+                iframe.style.top = '0';
+                iframe.style.width = '1200px';
+                iframe.style.height = '800px';
+                iframe.style.border = '0';
+                document.body.appendChild(iframe);
+
+                const start = Date.now();
+                const timer = setInterval(() => {
+                    try {
+                        const win = iframe.contentWindow;
+                        if (win && win.document && win.document.readyState === 'complete' && win.editor && win.FamousPluginCore && typeof win.isPopupWindow === 'function') {
+                            clearInterval(timer);
+                            resolve({ win, iframe });
+                            return;
+                        }
+                    } catch (e) {
+                        // Ignore transiting errors
+                    }
+                    if (Date.now() - start > 10000) {
+                        clearInterval(timer);
+                        document.body.removeChild(iframe);
+                        reject(new Error("App iframe with query failed to boot within 10s"));
+                    }
+                }, 50);
+            });
+        }
+
+        test("WI-01", "isPopupWindow() with and without ?mode=popup parameter", "returns false in standard iframe and true in popup iframe", async (appWin) => {
+            const standardResult = appWin.isPopupWindow();
+            if (standardResult !== false) {
+                throw new Error(`Expected isPopupWindow() to return false in standard tab/iframe, got ${standardResult}`);
+            }
+
+            const { win: popupWin, iframe: popupIframe } = await loadAppWithQuery("?mode=popup");
+            try {
+                const popupResult = popupWin.isPopupWindow();
+                if (popupResult !== true) {
+                    throw new Error(`Expected isPopupWindow() to return true when ?mode=popup is set, got ${popupResult}`);
+                }
+            } finally {
+                if (popupIframe && popupIframe.parentNode) {
+                    popupIframe.parentNode.removeChild(popupIframe);
+                }
+            }
+        });
+
+        test("WI-02", "getCleanAppUrl() and getPopupAppUrl(pos)", "getCleanAppUrl removes mode/pos params; getPopupAppUrl adds mode=popup and pos param", async (appWin) => {
+            const { win: customWin, iframe: customIframe } = await loadAppWithQuery("?mode=popup&pos=right&other=123");
+            try {
+                const cleanUrlStr = customWin.getCleanAppUrl();
+                const cleanUrl = new URL(cleanUrlStr);
+
+                if (cleanUrl.searchParams.has('mode')) {
+                    throw new Error(`getCleanAppUrl() should not contain 'mode', got '${cleanUrlStr}'`);
+                }
+                if (cleanUrl.searchParams.has('pos')) {
+                    throw new Error(`getCleanAppUrl() should not contain 'pos', got '${cleanUrlStr}'`);
+                }
+                if (cleanUrl.searchParams.get('other') !== '123') {
+                    throw new Error(`getCleanAppUrl() lost unrelated parameter 'other=123', got '${cleanUrlStr}'`);
+                }
+
+                const popupUrlStr = customWin.getPopupAppUrl('left');
+                const popupUrl = new URL(popupUrlStr);
+
+                if (popupUrl.searchParams.get('mode') !== 'popup') {
+                    throw new Error(`getPopupAppUrl('left') expected mode='popup', got '${popupUrlStr}'`);
+                }
+                if (popupUrl.searchParams.get('pos') !== 'left') {
+                    throw new Error(`getPopupAppUrl('left') expected pos='left', got '${popupUrlStr}'`);
+                }
+            } finally {
+                if (customIframe && customIframe.parentNode) {
+                    customIframe.parentNode.removeChild(customIframe);
+                }
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            }
+        });
+    </script>
+</body>
+</html>

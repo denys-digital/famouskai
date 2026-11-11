@@ -369,7 +369,7 @@ window.FamousPluginCore.SnippetManager = {
                         const clone = modalBody.cloneNode(true);
                         // Clean up inline padding from cloned template
                         clone.style.padding = '0';
-                        window.FamousPluginCore.Sidebar.openDrawer("Manage Magic Snippets", clone);
+                        window.FamousPluginCore.Sidebar.openDrawer("Manage Magic Snippets", clone, { size: 'M' });
                         this.bindDrawerListeners();
                         this.renderModalList();
                         return;

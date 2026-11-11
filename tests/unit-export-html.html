@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Export HTML & CSP Meta Tag (ext-export-html.js)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="../plugins/ext-export-html.js"></script>
+</head>
+<body>
+    <h1>Unit Test - Export HTML &amp; CSP Meta Tag (ext-export-html.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+
+    <script>
+        (function() {
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+
+            if (!window.FamousPluginCore || !window.FamousPluginCore.ExportHTML) {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = 'Error: ExportHTML not defined on window.FamousPluginCore';
+                return;
+            }
+
+            const ExportHTML = window.FamousPluginCore.ExportHTML;
+            const EXPECTED_CSP = "default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; font-src data:";
+
+            const testCases = [
+                {
+                    name: "CSP meta tag is the first child of <head>",
+                    test: function() {
+                        const html = ExportHTML.buildStandaloneHTML("Test Title", "<p>Hello</p>", "body { color: red; }", "fr");
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, "text/html");
+                        const head = doc.head;
+                        if (!head) return false;
+                        const firstChild = head.firstElementChild;
+                        if (!firstChild || firstChild.tagName.toLowerCase() !== "meta") return false;
+                        return firstChild.getAttribute("http-equiv") === "Content-Security-Policy";
+                    }
+                },
+                {
+                    name: "CSP content matches required policy exactly",
+                    test: function() {
+                        const html = ExportHTML.buildStandaloneHTML("Test Title", "<p>Hello</p>", "body { color: red; }", "en");
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, "text/html");
+                        const meta = doc.head.querySelector('meta[http-equiv="Content-Security-Policy"]');
+                        if (!meta) return false;
+                        return meta.getAttribute("content") === EXPECTED_CSP;
+                    }
+                },
+                {
+                    name: "Document structure has doctype, lang, charset, viewport, title, and body",
+                    test: function() {
+                        const html = ExportHTML.buildStandaloneHTML("Doc Title", "<h1>Content</h1>", ".h1 { font-size: 2em; }", "en");
+                        if (!html.startsWith("<!DOCTYPE html>")) return false;
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, "text/html");
+                        if (doc.documentElement.getAttribute("lang") !== "en") return false;
+                        if (doc.title !== "Doc Title") return false;
+                        const charsetMeta = doc.head.querySelector('meta[charset="UTF-8"]');
+                        const viewportMeta = doc.head.querySelector('meta[name="viewport"]');
+                        const styleTag = doc.head.querySelector('style');
+                        const bodyContent = doc.body.querySelector('.markdown-body');
+                        return !!(charsetMeta && viewportMeta && styleTag && bodyContent && bodyContent.innerHTML.includes("<h1>Content</h1>"));
+                    }
+                },
+                {
+                    name: "getExportFileName formats timestamp correctly",
+                    test: function() {
+                        const fileName = ExportHTML.getExportFileName("my-notes.md");
+                        return /^my-notes_\d{4}-\d{2}-\d{2}--\d{2}-\d{2}\.html$/.test(fileName);
+                    }
+                },
+                {
+                    name: "filterMarkdownBodyCSS strips @media print and diff2html rules",
+                    test: function() {
+                        const sampleCSS = ".markdown-body { color: #fff; } @media print { body { color: #000; } } .d2h-body { font-size: 12px; }";
+                        const filtered = ExportHTML.filterMarkdownBodyCSS(sampleCSS);
+                        return filtered.includes(".markdown-body") && !filtered.includes("@media print") && !filtered.includes(".d2h-body");
+                    }
+                }
+            ];
+
+            let passed = 0;
+            let total = testCases.length;
+
+            testCases.forEach((tc, index) => {
+                let isPass = false;
+                let errMessage = null;
+                try {
+                    isPass = tc.test();
+                } catch (e) {
+                    errMessage = e.message;
+                }
+
+                if (isPass) {
+                    passed++;
+                }
+
+                const card = document.createElement('div');
+                card.className = `test-case ${isPass ? 'pass' : 'fail'}`;
+
+                const badge = document.createElement('span');
+                badge.className = `badge ${isPass ? 'pass' : 'fail'}`;
+                badge.textContent = isPass ? 'PASS' : 'FAIL';
+
+                const title = document.createElement('span');
+                title.textContent = `Case ${index + 1}: ${tc.name}`;
+
+                card.appendChild(badge);
+                card.appendChild(title);
+
+                if (!isPass && errMessage) {
+                    const diff = document.createElement('div');
+                    diff.className = 'diff-details';
+                    diff.textContent = `Error: ${errMessage}`;
+                    card.appendChild(diff);
+                }
+
+                container.appendChild(card);
+            });
+
+            const summaryText = `${passed}/${total} passed`;
+            summaryEl.className = `summary ${passed === total ? 'passed' : 'failed'}`;
+            summaryEl.textContent = summaryText;
+
+            console.log(`Unit Tests - Export HTML: ${summaryText}`);
+        })();
+    </script>
+</body>
+</html>

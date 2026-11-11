@@ -9,7 +9,7 @@ Your files, on your disk, in your browser. Nothing in between.
 
 - **100% local.** Famouskai opens the file on your disk and saves it in place, online or offline.
 - **100% safe for your work.** Nothing changes silently: every change, by you or by a tool, shows as unsaved until you save it. If another program changed the file, Diffskai lets you choose what to keep.
-- **100% desktop.** Built for a keyboard, a mouse and a large screen, in a desktop Chromium browser.
+- **100% desktop first.** Built for a keyboard, a mouse and a large screen, in a desktop Chromium browser. On a phone, Mobkai keeps only a minimal note mode.
 - **100% open.** AGPLv3, for good. A commercial license exists for those who cannot share their code.
 - **100% extendable.** Colors are plain CSS, tools are small JavaScript files: anyone can read one and write one in an afternoon.
 

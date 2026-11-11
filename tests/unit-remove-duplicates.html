@@ -1,0 +1,177 @@
+<!--
+ * Famouskai Editor - Local-First PWA IDE
+ * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests: Remove Duplicate Lines Tool</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+            max-width: 900px;
+        }
+        h1 { color: #569cd6; font-size: 1.3rem; }
+        .summary {
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+            border: 1px solid #555;
+        }
+        .summary.passed { background-color: #0e3a1e; color: #4ec9b0; border-color: #4ec9b0; }
+        .summary.failed { background-color: #3a0e0e; color: #f44747; border-color: #f44747; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #333; vertical-align: top; }
+        th { background-color: #252526; color: #9cdcfe; }
+        td.status { font-weight: bold; width: 80px; }
+        tr.pass td.status { color: #4ec9b0; }
+        tr.fail td.status { color: #f44747; }
+        .details { font-size: 0.9rem; color: #9cdcfe; white-space: pre-wrap; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>Unit Tests: Remove Duplicate Lines Tool</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <table>
+        <thead>
+            <tr><th>Status</th><th>Test Case</th><th>Details</th></tr>
+        </thead>
+        <tbody id="test-results"></tbody>
+    </table>
+
+    <script src="../plugins/tools.js"></script>
+    <script src="../plugins/tool-remove-duplicates.js"></script>
+    <script>
+        (function() {
+            const resultsEl = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+
+            const tool = window.FamousPluginCore && window.FamousPluginCore.Manager && window.FamousPluginCore.Manager.registry.find(
+                t => t.name === "Remove Duplicate Lines"
+            );
+
+            const tests = [];
+
+            function addTest(name, fn) {
+                tests.push({ name, fn });
+            }
+
+            function run(text) {
+                const out = { replaced: null, toast: null, alert: null };
+                window.showToast = (msg) => { out.toast = msg; };
+                window.alert = (msg) => { out.alert = msg; };
+                const fakeEditor = {
+                    getSelectionRange: () => 'RANGE',
+                    session: {
+                        getTextRange: () => text,
+                        replace: (range, newText) => { out.replaced = newText; }
+                    }
+                };
+                tool.action(fakeEditor);
+                return out;
+            }
+
+            if (!tool) {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = '0/1 passed - Remove Duplicate Lines tool not registered';
+                const tr = document.createElement('tr');
+                tr.className = 'fail';
+                tr.innerHTML = '<td class="status">FAIL</td><td>Tool registration</td><td class="details">Tool not found in registry</td>';
+                resultsEl.appendChild(tr);
+                return;
+            }
+
+            addTest('removes later duplicates, keeps first order', () => {
+                const res = run("b\na\nb\nc\na");
+                if (res.replaced !== "b\na\nc" || res.toast !== "2 duplicate(s) removed!" || res.alert !== null) {
+                    throw new Error('Expected replaced: ' + JSON.stringify("b\na\nc") + ', toast: ' + JSON.stringify("2 duplicate(s) removed!") + ', alert: null. Got replaced: ' + JSON.stringify(res.replaced) + ', toast: ' + JSON.stringify(res.toast) + ', alert: ' + JSON.stringify(res.alert));
+                }
+            });
+
+            addTest('no duplicate leaves text unchanged', () => {
+                const res = run("x\ny");
+                if (res.replaced !== "x\ny" || res.toast !== "0 duplicate(s) removed!" || res.alert !== null) {
+                    throw new Error('Expected replaced: ' + JSON.stringify("x\ny") + ', toast: ' + JSON.stringify("0 duplicate(s) removed!") + ', alert: null. Got replaced: ' + JSON.stringify(res.replaced) + ', toast: ' + JSON.stringify(res.toast) + ', alert: ' + JSON.stringify(res.alert));
+                }
+            });
+
+            addTest('repeated empty lines collapse to one', () => {
+                const res = run("a\n\n\nb");
+                if (res.replaced !== "a\n\nb" || res.toast !== "1 duplicate(s) removed!" || res.alert !== null) {
+                    throw new Error('Expected replaced: ' + JSON.stringify("a\n\nb") + ', toast: ' + JSON.stringify("1 duplicate(s) removed!") + ', alert: null. Got replaced: ' + JSON.stringify(res.replaced) + ', toast: ' + JSON.stringify(res.toast) + ', alert: ' + JSON.stringify(res.alert));
+                }
+            });
+
+            addTest('case-sensitive', () => {
+                const res = run("A\na");
+                if (res.replaced !== "A\na" || res.toast !== "0 duplicate(s) removed!" || res.alert !== null) {
+                    throw new Error('Expected replaced: ' + JSON.stringify("A\na") + ', toast: ' + JSON.stringify("0 duplicate(s) removed!") + ', alert: null. Got replaced: ' + JSON.stringify(res.replaced) + ', toast: ' + JSON.stringify(res.toast) + ', alert: ' + JSON.stringify(res.alert));
+                }
+            });
+
+            addTest('CRLF lines compared with their \\r', () => {
+                const res = run("a\r\nb\r\na\r\n");
+                if (res.replaced !== "a\r\nb\r\n" || res.toast !== "1 duplicate(s) removed!" || res.alert !== null) {
+                    throw new Error('Expected replaced: ' + JSON.stringify("a\r\nb\r\n") + ', toast: ' + JSON.stringify("1 duplicate(s) removed!") + ', alert: null. Got replaced: ' + JSON.stringify(res.replaced) + ', toast: ' + JSON.stringify(res.toast) + ', alert: ' + JSON.stringify(res.alert));
+                }
+            });
+
+            addTest('empty selection: alert, editor untouched', () => {
+                const res = run("");
+                if (res.replaced !== null || res.toast !== null || res.alert !== "Please select the text to deduplicate first!") {
+                    throw new Error('Expected replaced: null, toast: null, alert: "Please select the text to deduplicate first!". Got replaced: ' + JSON.stringify(res.replaced) + ', toast: ' + JSON.stringify(res.toast) + ', alert: ' + JSON.stringify(res.alert));
+                }
+            });
+
+            addTest('tool is available on all file types', () => {
+                const actualExts = JSON.stringify(tool.extensions);
+                if (actualExts !== "[]") {
+                    throw new Error('Expected extensions: "[]", got: ' + actualExts);
+                }
+            });
+
+            let passed = 0;
+            tests.forEach(t => {
+                const tr = document.createElement('tr');
+                try {
+                    t.fn();
+                    tr.className = 'pass';
+                    tr.innerHTML = '<td class="status">PASS</td><td>' + t.name + '</td><td class="details">OK</td>';
+                    passed++;
+                } catch (e) {
+                    tr.className = 'fail';
+                    tr.innerHTML = '<td class="status">FAIL</td><td>' + t.name + '</td><td class="details">' + e.message + '</td>';
+                }
+                resultsEl.appendChild(tr);
+            });
+
+            const total = tests.length;
+            const allPassed = passed === total;
+            summaryEl.className = 'summary ' + (allPassed ? 'passed' : 'failed');
+            summaryEl.textContent = `${passed}/${total} passed`;
+            console.log(`${passed}/${total} passed`);
+        })();
+    </script>
+</body>
+</html>

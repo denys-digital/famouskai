@@ -39,6 +39,7 @@ Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que co
 ## Limites connues
 
 - **Chromium de bureau uniquement** pour enregistrer les fichiers sur place, gérer les espaces de travail et détecter les conflits. Dans Firefox et Safari, **Open** charge un fichier choisi et **Save** en télécharge une copie au lieu d'écrire sur place.
+- **Sur un téléphone, Famouskai ouvre Mobkai,** un mode note minimal (un fichier, l'éditeur, l'aperçu Markdown et une barre d'état). L'éditeur complet demande un ordinateur.
 - **Le hors-ligne exige HTTP(S).** Un Service Worker ne peut pas fonctionner en `file://` : une copie ouverte en double-cliquant sur `index.html` fonctionne, mais seulement tant que ses fichiers sont accessibles. Servez le dossier en HTTPS ou sur `localhost` pour un usage hors-ligne.
 - **Diffskai hors-ligne :** son moteur (Monaco Editor) est mis en cache en arrière-plan après la première visite ; ouvrez Diffskai une fois en ligne pour être sûr qu'il soit disponible hors-ligne. Monaco reste figé en 0.56.0 pour cette version.
 
@@ -85,6 +86,7 @@ GitHub :
 famouskai/
 ├── index.html, sw.js, manifest.json, *.css          ← l'application elle-même (aucune compilation)
 ├── plugins/                                         ← extensions (ext-*.js) et outils (tool-*.js)
+├── core/                                            ← le code de l'application, découpé par fonction (core-*.js, chargés dans l'ordre)
 ├── vendor/                                          ← copies locales de chaque bibliothèque (aucun CDN)
 ├── tests/                                           ← plans de test manual-*.md, pages de test unit-*.html, fichiers d'exemple fixtures-*
 ├── CHANGELOG.md                                     ← historique des versions, lié au cycle de release

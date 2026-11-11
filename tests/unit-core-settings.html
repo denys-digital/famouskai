@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Settings (core-settings.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Settings Unit Tests (core/core-settings.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        function clearPrefs() {
+            try { localStorage.removeItem("famouskai_prefs"); } catch (e) {}
+        }
+
+        test("CS-01", "savePreferences() then read localStorage", "stored key and JSON match UI state", async (appWin) => {
+            clearPrefs();
+
+            const wrapEl = appWin.document.getElementById("toggle-wrap");
+            const linksEl = appWin.document.getElementById("toggle-links");
+            const outlineEl = appWin.document.getElementById("toggle-preview-outline");
+
+            if (wrapEl) wrapEl.checked = false;
+            if (linksEl) linksEl.checked = true;
+            if (outlineEl) outlineEl.checked = true;
+
+            appWin.eval("savePreferences()");
+
+            const storedStr = localStorage.getItem("famouskai_prefs");
+            if (!storedStr) throw new Error("localStorage key 'famouskai_prefs' not found");
+
+            const stored = JSON.parse(storedStr);
+            if (stored.wrap !== false) throw new Error(`Expected stored.wrap === false, got ${stored.wrap}`);
+            if (stored.links !== true) throw new Error(`Expected stored.links === true, got ${stored.links}`);
+            if (stored.previewOutline !== true) throw new Error(`Expected stored.previewOutline === true, got ${stored.previewOutline}`);
+
+            clearPrefs();
+        });
+
+        test("CS-02", "Put known preferences in localStorage, call loadPreferences()", "UI controls and editor options (wrap, autosave flag) reflect them", async (appWin) => {
+            clearPrefs();
+
+            const testPrefs = {
+                wrap: false,
+                autosave: true,
+                links: true,
+                sidebarStartup: false,
+                fullPreviewStartup: true,
+                previewOutline: true,
+                previewDark: true
+            };
+            localStorage.setItem("famouskai_prefs", JSON.stringify(testPrefs));
+
+            appWin.eval("loadPreferences()");
+
+            const wrapChecked = appWin.document.getElementById("toggle-wrap") ? appWin.document.getElementById("toggle-wrap").checked : null;
+            const linksChecked = appWin.document.getElementById("toggle-links") ? appWin.document.getElementById("toggle-links").checked : null;
+            const fullPrevChecked = appWin.document.getElementById("toggle-full-preview-startup") ? appWin.document.getElementById("toggle-full-preview-startup").checked : null;
+            const outlineChecked = appWin.document.getElementById("toggle-preview-outline") ? appWin.document.getElementById("toggle-preview-outline").checked : null;
+
+            const useWrapMode = appWin.editor.session.getUseWrapMode();
+            const autoSave = appWin.eval("isAutoSaveEnabled");
+            const dark = appWin.eval("isPreviewDark");
+
+            if (wrapChecked !== false) throw new Error(`toggle-wrap checked expected false, got ${wrapChecked}`);
+            if (linksChecked !== true) throw new Error(`toggle-links checked expected true, got ${linksChecked}`);
+            if (fullPrevChecked !== true) throw new Error(`toggle-full-preview-startup checked expected true, got ${fullPrevChecked}`);
+            if (outlineChecked !== true) throw new Error(`toggle-preview-outline checked expected true, got ${outlineChecked}`);
+            if (useWrapMode !== false) throw new Error(`editor useWrapMode expected false, got ${useWrapMode}`);
+            if (autoSave !== true) throw new Error(`isAutoSaveEnabled expected true, got ${autoSave}`);
+            if (dark !== true) throw new Error(`isPreviewDark expected true, got ${dark}`);
+
+            clearPrefs();
+        });
+
+        test("CS-03", "Corrupt JSON in preferences key, call loadPreferences()", "no exception, defaults applied", async (appWin) => {
+            clearPrefs();
+
+            localStorage.setItem("famouskai_prefs", "{ corrupt_json_test ...");
+
+            // Should not throw
+            appWin.eval("loadPreferences()");
+
+            const wrapChecked = appWin.document.getElementById("toggle-wrap") ? appWin.document.getElementById("toggle-wrap").checked : null;
+            const outlineChecked = appWin.document.getElementById("toggle-preview-outline") ? appWin.document.getElementById("toggle-preview-outline").checked : null;
+            const autoSave = appWin.eval("isAutoSaveEnabled");
+            const dark = appWin.eval("isPreviewDark");
+
+            if (wrapChecked !== true) throw new Error(`toggle-wrap expected default true, got ${wrapChecked}`);
+            if (outlineChecked !== false) throw new Error(`toggle-preview-outline expected default false, got ${outlineChecked}`);
+            if (autoSave !== false) throw new Error(`isAutoSaveEnabled expected default false, got ${autoSave}`);
+            if (dark !== false) throw new Error(`isPreviewDark expected default false, got ${dark}`);
+
+            clearPrefs();
+        });
+
+        window.addEventListener("load", async () => {
+            clearPrefs();
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            } finally {
+                clearPrefs();
+            }
+        });
+    </script>
+</body>
+</html>

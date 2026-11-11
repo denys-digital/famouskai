@@ -87,6 +87,8 @@ window.FamousPluginCore.Manager.register({
          * @param {Object} settings - Key-value map of current tool settings
          */
         onBeforeSave: function(editor, settings) {
+            // Mobkai: auto-cleanup is off on a phone (docs-lab/MOBKAI-SPEC.md 14.3)
+            if (typeof window.isMobkai === 'function' && window.isMobkai()) return;
             if (settings && settings.cleanup_on_save) {
                 this.actionSilently(editor);
             }
@@ -98,6 +100,7 @@ window.FamousPluginCore.Manager.register({
          * @param {Object} settings - Key-value map of current tool settings
          */
         onFileOpen: function(editor, settings) {
+            if (typeof window.isMobkai === 'function' && window.isMobkai()) return;
             if (settings && settings.cleanup_on_open) {
                 this.actionSilently(editor);
             }

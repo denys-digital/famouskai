@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Snippets (core-snippets.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Snippets Unit Tests (core/core-snippets.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+        function clearSnippetState() {
+            try { localStorage.removeItem("famouskai_user_snippets"); } catch (e) {}
+            try { sessionStorage.clear(); } catch (e) {}
+        }
+
+        test("CS-S01", 'escapeHtml(\'<a href="x">&</a>\')', "correctly escaped string", async (appWin) => {
+            const raw = '<a href="x">&</a>';
+            const escaped = appWin.escapeHtml(raw);
+            const expected = '&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;';
+
+            if (escaped !== expected) {
+                throw new Error(`escapeHtml expected '${expected}', got '${escaped}'`);
+            }
+        });
+
+        test("CS-S02", "insertSnippetByKey(<an existing default key>) on a .md buffer", "the snippet text is inserted at the cursor and isModified is true", async (appWin) => {
+            appWin.eval("newFile()");
+            await delay(100); // Wait for initial load timer to finish
+            appWin.eval("currentFileName = 'document.md'");
+            appWin.editor.setValue("", 1);
+            await delay(100); // Ensure editor value change event for clear finishes
+
+            appWin.insertSnippetByKey('code');
+
+            const val = appWin.editor.getValue();
+            const modified = appWin.eval("isModified");
+
+            if (!val.includes("```")) {
+                throw new Error('Expected snippet text containing ```, got ' + val);
+            }
+            if (modified !== true) {
+                throw new Error(`isModified expected true after inserting snippet, got ${modified}`);
+            }
+        });
+
+        test("CS-S03", "Snippet with $SELECTION / $DATE / $FILENAME / cursor $1", "variables replaced, cursor placed where $1 was", async (appWin) => {
+            // Part 1: Dynamic variables substitution check
+            const manager = appWin.FamousPluginCore.SnippetManager;
+            if (manager && typeof manager.parseDynamicVariables === 'function') {
+                const parsed = manager.parseDynamicVariables("File: {{filename}}, Sel: {{selection}}, Date: {{date}}", {
+                    filename: "notes.md",
+                    selection: "selected_text"
+                });
+
+                if (!parsed.includes("File: notes.md")) {
+                    throw new Error(`Expected 'File: notes.md' in parsed snippet, got '${parsed}'`);
+                }
+                if (!parsed.includes("Sel: selected_text")) {
+                    throw new Error(`Expected 'Sel: selected_text' in parsed snippet, got '${parsed}'`);
+                }
+                const currentYear = String(new Date().getFullYear());
+                if (!parsed.includes(currentYear)) {
+                    throw new Error(`Expected date with year '${currentYear}' in parsed snippet, got '${parsed}'`);
+                }
+            }
+
+            // Part 2: Cursor $1 positioning check
+            appWin.eval("newFile()");
+            appWin.eval("currentFileName = 'notes.md'");
+            appWin.editor.setValue("", 1);
+
+            // 'br' snippet template is "<br>$1"
+            appWin.insertSnippetByKey('br');
+
+            const val = appWin.editor.getValue();
+            const cursorPos = appWin.editor.getCursorPosition();
+
+            if (val !== "<br>") {
+                throw new Error(`Expected buffer content '<br>' ($1 removed), got '${val}'`);
+            }
+            if (cursorPos.row !== 0 || cursorPos.column !== 4) {
+                throw new Error(`Expected cursor at (row 0, col 4), got (row ${cursorPos.row}, col ${cursorPos.column})`);
+            }
+        });
+
+        test("CS-S04", "updateSnippetsUI('md') then updateSnippetsUI('js')", "the panel lists only the snippets valid for that extension", async (appWin) => {
+            const lexicon = appWin.document.getElementById('snippets-lexicon');
+            if (!lexicon) throw new Error("snippets-lexicon container element not found");
+
+            // 1. Update for .md extension
+            appWin.updateSnippetsUI('md');
+            const mdHtml = lexicon.innerHTML;
+
+            if (!mdHtml.includes('data-snip-key="code"')) {
+                throw new Error("Expected /code snippet in .md snippets list");
+            }
+            if (!mdHtml.includes('data-snip-key="pb"')) {
+                throw new Error("Expected /pb snippet in .md snippets list");
+            }
+
+            // 2. Update for .js extension
+            appWin.updateSnippetsUI('js');
+            const jsHtml = lexicon.innerHTML;
+
+            if (jsHtml.includes('data-snip-key="pb"')) {
+                throw new Error("/pb snippet (md/html only) should NOT appear in .js snippets list");
+            }
+            if (jsHtml.includes('data-snip-key="br"')) {
+                throw new Error("/br snippet (md/html only) should NOT appear in .js snippets list");
+            }
+            if (!jsHtml.includes('data-snip-key="fa"')) {
+                throw new Error("Expected /fa snippet (all exts) in .js snippets list");
+            }
+        });
+
+        test("CS-S05", "Unknown key", "no exception, buffer unchanged", async (appWin) => {
+            appWin.eval("newFile()");
+            appWin.editor.setValue("original text", 1);
+
+            let error = null;
+            try {
+                appWin.insertSnippetByKey('non_existent_key_xyz_999');
+            } catch (e) {
+                error = e;
+            }
+
+            if (error) {
+                throw new Error(`Unexpected exception on unknown snippet key: ${error.message}`);
+            }
+
+            const val = appWin.editor.getValue();
+            if (val !== "original text") {
+                throw new Error(`Buffer expected 'original text', got '${val}'`);
+            }
+        });
+
+        test("CS-S06", "Click insert from the panel list (dispatch a click on the list item)", "the snippet is inserted and the 'Snippet inserted' toast appears", async (appWin) => {
+            appWin.eval("newFile()");
+            appWin.eval("currentFileName = 'test.md'");
+            appWin.editor.setValue("", 1);
+
+            appWin.updateSnippetsUI('md');
+
+            let toastCalled = false;
+            let toastMessage = "";
+            let toastType = "";
+
+            const originalShowToast = appWin.showToast;
+            appWin.showToast = (msg, type) => {
+                toastCalled = true;
+                toastMessage = msg;
+                toastType = type;
+            };
+
+            try {
+                const lexicon = appWin.document.getElementById('snippets-lexicon');
+                const row = lexicon.querySelector('.snippet-lexicon-row[data-snip-key="code"]');
+
+                if (!row) throw new Error("Snippet lexicon row for /code not found");
+
+                row.dispatchEvent(new appWin.MouseEvent('click', { bubbles: true, cancelable: true }));
+
+                const val = appWin.editor.getValue();
+                if (!val.includes("```")) {
+                    throw new Error(`Expected snippet insertion after row click, got '${val}'`);
+                }
+
+                if (!toastCalled) {
+                    throw new Error("Expected showToast to be called after clicking snippet row");
+                }
+                if (!toastMessage.includes("inserted")) {
+                    throw new Error(`Expected toast message to contain 'inserted', got '${toastMessage}'`);
+                }
+            } finally {
+                appWin.showToast = originalShowToast;
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            clearSnippetState();
+            try {
+                const appWin = await loadApp();
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            } finally {
+                clearSnippetState();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Core Workspace Tree (core-workspace-tree.js)</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Core Workspace Tree Unit Tests (core/core-workspace-tree.js)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <script>
+        function cleanupWorkspaceTree(appWin) {
+            if (!appWin) return;
+            appWin.window.currentWorkspaceHandle = null;
+            const container = appWin.document.getElementById("workspace-file-list");
+            if (container) container.innerHTML = "";
+            const title = appWin.document.getElementById("workspace-name");
+            if (title) title.textContent = "";
+            try { localStorage.clear(); } catch (e) {}
+            try { sessionStorage.clear(); } catch (e) {}
+        }
+
+        test("WT-01", "refreshWorkspaceList() / renderDirectoryTree(dirMock, container, token)", "files and folders rendered, in the order the code defines", async (appWin) => {
+            const rootMock = mockDirectoryHandle("my-project", {
+                "z_file.md": "markdown content",
+                "a_file.js": "console.log(1);",
+                "docs": {
+                    "readme.txt": "docs readme"
+                },
+                "assets": {
+                    "style.css": "body {}"
+                }
+            });
+
+            appWin.window.currentWorkspaceHandle = rootMock;
+            await appWin.refreshWorkspaceList();
+
+            const container = appWin.document.getElementById("workspace-file-list");
+            if (!container) throw new Error("#workspace-file-list element not found");
+
+            const children = Array.from(container.children);
+            if (children.length < 4) {
+                throw new Error(`Expected at least 4 rendered entries, got ${children.length}`);
+            }
+
+            const renderedNames = children.map(el => {
+                if (el.tagName.toLowerCase() === 'details') {
+                    const summary = el.querySelector('summary');
+                    return summary ? summary.textContent.trim() : '';
+                } else {
+                    return el.textContent.trim();
+                }
+            });
+
+            if (renderedNames[0] !== "assets") {
+                throw new Error(`Expected first folder 'assets', got '${renderedNames[0]}'`);
+            }
+            if (renderedNames[1] !== "docs") {
+                throw new Error(`Expected second folder 'docs', got '${renderedNames[1]}'`);
+            }
+            if (!renderedNames[2].includes("a_file.js")) {
+                throw new Error(`Expected first file 'a_file.js', got '${renderedNames[2]}'`);
+            }
+            if (!renderedNames[3].includes("z_file.md")) {
+                throw new Error(`Expected second file 'z_file.md', got '${renderedNames[3]}'`);
+            }
+        });
+
+        test("WT-02", "Ignored folders (WORKSPACE_IGNORED_DIRS, e.g. node_modules, .git)", "not rendered", async (appWin) => {
+            const rootMock = mockDirectoryHandle("repo", {
+                "node_modules": { "package.json": "{}" },
+                ".git": { "HEAD": "ref: refs/heads/main" },
+                ".vscode": { "settings.json": "{}" },
+                "src": { "index.js": "console.log(1);" }
+            });
+
+            appWin.window.currentWorkspaceHandle = rootMock;
+            await appWin.refreshWorkspaceList();
+
+            const container = appWin.document.getElementById("workspace-file-list");
+            const renderedText = container ? container.textContent : "";
+
+            if (renderedText.includes("node_modules")) {
+                throw new Error("node_modules folder should NOT be rendered");
+            }
+            if (renderedText.includes(".git")) {
+                throw new Error(".git folder should NOT be rendered");
+            }
+            if (renderedText.includes(".vscode")) {
+                throw new Error(".vscode folder should NOT be rendered");
+            }
+            if (!renderedText.includes("src")) {
+                throw new Error("src folder should be rendered");
+            }
+        });
+
+        test("WT-03", "Files with an extension not in WORKSPACE_ALLOWED_EXT", "not rendered (or rendered as the code defines)", async (appWin) => {
+            const rootMock = mockDirectoryHandle("media-app", {
+                "executable.exe": "binary",
+                "picture.png": "png_data",
+                "notes.md": "# Notes",
+                "script.js": "const a = 1;"
+            });
+
+            appWin.window.currentWorkspaceHandle = rootMock;
+            await appWin.refreshWorkspaceList();
+
+            const container = appWin.document.getElementById("workspace-file-list");
+            const renderedText = container ? container.textContent : "";
+
+            if (renderedText.includes("executable.exe")) {
+                throw new Error("executable.exe should NOT be rendered (unallowed extension)");
+            }
+            if (renderedText.includes("picture.png")) {
+                throw new Error("picture.png should NOT be rendered (unallowed extension)");
+            }
+            if (!renderedText.includes("notes.md")) {
+                throw new Error("notes.md should be rendered");
+            }
+            if (!renderedText.includes("script.js")) {
+                throw new Error("script.js should be rendered");
+            }
+        });
+
+        test("WT-04", "getFileIcon('md'), ('js'), ('unknown')", "the entries of FILE_ICON_MAP, fallback for unknown", async (appWin) => {
+            const mdIcon = appWin.getFileIcon('md');
+            const jsIcon = appWin.getFileIcon('js');
+            const unknownIcon = appWin.getFileIcon('unknown_ext_123');
+
+            if (!mdIcon.includes('icon-md') || !mdIcon.includes('M⇣')) {
+                throw new Error(`getFileIcon('md') expected icon-md with M⇣, got '${mdIcon}'`);
+            }
+            if (!jsIcon.includes('icon-js') || !jsIcon.includes('JS')) {
+                throw new Error(`getFileIcon('js') expected icon-js with JS, got '${jsIcon}'`);
+            }
+            if (!unknownIcon.includes('icon-default') || !unknownIcon.includes('⛘')) {
+                throw new Error(`getFileIcon('unknown_ext_123') expected fallback icon-default with ⛘, got '${unknownIcon}'`);
+            }
+        });
+
+        test("WT-05", "Lazy loading: a sub-folder is not read until it is expanded (spy on values() of the sub-folder mock)", "read only on expand", async (appWin) => {
+            const docsMock = mockDirectoryHandle("docs", {
+                "guide.md": "# Guide"
+            });
+
+            let valuesCalled = false;
+            const originalValues = docsMock.values.bind(docsMock);
+            docsMock.values = async function* () {
+                valuesCalled = true;
+                for await (const entry of originalValues()) {
+                    yield entry;
+                }
+            };
+
+            const rootMock = mockDirectoryHandle("my-project", {
+                "docs": docsMock,
+                "main.js": "console.log('main');"
+            });
+
+            appWin.window.currentWorkspaceHandle = rootMock;
+            await appWin.refreshWorkspaceList();
+
+            if (valuesCalled) {
+                throw new Error("sub-folder docs.values() should NOT be called before folder expansion");
+            }
+
+            const container = appWin.document.getElementById("workspace-file-list");
+            const summaryEl = container ? container.querySelector("details summary") : null;
+            if (!summaryEl) throw new Error("Folder <summary> element not found");
+
+            summaryEl.click();
+            await new Promise(r => setTimeout(r, 100));
+
+            if (!valuesCalled) {
+                throw new Error("sub-folder docs.values() should be called upon folder expansion");
+            }
+        });
+
+        test("WT-06", "Two refreshes in a row (render token)", "the first, stale render does not add items after the second (no duplicates)", async (appWin) => {
+            const mockDir1 = mockDirectoryHandle("dir1", {
+                "file1.md": "content 1"
+            });
+            const mockDir2 = mockDirectoryHandle("dir2", {
+                "file2.js": "content 2"
+            });
+
+            const container = appWin.document.getElementById("workspace-file-list");
+            if (!container) throw new Error("#workspace-file-list not found");
+
+            container.innerHTML = "";
+
+            const token1 = 100;
+            const token2 = 101;
+            appWin.eval("currentWorkspaceRenderToken = 101");
+
+            const p1 = appWin.renderDirectoryTree(mockDir1, container, token1);
+            const p2 = appWin.renderDirectoryTree(mockDir2, container, token2);
+
+            await Promise.all([p1, p2]);
+
+            const renderedText = container.textContent;
+            if (renderedText.includes("file1.md")) {
+                throw new Error("Stale token1 render items should NOT appear in container");
+            }
+            if (!renderedText.includes("file2.js")) {
+                throw new Error("Active token2 render items should appear in container");
+            }
+        });
+
+        window.addEventListener("load", async () => {
+            try {
+                const appWin = await loadApp();
+                cleanupWorkspaceTree(appWin);
+
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            } finally {
+                cleanupWorkspaceTree(window);
+            }
+        });
+    </script>
+</body>
+</html>

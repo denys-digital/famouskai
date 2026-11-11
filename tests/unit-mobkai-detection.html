@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - core-mobkai (Mobkai detection)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <!-- Mobkai detection: only the pure decide() function is tested here. -->
+    <script src="../core/core-mobkai.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - core-mobkai (Mobkai detection)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+    <script>
+        (function () {
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+            const M = window.FamousMobkai;
+            if (!M || typeof window.isMobkai !== 'function') {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = 'Error: ../core/core-mobkai.js did not load (window.FamousMobkai missing)';
+                return;
+            }
+            const ANDROID = 'Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Mobile Safari/537.36';
+            const FIREFOX_ANDROID = 'Mozilla/5.0 (Android 14; Mobile; rv:140.0) Gecko/140.0 Firefox/140.0';
+            const CROS = 'Mozilla/5.0 (X11; CrOS x86_64 16000.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';
+            const phone = (extra) => Object.assign({ query: null, stored: null, coarse: true, narrow: true, uaDataMobile: true, ua: ANDROID }, extra);
+            const desk = (extra) => Object.assign({ query: null, stored: null, coarse: false, narrow: false, uaDataMobile: false, ua: CROS }, extra);
+            const d = (input) => JSON.stringify(M.decide(input));
+
+            const cases = [
+                { name: 'Chrome Android phone: on', got: () => M.decide(phone()).on, expected: true },
+                { name: 'Firefox Android phone (no userAgentData): on through the UA fallback', got: () => M.decide(phone({ uaDataMobile: undefined, ua: FIREFOX_ANDROID })).on, expected: true },
+                { name: 'desktop Chromebook: off', got: () => M.decide(desk()).on, expected: false },
+                { name: 'Chromebook tablet mode (coarse, wide, not mobile): off', got: () => M.decide(desk({ coarse: true })).on, expected: false },
+                { name: 'touch laptop zoomed narrow (coarse, narrow, not mobile): off', got: () => M.decide(desk({ coarse: true, narrow: true })).on, expected: false },
+                { name: 'phone in landscape (wide): off at boot', got: () => M.decide(phone({ narrow: false })).on, expected: false },
+                { name: 'phone with a mouse (fine pointer): off', got: () => M.decide(phone({ coarse: false })).on, expected: false },
+                { name: '?mobkai=1 on desktop: on and stored', got: () => d(desk({ query: '1' })), expected: JSON.stringify({ on: true, store: '1' }) },
+                { name: '?mobkai=0 on a phone: off and stored', got: () => d(phone({ query: '0' })), expected: JSON.stringify({ on: false, store: '0' }) },
+                { name: 'stored 1 on desktop: on, nothing to store', got: () => d(desk({ stored: '1' })), expected: JSON.stringify({ on: true }) },
+                { name: 'stored 0 on a phone: off', got: () => M.decide(phone({ stored: '0' })).on, expected: false },
+                { name: 'query wins over the stored value', got: () => M.decide(desk({ query: '0', stored: '1' })).on, expected: false },
+                { name: '?mobkai=auto removes the override and detects', got: () => d(phone({ query: 'auto', stored: '0' })), expected: JSON.stringify({ on: true, store: null }) },
+                { name: 'unknown query value is ignored', got: () => M.decide(desk({ query: 'yes', stored: '1' })).on, expected: true },
+                { name: 'storage key name', got: () => M.STORAGE_KEY, expected: 'famouskai_mobkai_override' },
+                { name: 'isMobkai() returns a boolean', got: () => typeof window.isMobkai(), expected: 'boolean' },
+                { name: 'draft key name is famouskai_mobkai_draft', got: () => M.DRAFT_KEY, expected: 'famouskai_mobkai_draft' },
+                // shouldKeepDraft unit tests
+                { name: 'shouldKeepDraft: empty fileName, modified true, non-empty text: true', got: () => M.shouldKeepDraft({ fileName: '', modified: true, text: 'hello' }), expected: true },
+                { name: 'shouldKeepDraft: [New] fileName, modified true, non-empty text: true', got: () => M.shouldKeepDraft({ fileName: '[New]', modified: true, text: 'draft' }), expected: true },
+                { name: 'shouldKeepDraft: null/undefined fileName, modified true, non-empty text: true', got: () => M.shouldKeepDraft({ modified: true, text: 'draft' }), expected: true },
+                { name: 'shouldKeepDraft: named file (note.md), modified true, non-empty text: false', got: () => M.shouldKeepDraft({ fileName: 'note.md', modified: true, text: 'draft' }), expected: false },
+                { name: 'shouldKeepDraft: modified false: false', got: () => M.shouldKeepDraft({ fileName: '', modified: false, text: 'hello' }), expected: false },
+                { name: 'shouldKeepDraft: text is whitespace only: false', got: () => M.shouldKeepDraft({ fileName: '', modified: true, text: '   \n  ' }), expected: false },
+                { name: 'shouldKeepDraft: text is empty string: false', got: () => M.shouldKeepDraft({ fileName: '', modified: true, text: '' }), expected: false },
+                { name: 'shouldKeepDraft: missing input: false', got: () => M.shouldKeepDraft(null), expected: false },
+                // shouldOfferDraft unit tests
+                { name: 'shouldOfferDraft: valid draft, empty buffer, no special query: true', got: () => M.shouldOfferDraft({ draft: { text: 'my note', savedAt: 12345 }, fileName: '', text: '', search: '' }), expected: true },
+                { name: 'shouldOfferDraft: [New] fileName, empty buffer: true', got: () => M.shouldOfferDraft({ draft: { text: 'my note' }, fileName: '[New]', text: '   ', search: '?mobkai=1' }), expected: true },
+                { name: 'shouldOfferDraft: draft is null: false', got: () => M.shouldOfferDraft({ draft: null, fileName: '', text: '', search: '' }), expected: false },
+                { name: 'shouldOfferDraft: draft text is empty: false', got: () => M.shouldOfferDraft({ draft: { text: '   ' }, fileName: '', text: '', search: '' }), expected: false },
+                { name: 'shouldOfferDraft: current buffer already has non-empty text: false', got: () => M.shouldOfferDraft({ draft: { text: 'my note' }, fileName: '', text: 'already here', search: '' }), expected: false },
+                { name: 'shouldOfferDraft: current file is already named (note.md): false', got: () => M.shouldOfferDraft({ draft: { text: 'my note' }, fileName: 'note.md', text: '', search: '' }), expected: false },
+                { name: 'shouldOfferDraft: search contains shared=true: false', got: () => M.shouldOfferDraft({ draft: { text: 'my note' }, fileName: '', text: '', search: '?shared=true&mobkai=1' }), expected: false },
+                { name: 'shouldOfferDraft: search contains open_file_id: false', got: () => M.shouldOfferDraft({ draft: { text: 'my note' }, fileName: '', text: '', search: '?open_file_id=abc' }), expected: false },
+                { name: 'shouldOfferDraft: missing input: false', got: () => M.shouldOfferDraft(null), expected: false }
+            ];
+
+            let passed = 0;
+            cases.forEach((tc) => {
+                let got;
+                try { got = tc.got(); } catch (e) { got = 'ERROR: ' + e.message; }
+                const ok = got === tc.expected;
+                if (ok) { passed++; }
+                const div = document.createElement('div');
+                div.className = 'test-case ' + (ok ? 'pass' : 'fail');
+                div.innerHTML = '<span class="badge ' + (ok ? 'pass' : 'fail') + '">' + (ok ? 'PASS' : 'FAIL') + '</span>';
+                div.appendChild(document.createTextNode(tc.name));
+                if (!ok) {
+                    const det = document.createElement('div');
+                    det.className = 'diff-details';
+                    det.textContent = 'expected: ' + JSON.stringify(tc.expected) + '\ngot: ' + JSON.stringify(got);
+                    div.appendChild(det);
+                }
+                container.appendChild(div);
+            });
+            const allOk = passed === cases.length;
+            summaryEl.className = 'summary ' + (allOk ? 'passed' : 'failed');
+            summaryEl.textContent = passed + '/' + cases.length + ' passed';
+        })();
+    </script>
+</body>
+</html>
