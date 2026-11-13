@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-13
+
 ### Added
 
 - Outline: two buttons, `-#` and `+#`, move every heading of the selection
