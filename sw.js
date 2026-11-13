@@ -139,7 +139,7 @@ self.addEventListener('install', (event) => {
 
             // Execute all caching operations concurrently
             await Promise.all(URLS_TO_CACHE.map(async (url) => {
-                const response = await fetch(url);
+                const response = await fetch(url, { cache: 'reload' });
 
                 if (!response.ok) {
                     // If ANY file fails, Promise.all rejects immediately.
@@ -170,7 +170,7 @@ self.addEventListener('install', (event) => {
 
             await Promise.allSettled(monacoWarmupUrls.map(async (url) => {
                 try {
-                    const response = await fetch(url);
+                    const response = await fetch(url, { cache: 'reload' });
                     if (response.ok) {
                         const bodyBlob = await response.blob();
                         const cleanResponse = new Response(bodyBlob, {
@@ -205,10 +205,8 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim())
     );
-    // Take control of all clients immediately without requiring a page refresh
-    self.clients.claim();
 });
 
 // Intercept fetch requests (Local-First Cache Strategy & Share Target)
@@ -241,11 +239,21 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 2. Standard Local-First caching behavior (Cache First strategy)
+    // 2. Other origins (ffactory calls api.github.com): let the browser fetch them directly.
+    // The worker runs under the app's CSP (connect-src 'self'), so a fetch from here would be
+    // blocked and answered with the 503 below. Same-origin requests only are cached.
+    if (url.origin !== self.location.origin) {
+        return;
+    }
+
+    // 3. Standard Local-First caching behavior (Cache First strategy)
     event.respondWith((async () => {
         try {
-            // Ignore search parameters to ensure cache matching works perfectly
-            const cachedResponse = await caches.match(event.request, { ignoreSearch: true });
+            // Look in the current cache only, never in an old one (#454: new index.html
+            // with old style.css). caches.match with cacheName does not create the cache,
+            // unlike caches.open: an old worker still answering a request must not bring
+            // back the cache that the new worker just purged.
+            const cachedResponse = await caches.match(event.request, { cacheName: CACHE_NAME, ignoreSearch: true });
             if (cachedResponse) {
                 return cachedResponse;
             }
@@ -257,7 +265,7 @@ self.addEventListener('fetch', (event) => {
             const isGetRequest = event.request.method === 'GET';
             const isMonacoAsset = url.pathname.includes('/vendor/monaco-editor/');
 
-            if (isSameOrigin && isGetRequest && isMonacoAsset && networkResponse.ok) {
+            if (isSameOrigin && isGetRequest && isMonacoAsset && networkResponse.ok && await caches.has(CACHE_NAME)) {
                 const cache = await caches.open(CACHE_NAME);
                 await cache.put(event.request, networkResponse.clone());
             }
@@ -266,7 +274,7 @@ self.addEventListener('fetch', (event) => {
         } catch (err) {
             // Fall back to cached index.html for navigation requests
             if (event.request.mode === 'navigate') {
-                const cachedIndex = await caches.match('./index.html', { ignoreSearch: true });
+                const cachedIndex = await caches.match('./index.html', { cacheName: CACHE_NAME, ignoreSearch: true });
                 if (cachedIndex) {
                     return cachedIndex;
                 }

@@ -87,9 +87,9 @@ The global sidebar manager attaches to `window.FamousPluginCore.Sidebar`.
 - **Recent Files Stack:** Stack list (`#recent-files-list`) holding up to 10 recent file records.
 
 ### Outline Panel (`#panel-outline`)
-- **Heading Fold Controls:** Unfold all button (`#btn-unfold-all`) and level fold buttons (`H1` to `H4`).
+- **Heading Fold & Level Controls:** Unfold all button (`#btn-unfold-all`), level fold buttons (`H1` to `H4`), and heading level buttons `-#` (`#btn-heading-promote`) and `+#` (`#btn-heading-demote`) that move every heading of the selection one level up or down in one undo step.
 - **Copy Outline:** Copy button (`#btn-outline-copy`) to copy structure text to clipboard.
-- **Search, Sort & Reorder Controls:** Search input (`#outline-search`), A-Z sort toggle button (`#btn-outline-sort`), and Drag & Drop reorder mode button (`#btn-outline-reorder-mode`).
+- **Search, Sort & Reorder Controls:** Search input (`#outline-search`), A-Z sort toggle button (`#btn-outline-sort`), and Drag & Drop reorder mode button (`#btn-outline-reorder-mode`). Reorder works on Markdown files only (the button is hidden for other files); while it is on, the Outline lists only the headings, and dragging a heading moves its whole section, down to the next heading of the same or higher level.
 - **Filter Badges:** Quick filter badges (`#outline-mark-filters`) for `All`, Famous Marks (`﹥`, `•`, `°`), `TODO`, `@`, `</>` HTML/XML tags, and `JS` symbols.
 - **Table of Contents Tree:** Rendered heading and mark structure (`#toc-list`).
 

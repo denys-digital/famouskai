@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - Outline Section Reorder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="../plugins/ext-famous-core.js"></script>
+    <script src="../plugins/ext-outline.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - Outline Section Reorder</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+
+    <script>
+        (function() {
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+            const Outline = window.FamousPluginCore && window.FamousPluginCore.Outline;
+
+            if (!Outline || typeof Outline.sectionRange !== 'function') {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = 'Error: Outline.sectionRange method is not available';
+                console.error('Error: Outline.sectionRange not found');
+                return;
+            }
+
+            const SAMPLE = [
+                "# A",          // 0
+                "﹥ a mark",    // 1
+                "text a",       // 2
+                "## A1",        // 3
+                "• a1 mark",    // 4
+                "# B",          // 5
+                "° b mark",     // 6
+                "text b"        // 7
+            ];
+
+            // Minimal editor: a mutable line array, a replace() that rewrites it, a replace counter
+            function makeEditor(lines) {
+                const state = { lines: lines.slice(), replaced: 0 };
+                const doc = {
+                    getAllLines: () => state.lines.slice(),
+                    getNewLineCharacter: () => '\n'
+                };
+                state.editor = {
+                    session: {
+                        getDocument: () => doc,
+                        replace: (range, text) => { state.replaced++; state.lines = text.split('\n'); }
+                    }
+                };
+                return state;
+            }
+
+            window.showToast = function() {};
+
+            function itemsOf(lines) {
+                const st = makeEditor(lines);
+                Outline.update(st.editor);
+                return Outline.items.map(it => ({ type: it.type, line: it.line, level: it.level }));
+            }
+
+            function move(lines, fromIdx, toIdx) {
+                const st = makeEditor(lines);
+                Outline.update(st.editor);
+                Outline.reorderSection(fromIdx, toIdx);
+                return { text: st.lines.join('\n'), replaced: st.replaced };
+            }
+
+            const items = itemsOf(SAMPLE);
+            const results = [];
+            function check(name, actual, expected) {
+                results.push({ name, pass: JSON.stringify(actual) === JSON.stringify(expected), actual, expected });
+            }
+
+            check('parser finds 6 items (A, ﹥, A1, •, B, °)', items.map(i => i.line), [0, 1, 3, 4, 5, 6]);
+            check('# A owns its marks, text and ## A1 (lines 0-4)', Outline.sectionRange(items, 0, SAMPLE.length), { start: 0, end: 4 });
+            check('## A1 owns its • line (lines 3-4)', Outline.sectionRange(items, 2, SAMPLE.length), { start: 3, end: 4 });
+            check('a ﹥ mark owns lines down to the next item (lines 1-2)', Outline.sectionRange(items, 1, SAMPLE.length), { start: 1, end: 2 });
+            check('last heading # B owns the end of the file (lines 5-7)', Outline.sectionRange(items, 4, SAMPLE.length), { start: 5, end: 7 });
+
+            check('TSB-05: drop # B on # A moves B with its ° line and text',
+                move(SAMPLE, 4, 0),
+                { text: "# B\n° b mark\ntext b\n# A\n﹥ a mark\ntext a\n## A1\n• a1 mark", replaced: 1 });
+            check('drop # A on its own ## A1: nothing changes',
+                move(SAMPLE, 0, 2),
+                { text: SAMPLE.join('\n'), replaced: 0 });
+            check('drop # A on the next # B (same place): nothing changes',
+                move(SAMPLE, 0, 4),
+                { text: SAMPLE.join('\n'), replaced: 0 });
+            check('drop a ﹥ mark on # B moves the mark and its text only',
+                move(SAMPLE, 1, 4),
+                { text: "# A\n## A1\n• a1 mark\n﹥ a mark\ntext a\n# B\n° b mark\ntext b", replaced: 1 });
+
+            // Reorder is Markdown only (HTML, JS, CSS items have no clean block)
+            check('isReorderable: notes.md', Outline.isReorderable('notes.md', 'ace/mode/markdown'), true);
+            check('isReorderable: README.MARKDOWN', Outline.isReorderable('README.MARKDOWN', 'ace/mode/text'), true);
+            check('isReorderable: app.js (even if the mode is still markdown)', Outline.isReorderable('app.js', 'ace/mode/markdown'), false);
+            check('isReorderable: index.html', Outline.isReorderable('index.html', 'ace/mode/html'), false);
+            check('isReorderable: style.css', Outline.isReorderable('style.css', 'ace/mode/css'), false);
+            check('isReorderable: deploy.sh (# comments are not headings here)', Outline.isReorderable('deploy.sh', 'ace/mode/text'), false);
+            check('isReorderable: unsaved file detected as Markdown', Outline.isReorderable('', 'ace/mode/markdown'), true);
+            check('isReorderable: unsaved file detected as JavaScript', Outline.isReorderable('', 'ace/mode/javascript'), false);
+
+            // Reorder mode lists Markdown headings only
+            check('isReorderItem: the parser items kept in Reorder mode are # A, ## A1, # B',
+                items.filter(i => Outline.isReorderItem(i)).map(i => i.line), [0, 3, 5]);
+            check('isReorderItem: a TODO line is not listed', Outline.isReorderItem({ type: 'todo', line: 0 }), false);
+
+            let passed = 0;
+            results.forEach((res, index) => {
+                if (res.pass) passed++;
+                const card = document.createElement('div');
+                card.className = `test-case ${res.pass ? 'pass' : 'fail'}`;
+                const badge = document.createElement('span');
+                badge.className = `badge ${res.pass ? 'pass' : 'fail'}`;
+                badge.textContent = res.pass ? 'PASS' : 'FAIL';
+                const title = document.createElement('span');
+                title.textContent = `Case ${index + 1}: ${res.name}`;
+                card.appendChild(badge);
+                card.appendChild(title);
+                if (!res.pass) {
+                    const diff = document.createElement('div');
+                    diff.className = 'diff-details';
+                    diff.textContent = `Expected: ${JSON.stringify(res.expected)}\nActual:   ${JSON.stringify(res.actual)}`;
+                    card.appendChild(diff);
+                }
+                container.appendChild(card);
+            });
+
+            const summaryText = `${passed}/${results.length} passed`;
+            summaryEl.className = `summary ${passed === results.length ? 'passed' : 'failed'}`;
+            summaryEl.textContent = summaryText;
+            console.log(`Unit Tests - Outline Section Reorder: ${summaryText}`);
+        })();
+    </script>
+</body>
+</html>

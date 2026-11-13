@@ -18,7 +18,7 @@ Your files, on your disk, in your browser. Nothing in between.
 - **Zero account.** Open Famouskai and work. Nobody should have to sign in to edit a text file.
 - **Zero setup.** It runs in the browser and installs as an app in one click, even on a Chromebook without Linux: no command line, no virtual machine, no developer mode.
 - **Zero server.** Your files never leave your machine; only your settings and history stay, locally in your browser.
-- **Zero tracker.** No analytics, no ads, no telemetry.
+- **Zero tracker.** No analytics, no ads, no telemetry: nothing in the page counts you or follows you. The only numbers are aggregate counts kept by the hosts themselves (Cloudflare, GitHub traffic).
 - **Zero lock-in.** Your files stay plain text. Famous Marks are ordinary characters that any editor can read.
 - **Zero overhead.** One document per page: your browser already has tabs.
 - **Zero CDN.** Every library ships in the repository: nothing loads from a third party.

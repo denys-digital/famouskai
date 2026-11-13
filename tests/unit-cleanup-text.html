@@ -279,6 +279,71 @@
                     isSelection: false,
                     options: { markdown: false },
                     expected: " *\n"
+                },
+
+                // Rule 8 (Markdown empty blockquote lines) test cases:
+                {
+                    name: "Rule 8: empty blockquote gives empty document",
+                    input: "> \n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: ""
+                },
+                {
+                    name: "Rule 8: trailing empty blockquote line removed",
+                    input: "Text\n>\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "Text\n"
+                },
+                {
+                    name: "Rule 8: paragraph separator inside blockquote kept (no space)",
+                    input: "> a\n>\n> b\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "> a\n>\n> b\n"
+                },
+                {
+                    name: "Rule 8: paragraph separator inside blockquote kept (trailing space trimmed)",
+                    input: "> a\n> \n> b\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "> a\n>\n> b\n"
+                },
+                {
+                    name: "Rule 8: empty blockquote line before non-quote line removed",
+                    input: "> a\n> \n\nText\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "> a\n\nText\n"
+                },
+                {
+                    name: "Rule 8: nested empty blockquote markers removed",
+                    input: "> > \n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: ""
+                },
+                {
+                    name: "Rule 8: blockquote with text preserved unchanged",
+                    input: "> quote\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "> quote\n"
+                },
+                {
+                    name: "Protected: empty blockquote inside fenced code block (only Rule 1 applies)",
+                    input: "```\n> \n```\n",
+                    isSelection: false,
+                    options: { markdown: true },
+                    expected: "```\n>\n```\n"
+                },
+                {
+                    name: "Protected: empty blockquote with markdown: false (only Rule 1 applies)",
+                    input: "> \nx\n",
+                    isSelection: false,
+                    options: { markdown: false },
+                    expected: ">\nx\n"
                 }
             ];
 

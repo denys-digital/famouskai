@@ -959,6 +959,24 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    const btnHeadingPromote = document.getElementById("btn-heading-promote");
+    if (btnHeadingPromote) {
+        btnHeadingPromote.addEventListener("click", () => {
+            if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
+                window.FamousPluginCore.Outline.shiftHeadings(editor, -1);
+            }
+        });
+    }
+
+    const btnHeadingDemote = document.getElementById("btn-heading-demote");
+    if (btnHeadingDemote) {
+        btnHeadingDemote.addEventListener("click", () => {
+            if (window.FamousPluginCore && window.FamousPluginCore.Outline) {
+                window.FamousPluginCore.Outline.shiftHeadings(editor, 1);
+            }
+        });
+    }
 });
 
 window.addEventListener('workspace-updated', async () => {
