@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests - Outline Mark Filters</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        .summary {
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .summary.passed {
+            background-color: #1e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #2e5a2e;
+        }
+        .summary.failed {
+            background-color: #3a1e1e;
+            color: #f44747;
+            border: 1px solid #5a2e2e;
+        }
+        .test-case {
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #252526;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-case.pass {
+            border-left: 4px solid #4ec9b0;
+        }
+        .test-case.fail {
+            border-left: 4px solid #f44747;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 11px;
+        }
+        .badge.pass {
+            background-color: #4ec9b0;
+            color: #1e1e1e;
+        }
+        .badge.fail {
+            background-color: #f44747;
+            color: #ffffff;
+        }
+        .diff-details {
+            margin-top: 6px;
+            padding: 6px;
+            background-color: #1a1a1a;
+            border-radius: 3px;
+            color: #ce9178;
+            white-space: pre-wrap;
+        }
+    </style>
+    <script src="../plugins/ext-famous-core.js"></script>
+    <script src="../plugins/ext-outline.js"></script>
+</head>
+<body>
+    <h1>Unit Tests - Outline Mark Filters</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="test-results"></div>
+
+    <script>
+        (function() {
+            const container = document.getElementById('test-results');
+            const summaryEl = document.getElementById('summary');
+            const Outline = window.FamousPluginCore && window.FamousPluginCore.Outline;
+
+            if (!Outline || typeof Outline.matchesMarkFilter !== 'function') {
+                summaryEl.className = 'summary failed';
+                summaryEl.textContent = 'Error: Outline.matchesMarkFilter method is not available';
+                console.error('Error: Outline.matchesMarkFilter not found');
+                return;
+            }
+
+            const sampleItems = [
+                { type: 'famous', mark: '﹥', text: 'A' },
+                { type: 'famous', mark: '•', text: 'B' },
+                { type: 'famous', mark: '°', text: 'C' },
+                { type: 'todo', text: 'TODO: x' },
+                { type: 'md', text: 'Title' }
+            ];
+
+            const filterTestCases = [
+                {
+                    name: "filter ﹥ keeps only ﹥ items",
+                    filter: "﹥",
+                    items: sampleItems,
+                    expectedText: "A"
+                },
+                {
+                    name: "filter • keeps only • items",
+                    filter: "•",
+                    items: sampleItems,
+                    expectedText: "B"
+                },
+                {
+                    name: "filter ° keeps only ° items",
+                    filter: "°",
+                    items: sampleItems,
+                    expectedText: "C"
+                },
+                {
+                    name: "filter TODO keeps only TODO items",
+                    filter: "TODO",
+                    items: sampleItems,
+                    expectedText: "TODO: x"
+                },
+                {
+                    name: "filter all keeps all items",
+                    filter: "all",
+                    items: sampleItems,
+                    expectedText: "A,B,C,TODO: x,Title"
+                }
+            ];
+
+            // Parser test: Outline.update requires an editor object with session.getDocument().getAllLines().
+            // We verify parser mark extraction using a minimal mock editor session.
+            const mockLines = [
+                "// ﹥ one",
+                "// • two",
+                "// ° three"
+            ];
+            const mockEditor = {
+                session: {
+                    getDocument: function() {
+                        return {
+                            getAllLines: function() {
+                                return mockLines;
+                            }
+                        };
+                    }
+                }
+            };
+
+            Outline.update(mockEditor);
+            const parsedMarks = Outline.items.map(function(item) { return item.mark; });
+
+            const testCases = [
+                ...filterTestCases.map(function(tc) {
+                    return {
+                        name: tc.name,
+                        run: function() {
+                            const kept = tc.items.filter(function(item) {
+                                return Outline.matchesMarkFilter(item, tc.filter);
+                            });
+                            const result = kept.map(function(i) { return i.text; }).join(",");
+                            return {
+                                pass: result === tc.expectedText,
+                                expected: tc.expectedText,
+                                actual: result
+                            };
+                        }
+                    };
+                }),
+                {
+                    name: "parser extracts mark property for Famous Marks",
+                    run: function() {
+                        const expected = JSON.stringify(["﹥", "•", "°"]);
+                        const actual = JSON.stringify(parsedMarks);
+                        return {
+                            pass: actual === expected,
+                            expected: expected,
+                            actual: actual
+                        };
+                    }
+                }
+            ];
+
+            let passed = 0;
+            const total = testCases.length;
+
+            testCases.forEach(function(tc, index) {
+                const res = tc.run();
+                if (res.pass) {
+                    passed++;
+                }
+
+                const card = document.createElement('div');
+                card.className = `test-case ${res.pass ? 'pass' : 'fail'}`;
+
+                const badge = document.createElement('span');
+                badge.className = `badge ${res.pass ? 'pass' : 'fail'}`;
+                badge.textContent = res.pass ? 'PASS' : 'FAIL';
+
+                const title = document.createElement('span');
+                title.textContent = `Case ${index + 1}: ${tc.name}`;
+
+                card.appendChild(badge);
+                card.appendChild(title);
+
+                if (!res.pass) {
+                    const diff = document.createElement('div');
+                    diff.className = 'diff-details';
+                    diff.textContent = `Expected: ${res.expected}\nActual:   ${res.actual}`;
+                    card.appendChild(diff);
+                }
+
+                container.appendChild(card);
+            });
+
+            const summaryText = `${passed}/${total} passed`;
+            summaryEl.className = `summary ${passed === total ? 'passed' : 'failed'}`;
+            summaryEl.textContent = summaryText;
+
+            console.log(`Unit Tests - Outline Mark Filters: ${summaryText}`);
+        })();
+    </script>
+</body>
+</html>

@@ -139,16 +139,35 @@ function getPopupAppUrl(pos) {
 })();
 
 // ﹥ GLOBAL TOAST FUNCTION
-window.showToast = function(msg, type) {
+// showToast(msg, type) closes by itself after a few seconds.
+// showToast(msg, type, { sticky: true }) stays until the user clicks its "OK" link
+// (for messages the user must read, such as the update message). Any later toast
+// replaces it.
+window.showToast = function(msg, type, options) {
     const toast = document.getElementById('toast-msg');
     if (!toast) return;
+    const sticky = !!(options && options.sticky);
     toast.textContent = msg;
-    toast.classList.remove('toast-success', 'toast-info', 'toast-warn', 'toast-error');
+    toast.classList.remove('toast-success', 'toast-info', 'toast-warn', 'toast-error', 'toast-sticky');
     if (type) toast.classList.add('toast-' + type);
+    clearTimeout(window._toastTimer);
+    if (sticky) {
+        toast.classList.add('toast-sticky');
+        const close = document.createElement('a');
+        close.href = '#';
+        close.className = 'toast-close';
+        close.textContent = 'OK';
+        close.addEventListener('click', (e) => {
+            e.preventDefault();
+            toast.classList.remove('show', 'toast-sticky');
+        });
+        toast.appendChild(document.createTextNode(' '));
+        toast.appendChild(close);
+    }
     toast.classList.add('show');
+    if (sticky) return;
     // Longer messages stay longer: 1 s plus about 70 ms per character, between 3 and 10 s.
     const duration = Math.min(10000, Math.max(3000, 1000 + String(msg).length * 70));
-    clearTimeout(window._toastTimer);
     window._toastTimer = setTimeout(() => toast.classList.remove('show'), duration);
 };
 

@@ -93,6 +93,20 @@
 
 // ﹥ PWA AND FILE HANDLING API
 if ('serviceWorker' in navigator) {
+    const hadController = !!navigator.serviceWorker.controller;
+    let updateNotified = false;
+
+    if (hadController) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!updateNotified) {
+                updateNotified = true;
+                if (typeof window.showToast === 'function') {
+                    window.showToast("Famouskai was updated. Reload the page when your work is saved.", "info", { sticky: true });
+                }
+            }
+        });
+    }
+
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
             .then(reg => console.log('Service Worker registered!'))
