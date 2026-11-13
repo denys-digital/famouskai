@@ -15,6 +15,7 @@ This document defines manual test scenarios for verifying the "Tidy & Sanitize T
 | **TC-CLEAN-07 (T2)** | Auto-cleanup on Save (`[Named]` existing file) | Open named file, paste uncleaned text, check "Auto-cleanup on Save" | Click "Save" (Ctrl+S) | On-before-save trigger fires, editor content is sanitized automatically and saved to disk. |
 | **TC-CLEAN-08 (T3)** | Auto-cleanup on Open | Check "Auto-cleanup on Open" in SETTINGS | Click "Open" and select a file containing uncleaned text | On-file-open trigger fires immediately after reading file, content is loaded sanitized in editor. |
 | **TC-CLEAN-09 (T4)** | Auto-cleanup on Reload | Check "Auto-cleanup on Open" in SETTINGS, file reloaded from disk after external edit | Click "Reload" button in toolbar | On-file-open trigger fires upon reload, content is reloaded sanitized in editor. |
+| **TC-CLEAN-10** | Empty Blockquote Lines (Markdown) | Markdown file with empty blockquote markers (`> `, `>\n`, `> > `), isolated empty quotes, and paragraph separators inside a quote | Run "Tidy & Sanitize Text" on entire document | Empty quote lines at start, end, or outside a quote block are cleaned. Empty quote lines acting as paragraph separators between quote lines (`> a\n>\n> b`) are preserved. Quotes with content (`> quote`) remain unchanged. Inside fenced code blocks or non-Markdown files, quote characters are preserved. |
 
 ---
 

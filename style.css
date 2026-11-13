@@ -1060,6 +1060,11 @@ html.mobkai #toast-msg.show {
     display: block;
 }
 
+/* Sticky toast in the Mobkai bar: wrap so the OK link is never cut */
+html.mobkai #toast-msg.toast-sticky {
+    white-space: normal;
+}
+
 html.mobkai #mobkai-status-version {
     margin-left: auto;
     font-size: 12px;
@@ -1184,6 +1189,15 @@ dialog::backdrop {
     pointer-events: none;
 }
 #toast-msg.show { bottom: 20px; }
+/* Sticky toast: stays until its OK link is clicked */
+#toast-msg.toast-sticky { pointer-events: auto; }
+#toast-msg .toast-close {
+    color: inherit;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-left: 8px;
+    cursor: pointer;
+}
 #toast-msg.toast-success {
     background: var(--color-status-success);
     color: var(--color-text-on-accent);
@@ -1734,6 +1748,12 @@ dialog::backdrop {
 /* ==========================================================================
     ﹥ ext. - Outline
    ========================================================================== */
+#panel-outline #markdown-fold-buttons {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
 .outline-search-row {
     display: flex;
     gap: 5px;

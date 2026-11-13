@@ -166,6 +166,28 @@
             }
         });
 
+        test("WI-03", "showToast(msg, type) without options", "toast shows, has no OK link and is not sticky", async (appWin) => {
+            appWin.showToast("Plain message", "success");
+            const toast = appWin.document.getElementById('toast-msg');
+            if (!toast.classList.contains('show')) throw new Error('toast is not shown');
+            if (toast.classList.contains('toast-sticky')) throw new Error('plain toast is sticky');
+            if (toast.querySelector('.toast-close')) throw new Error('plain toast has an OK link');
+            if (toast.textContent !== 'Plain message') throw new Error(`text is '${toast.textContent}'`);
+        });
+
+        test("WI-04", "showToast(msg, type, { sticky: true })", "toast stays after 3.5 s and closes on its OK link", async (appWin) => {
+            appWin.showToast("Sticky message", "info", { sticky: true });
+            const toast = appWin.document.getElementById('toast-msg');
+            await delay(3500);
+            if (!toast.classList.contains('show')) throw new Error('sticky toast closed by itself');
+            const link = toast.querySelector('a.toast-close');
+            if (!link || link.textContent !== 'OK') throw new Error('no OK link');
+            link.click();
+            if (toast.classList.contains('show')) throw new Error('OK link did not close the toast');
+            appWin.showToast("Next message");
+            if (toast.querySelector('.toast-close') || toast.classList.contains('toast-sticky')) throw new Error('next toast kept the sticky state');
+        });
+
         window.addEventListener("load", async () => {
             try {
                 const appWin = await loadApp();

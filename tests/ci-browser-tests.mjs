@@ -24,6 +24,7 @@
 // 2. Go/No-Go smoke test of the app (automatic No-Go criteria of the 0.1.0 plan):
 //    G1 the app starts without an uncaught error,
 //    G2 the app reloads offline from the Service Worker cache,
+//    G2b Service Worker upgrade serves only the new version,
 //    G3 the Markdown preview does not run injected HTML,
 //    G4 Diffskai opens and finishes loading,
 //    G5 Diffskai collapses unchanged lines right after a load.
@@ -32,7 +33,10 @@
 // Browser: the Chrome installed on the runner, or CHROME_PATH if set.
 
 import { chromium } from 'playwright-core';
-import { readdirSync, existsSync, appendFileSync } from 'node:fs';
+import { readdirSync, existsSync, appendFileSync, readFileSync, statSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { join, normalize, extname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const BASE = (process.argv[2] || 'http://localhost:8000').replace(/\/$/, '');
 const results = [];
@@ -212,6 +216,102 @@ await check('G2 app reloads offline from the Service Worker cache', async () => 
     });
     if (cspViolations.length > beforeCSP) throw new Error('CSP violation in G2: ' + cspViolations.slice(beforeCSP).join(' | '));
     return n;
+});
+
+// G2b runs on its own small server: Playwright routes do not reach the requests
+// made by the Service Worker, so the "new version" must come from a real server.
+// Every file is sent with a long HTTP cache (like a CDN), except sw.js, so the
+// check also proves that install does not store an old file from the HTTP cache.
+await check('G2b Service Worker upgrade serves only the new version', async () => {
+    const root = fileURLToPath(new URL('..', import.meta.url));
+    const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
+        '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.md': 'text/markdown' };
+    let upgraded = false;
+    let newCacheName = '';
+    const server = createServer((req, res) => {
+        let path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+        if (path.endsWith('/')) path += 'index.html';
+        const file = join(root, normalize(path));
+        if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) {
+            res.writeHead(404); res.end(); return;
+        }
+        let body = readFileSync(file);
+        if (upgraded && path === '/sw.js') {
+            body = body.toString().replace(/const CACHE_NAME\s*=\s*['"][^'"]+['"];/, `const CACHE_NAME = '${newCacheName}';`);
+        } else if (upgraded && path === '/style.css') {
+            body = body.toString() + '\n/* upgrade-test-marker */\n';
+        }
+        res.writeHead(200, {
+            'Content-Type': types[extname(file)] || 'application/octet-stream',
+            'Cache-Control': path === '/sw.js' ? 'no-cache' : 'max-age=3600'
+        });
+        res.end(body);
+    });
+    await new Promise(r => server.listen(0, '127.0.0.1', r));
+    const UP = `http://127.0.0.1:${server.address().port}`;
+    const upCtx = await browser.newContext();
+    try {
+        const upPage = await upCtx.newPage();
+        const upReady = () => upPage.waitForFunction(
+            () => typeof editor !== 'undefined' && editor && window.FamousPluginCore && window.FamousPluginCore.Manager,
+            null, { timeout: 30000 }
+        );
+        await upPage.goto(`${UP}/index.html`);
+        await upReady();
+        const active = await upPage.evaluate(() => Promise.race([
+            navigator.serviceWorker.ready.then(reg => !!reg.active),
+            new Promise(r => setTimeout(() => r(false), 30000))
+        ]));
+        if (!active) throw new Error('the Service Worker did not install');
+        await upPage.waitForFunction(async () => {
+            const names = await caches.keys();
+            return names.length === 1 && (await (await caches.open(names[0])).keys()).length > 20;
+        }, null, { timeout: 60000, polling: 500 });
+        // Load style.css once from the network so the HTTP cache holds the OLD file.
+        await upPage.evaluate(() => fetch('./style.css?warm-http-cache'));
+        await upPage.reload();
+        await upReady();
+        await upPage.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15000 });
+
+        const oldNames = await upPage.evaluate(() => caches.keys());
+        newCacheName = oldNames[0] + '-upgrade-test';
+        upgraded = true;
+
+        await upPage.evaluate(async () => {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (!reg) throw new Error('no Service Worker registration');
+            await reg.update();
+        });
+        // Wait in the page (an async waitForFunction predicate would pass at once).
+        const purged = await upPage.evaluate(async (expected) => {
+            const end = Date.now() + 60000;
+            while (Date.now() < end) {
+                const keys = await caches.keys();
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (keys.length === 1 && keys[0] === expected && reg && reg.active && !reg.installing && !reg.waiting) return keys;
+                await new Promise(r => setTimeout(r, 200));
+            }
+            return caches.keys();
+        }, newCacheName);
+        if (purged.length !== 1 || purged[0] !== newCacheName) {
+            throw new Error(`after the update, caches are [${purged.join(', ')}], expected [${newCacheName}]`);
+        }
+
+        for (let i = 0; i < 2; i++) {
+            await upPage.reload();
+            await upReady();
+        }
+        const v = await upPage.evaluate(async () => ({
+            css: await (await fetch('./style.css')).text(),
+            keys: await caches.keys()
+        }));
+        if (!v.css.includes('upgrade-test-marker')) throw new Error('the OLD style.css is served after the update');
+        if (v.keys.length !== 1 || v.keys[0] !== newCacheName) throw new Error(`caches are [${v.keys.join(', ')}]`);
+        return 'old cache purged, new style.css served';
+    } finally {
+        await upCtx.close();
+        server.close();
+    }
 });
 
 await check('G3 Markdown preview does not run injected HTML', async () => {

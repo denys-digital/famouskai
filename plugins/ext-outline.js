@@ -141,12 +141,52 @@ window.FamousPluginCore.Outline = {
         if (btnXml) btnXml.style.display = isXmlOrHtml ? 'inline-block' : 'none';
         if (btnJs) btnJs.style.display = isJsOrHtml ? 'inline-block' : 'none';
 
+        // Reorder is Markdown only: in HTML, JS or CSS an outline item has no clean block
+        // (no closing tag or brace), so a move would break the code.
+        const session = this.editorInstance && this.editorInstance.session;
+        const canReorder = this.isReorderable(filename, session && session.$modeId);
+        const reorderBtn = document.getElementById('btn-outline-reorder-mode');
+        if (reorderBtn) reorderBtn.style.display = canReorder ? '' : 'none';
+        if (!canReorder && this.isReorderMode) {
+            this.isReorderMode = false;
+            if (reorderBtn) reorderBtn.classList.remove('active-filter');
+        }
+
         if (this.activeMarkFilter === '</>' && !isXmlOrHtml) {
             this.resetFilter();
         }
         if ((this.activeMarkFilter === 'js' || this.activeMarkFilter === 'JS') && !isJsOrHtml) {
             this.resetFilter();
         }
+    },
+
+    /**
+     * Whether Reorder mode is offered for the current document.
+     * Only Markdown has a clean block (a heading owns its section). A saved file is judged
+     * by its extension; an unsaved file without a name by its detected Ace mode.
+     *
+     * @param {string} filename - current file name, empty for an unsaved new file
+     * @param {string} [modeId] - Ace mode id of the session, e.g. 'ace/mode/markdown'
+     * @returns {boolean}
+     */
+    isReorderable: function(filename, modeId) {
+        if (filename) {
+            const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
+            return ext === 'md' || ext === 'markdown';
+        }
+        return modeId === 'ace/mode/markdown';
+    },
+
+    /**
+     * Whether an outline item is listed (and draggable) in Reorder mode.
+     * Reorder is a Markdown heading reorder: Famous Mark, TODO and @ lines are not
+     * listed, they move with the heading that owns them (see sectionRange).
+     *
+     * @param {{type: string}} item - outline item
+     * @returns {boolean}
+     */
+    isReorderItem: function(item) {
+        return !!item && item.type === 'md';
     },
 
     update: function(editor) {
@@ -179,6 +219,10 @@ window.FamousPluginCore.Outline = {
         const regexFamous = (window.FamousPluginCore && window.FamousPluginCore.FamousMark)
             ? window.FamousPluginCore.FamousMark.regex
             : /^\s*[/<*!\-#%;]*\s*[﹥•°]\s*(.*?)\s*(?:-->|\*\/)?\s/;
+
+        const famousChars = (window.FamousPluginCore && window.FamousPluginCore.FamousMark && window.FamousPluginCore.FamousMark.CHAR_CLASS)
+            ? window.FamousPluginCore.FamousMark.CHAR_CLASS
+            : '﹥•°';
             
         const ignoredTags = [
             'div', 'span', 'p', 'a', 'button', 'main', 'meta', 'title',
@@ -200,8 +244,10 @@ window.FamousPluginCore.Outline = {
             // 1. Process Custom Famous Marks FIRST (Universal override)
             const matchFamous = line.match(regexFamous);
             if (matchFamous) {
+                const markChar = line.split('').find(ch => famousChars.includes(ch)) || '';
                 this.items.push({
                     type: 'famous', 
+                    mark: markChar,
                     text: matchFamous[1], 
                     line: index
                 });
@@ -266,6 +312,18 @@ window.FamousPluginCore.Outline = {
         this.render();
     },
 
+    matchesMarkFilter: function(item, filter) {
+        if (!filter || filter === "all") return true;
+        if (filter === "﹥" || filter === "•" || filter === "°") {
+            return item.type === 'famous' && item.mark === filter;
+        }
+        if (filter === "TODO") return item.type === 'todo';
+        if (filter === "@") return item.type === 'at-mark';
+        if (filter === "</>" || filter === "xml") return item.type === 'xml';
+        if (filter === "js" || filter === "JS") return item.type === 'js';
+        return true;
+    },
+
     render: function() {
         const tocList = document.getElementById("toc-list");
         if (!tocList) return;
@@ -301,15 +359,12 @@ window.FamousPluginCore.Outline = {
                 return;
             }
 
-            // Famous mark / heading badge filter
-            if (this.activeMarkFilter !== "all") {
-                if (this.activeMarkFilter === "﹥" && (!item.text.startsWith("﹥") && item.type !== 'famous')) return;
-                if (this.activeMarkFilter === "•" && !item.text.startsWith("•")) return;
-                if (this.activeMarkFilter === "°" && !item.text.startsWith("°")) return;
-                if (this.activeMarkFilter === "TODO" && item.type !== 'todo') return;
-                if (this.activeMarkFilter === "@" && item.type !== 'at-mark') return;
-                if ((this.activeMarkFilter === "</>" || this.activeMarkFilter === "xml") && item.type !== 'xml') return;
-                if ((this.activeMarkFilter === "js" || this.activeMarkFilter === "JS") && item.type !== 'js') return;
+            // Reorder mode moves Markdown headings only (their ﹥ • ° and TODO lines move with
+            // them), so it lists headings only; otherwise the badge filter applies.
+            if (this.isReorderMode) {
+                if (!this.isReorderItem(item)) return;
+            } else if (!this.matchesMarkFilter(item, this.activeMarkFilter)) {
+                return;
             }
 
             visibleCount++;
@@ -415,6 +470,32 @@ window.FamousPluginCore.Outline = {
         }
     },
 
+    /**
+     * Lines of the section that starts at items[idx].
+     * A Markdown heading of level L owns everything down to the next heading of level L or
+     * higher (its sub-headings, Famous Mark lines, TODOs and plain text move with it).
+     * Any other item owns the lines down to the next outline item.
+     *
+     * @param {Array<{type: string, line: number, level?: number}>} items - outline items, in line order
+     * @param {number} idx - index of the section's first item
+     * @param {number} totalLines - number of lines in the document
+     * @returns {{start: number, end: number}} first and last line (inclusive)
+     */
+    sectionRange: function(items, idx, totalLines) {
+        const item = items[idx];
+        let end = totalLines - 1;
+        for (let i = idx + 1; i < items.length; i++) {
+            const next = items[i];
+            if (item.type === 'md') {
+                if (next.type === 'md' && next.level <= item.level) { end = next.line - 1; break; }
+            } else {
+                end = next.line - 1;
+                break;
+            }
+        }
+        return { start: item.line, end: end };
+    },
+
     reorderSection: function(fromIdx, toIdx) {
         const editor = this.editorInstance;
         if (!editor || !this.items || this.items.length === 0) return;
@@ -426,10 +507,14 @@ window.FamousPluginCore.Outline = {
         const fromItem = this.items[fromIdx];
         const toItem = this.items[toIdx];
 
-        const startA = fromItem.line;
-        const endA = (fromIdx < this.items.length - 1) ? (this.items[fromIdx + 1].line - 1) : (allLines.length - 1);
+        const range = this.sectionRange(this.items, fromIdx, allLines.length);
+        const startA = range.start;
+        const endA = range.end;
 
         const startB = toItem.line;
+
+        // Dropping a section inside itself (on one of its own sub-headings or marks) changes nothing
+        if (startB >= startA && startB <= endA + 1) return;
 
         // Extract section A
         const sectionALines = allLines.slice(startA, endA + 1);
@@ -447,8 +532,13 @@ window.FamousPluginCore.Outline = {
         // Insert section A
         modifiedLines.splice(targetLine, 0, ...sectionALines);
 
-        // Set value back to editor
-        editor.setValue(modifiedLines.join('\n'), -1);
+        // Replace the whole text in one edit: Ctrl+Z undoes the move in one step
+        const lastRow = allLines.length - 1;
+        const AceRange = (window.ace && window.ace.require) ? window.ace.require('ace/range').Range : null;
+        const fullRange = AceRange
+            ? new AceRange(0, 0, lastRow, allLines[lastRow].length)
+            : { start: { row: 0, column: 0 }, end: { row: lastRow, column: allLines[lastRow].length } };
+        editor.session.replace(fullRange, modifiedLines.join(doc.getNewLineCharacter ? doc.getNewLineCharacter() : '\n'));
 
         if (window.showToast) {
             window.showToast("Section reordered!", "success");
@@ -456,5 +546,114 @@ window.FamousPluginCore.Outline = {
 
         // Re-update outline
         this.update(editor);
+    },
+
+    isLineInFence: function(allLines, row) {
+        if (!allLines || row <= 0) return false;
+        let inFence = false;
+        const max = Math.min(row, allLines.length);
+        for (let i = 0; i < max; i++) {
+            const trimmed = allLines[i].trim();
+            if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+                inFence = !inFence;
+            }
+        }
+        return inFence;
+    },
+
+    shiftHeadingLines: function(lines, delta, startsInFence = false) {
+        if (!Array.isArray(lines)) return { lines: [], changed: 0 };
+        let inFence = !!startsInFence;
+        let changed = 0;
+        const regexHeading = /^(#{1,6})([ \t]+|$)/;
+
+        const resultLines = lines.map(line => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+                inFence = !inFence;
+                return line;
+            }
+            if (inFence) {
+                return line;
+            }
+
+            const match = line.match(regexHeading);
+            if (!match) {
+                return line;
+            }
+
+            const hashes = match[1];
+            const rest = line.slice(hashes.length);
+            const level = hashes.length;
+
+            if (delta === 1) {
+                if (level >= 1 && level <= 5) {
+                    changed++;
+                    return '#' + line;
+                }
+            } else if (delta === -1) {
+                if (level >= 2 && level <= 6) {
+                    changed++;
+                    return line.slice(1);
+                }
+            }
+            return line;
+        });
+
+        return { lines: resultLines, changed };
+    },
+
+    shiftHeadings: function(editor, delta) {
+        if (!editor || !editor.session) return;
+        const selectionRange = editor.getSelectionRange();
+        const doc = editor.session.getDocument();
+        const allLines = doc.getAllLines();
+
+        let startRow = selectionRange.start.row;
+        let endRow = selectionRange.end.row;
+
+        if (selectionRange.isEmpty()) {
+            const cursor = editor.getCursorPosition();
+            startRow = cursor.row;
+            endRow = cursor.row;
+        } else {
+            if (selectionRange.end.column === 0 && endRow > startRow) {
+                endRow--;
+            }
+        }
+
+        const targetLines = allLines.slice(startRow, endRow + 1);
+        const startsInFence = this.isLineInFence(allLines, startRow);
+        const { lines: shiftedLines, changed } = this.shiftHeadingLines(targetLines, delta, startsInFence);
+
+        if (changed > 0) {
+            const Range = (window.ace && window.ace.require) ? window.ace.require('ace/range').Range : null;
+            const lastLineLen = doc.getLine(endRow).length;
+            const replaceRange = Range
+                ? new Range(startRow, 0, endRow, lastLineLen)
+                : { start: { row: startRow, column: 0 }, end: { row: endRow, column: lastLineLen } };
+
+            editor.session.replace(replaceRange, shiftedLines.join('\n'));
+
+            const newLastLineLen = shiftedLines[shiftedLines.length - 1].length;
+            editor.selection.setRange({
+                start: { row: startRow, column: 0 },
+                end: { row: endRow, column: newLastLineLen }
+            });
+        }
+
+        const toast = (typeof window.showToast === 'function')
+            ? window.showToast
+            : (window.FamousPluginCore && typeof window.FamousPluginCore.showToast === 'function' ? window.FamousPluginCore.showToast : null);
+
+        if (toast) {
+            if (changed === 0) {
+                toast("No heading changed", "info");
+            } else {
+                const direction = delta > 0 ? "down" : "up";
+                const headingWord = changed === 1 ? "heading" : "headings";
+                toast(`${changed} ${headingWord} moved ${direction}`);
+            }
+        }
     }
 };

@@ -33,7 +33,7 @@
  * 3. Dynamic Scope Detection (Selection vs Entire Document) with confirmMsg callbacks.
  * 4. Silent non-intrusive automated execution for background triggers.
  * 5. Multi-rule text sanitization with regex, CRLF/LF line ending preservation & POSIX trailing newline normalization.
- * 6. Markdown-only rule: orphan list markers removal for empty list items.
+ * 6. Markdown-only rules: orphan list markers and empty blockquote markers removal.
  */
 
 window.FamousPluginCore = window.FamousPluginCore || {};
@@ -47,7 +47,7 @@ window.FamousPluginCore.Manager.register({
     /**
      * Tooltip description revealed when hovering over the menu entry
      */
-    description: "Cleans whitespace, double spaces, empty list items, leading/consecutive blank lines, and normalizes file ending",
+    description: "Cleans whitespace, double spaces, empty list items and empty quote lines, leading/consecutive blank lines, and normalizes file ending",
 
     /**
      * Supported file extensions. An empty array [] allows availability across ALL file types
@@ -231,6 +231,7 @@ window.FamousPluginCore.Manager.register({
         const lines = text.split(/\r?\n/);
 
         let emptyListItemsCount = 0;
+        let emptyQuoteLinesCount = 0;
         let trailingTrimmedCount = 0;
         let whiteLinesCleanedCount = 0;
         let doubleSpacesCount = 0;
@@ -238,8 +239,8 @@ window.FamousPluginCore.Manager.register({
         const isMarkdown = Boolean(options && options.markdown);
         let inFence = false;
 
-        // RULE 7 (Markdown), 1, 2, & 6: Line-by-line processing
-        const processedLines = lines.map(line => {
+        // RULE 7 (Markdown), RULE 8 (Markdown), 1, 2, & 6: Line-by-line processing
+        const processedLines = lines.map((line, index) => {
             let tempLine = line;
 
             // Code fence tracking (``` or ~~~) for Markdown document protection
@@ -259,6 +260,22 @@ window.FamousPluginCore.Manager.register({
                 }
             }
 
+            // Rule 8: Empty blockquote lines (Markdown only, outside fenced code blocks)
+            let isEmptyQuoteLine = false;
+            if (isMarkdown && !inFence) {
+                if (/^[ \t]*(?:>[ \t]*)+$/.test(tempLine)) {
+                    const prevIsQuote = index > 0 && /^[ \t]*>/.test(lines[index - 1]);
+                    const nextIsQuote = index < lines.length - 1 && /^[ \t]*>/.test(lines[index + 1]);
+                    if (prevIsQuote && nextIsQuote) {
+                        // Paragraph separator inside a blockquote: keep it (Rule 1 will trim trailing spaces)
+                    } else {
+                        tempLine = '';
+                        emptyQuoteLinesCount++;
+                        isEmptyQuoteLine = true;
+                    }
+                }
+            }
+
             // Rule 1: Trim trailing spaces and tabs
             if (/[ \t]+$/.test(tempLine)) {
                 tempLine = tempLine.replace(/[ \t]+$/, '');
@@ -266,8 +283,8 @@ window.FamousPluginCore.Manager.register({
             }
 
             // Rule 2: White lines (containing spaces/tabs only) -> empty lines
-            // (not counted again for a line already emptied by rule 7)
-            if (!isEmptyListItem && line.length > 0 && tempLine.trim() === '') {
+            // (not counted again for a line already emptied by rule 7 or rule 8)
+            if (!isEmptyListItem && !isEmptyQuoteLine && line.length > 0 && tempLine.trim() === '') {
                 whiteLinesCleanedCount++;
                 tempLine = '';
             }
@@ -337,7 +354,7 @@ window.FamousPluginCore.Manager.register({
             cleanedText += eol;
         }
 
-        const totalChanges = emptyListItemsCount + trailingTrimmedCount + whiteLinesCleanedCount + doubleSpacesCount + leadingBlankRemovedCount + mergedBlankCount;
+        const totalChanges = emptyListItemsCount + emptyQuoteLinesCount + trailingTrimmedCount + whiteLinesCleanedCount + doubleSpacesCount + leadingBlankRemovedCount + mergedBlankCount;
 
         return {
             cleanedText: cleanedText,

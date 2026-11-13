@@ -163,16 +163,20 @@
                 <div id="panel-outline" class="sidebar-panel" role="tabpanel" aria-labelledby="tab-outline">
                     <div class="sidebar-header">
                         <div class="sidebar-title">OUTLINE</div>
-                        <div class="sidebar-actions" id="markdown-fold-buttons">
-                            <button class="fold-btn" id="btn-unfold-all" title="Unfold all">+</button>
-                            <button class="fold-btn" data-fold-level="1" title="Fold Headings 1">H1</button>
-                            <button class="fold-btn" data-fold-level="2" title="Fold Headings 2">H2</button>
-                            <button class="fold-btn" data-fold-level="3" title="Fold Headings 3">H3</button>
-                            <button class="fold-btn" data-fold-level="4" title="Fold Headings 4">H4</button>
-                        </div>
                         <button class="fold-btn" id="btn-outline-copy" title="Copy Outline Text">
                             <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                         </button>
+                    </div>
+
+                    <!-- Markdown Fold & Heading Level Toolbar Row -->
+                    <div class="sidebar-actions" id="markdown-fold-buttons">
+                        <button class="fold-btn" id="btn-unfold-all" title="Unfold all">+</button>
+                        <button class="fold-btn" data-fold-level="1" title="Fold Headings 1">H1</button>
+                        <button class="fold-btn" data-fold-level="2" title="Fold Headings 2">H2</button>
+                        <button class="fold-btn" data-fold-level="3" title="Fold Headings 3">H3</button>
+                        <button class="fold-btn" data-fold-level="4" title="Fold Headings 4">H4</button>
+                        <button class="fold-btn" id="btn-heading-promote" title="Headings one level up (H3 to H2)">-#</button>
+                        <button class="fold-btn" id="btn-heading-demote" title="Headings one level down (H2 to H3)">+#</button>
                     </div>
 
                     <!-- Fuzzy Search & A-Z Sort & Reorder Switch Bar -->

@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Outline: two buttons, `-#` and `+#`, move every heading of the selection
+  (or of the cursor line) one level up or down, in one undo step. They sit
+  with the fold buttons on their own row under the Outline title.
+- Tidy & Sanitize Text: a new rule removes empty blockquote lines (`>`,
+  `> >`) in Markdown files and keeps the blank lines that separate
+  blockquote paragraphs.
+
+### Changed
+
+- Outline Reorder works on Markdown files only and lists only the headings
+  while it is on: a heading moves with its whole section, Famous Mark,
+  TODO and @ lines included. The Reorder button is hidden for HTML, JS,
+  CSS and other files.
+
+### Fixed
+
+- Outline: the ﹥, • and ° filters each show only the lines with their own
+  mark. Before, ﹥ showed all three marks and • and ° showed nothing.
+- Outline Reorder: dragging a Markdown heading moves its whole section
+  (sub-headings, Famous Mark lines, text, code blocks), down to the next
+  heading of the same or higher level. One Ctrl+Z undoes the move.
+- Update: after an upgrade, Famouskai no longer mixes new and old files
+  (for example the new page with the old stylesheet). The old version's
+  cache is deleted before the new one takes over, and a message says when
+  to reload. The message stays until you click OK. Famouskai never reloads
+  by itself.
+- Offline: the Service Worker only answers requests for Famouskai's own
+  files and leaves any other request to the browser.
+
 ## [0.2.0] - 2026-11-11
 
 ### Added
@@ -153,6 +184,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Saving files requires the File System Access API, so a desktop Chromium browser such as Chrome or Edge is required; other browsers display a warning banner.
 - Monaco Editor (Diffskai) remains pinned at version 0.56.0 for this release.
 
-[Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/denys-digital/famouskai/compare/v0.1.3...v0.2.0
+[0.1.3]: https://github.com/denys-digital/famouskai/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/denys-digital/famouskai/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/denys-digital/famouskai/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/denys-digital/famouskai/releases/tag/v0.1.0
