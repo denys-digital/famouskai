@@ -231,6 +231,80 @@
             }
         });
 
+        test("SH-05", "detectPasteMode() on full sample files (issue 560)", "Each tests/fixtures-* file pasted whole gets its own mode: CSS and Markdown are no longer taken for JavaScript, CSV with quoted commas and line breaks stays CSV", async (appWin) => {
+            const cases = [
+                ['fixtures-syntax-sample.diff', 'ace/mode/diff'],
+                ['fixtures-syntax-sample.html', 'ace/mode/html'],
+                ['fixtures-syntax-sample.xml', 'ace/mode/xml'],
+                ['fixtures-syntax-sample.yml', 'ace/mode/yaml'],
+                ['fixtures-syntax-sample.js', 'ace/mode/javascript'],
+                ['fixtures-syntax-sample.json', 'ace/mode/json'],
+                ['fixtures-syntax-sample.css', 'ace/mode/css'],
+                ['fixtures-syntax-sample.md', 'ace/mode/markdown'],
+                ['fixtures-syntax-sample-extended.md', 'ace/mode/markdown'],
+                ['fixtures-syntax-sample.csv', 'ace/mode/csv'],
+                ['fixtures-syntax-sample-semicolon.csv', 'ace/mode/csv'],
+                ['fixtures-syntax-sample.txt', 'ace/mode/text']
+            ];
+            const errors = [];
+            for (const [file, want] of cases) {
+                const text = await (await fetch(file)).text();
+                const got = appWin.detectPasteMode(text);
+                if (got !== want) errors.push(`${file}: expected ${want}, got ${got}`);
+            }
+            if (errors.length) throw new Error(errors.join('; '));
+        });
+
+        test("SH-06", "detectPasteMode() on short snippets", "Short pastes keep their mode; var(--x) in CSS is not JavaScript", async (appWin) => {
+            const cases = [
+                ['<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>', 'ace/mode/svg'],
+                ['---\ntitle: Note\ndate: 2026-10-29\n---\n\n# Heading\n\nBody text.', 'ace/mode/markdown'],
+                ['Todo: buy milk\nNote: call Bob', 'ace/mode/text'],
+                ['- name: Alice', 'ace/mode/yaml'],
+                ['body { color: red; }', 'ace/mode/css'],
+                ['.btn { color: var(--accent); }', 'ace/mode/css'],
+                ['const a = 1;', 'ace/mode/javascript'],
+                ['items.map(x => x * 2)', 'ace/mode/javascript'],
+                ['{ "key": "value" }', 'ace/mode/json'],
+                ['a,b\n1,2', 'ace/mode/csv'],
+                ['# Heading', 'ace/mode/markdown'],
+                ['- list item', 'ace/mode/markdown'],
+                ['# Notes\n\n```js\nconst x = 1;\n```', 'ace/mode/markdown']
+            ];
+            const errors = [];
+            for (const [text, want] of cases) {
+                const got = appWin.detectPasteMode(text);
+                if (got !== want) errors.push(`${JSON.stringify(text.slice(0, 30))}: expected ${want}, got ${got}`);
+            }
+            if (errors.length) throw new Error(errors.join('; '));
+        });
+
+        test("SH-07", "Paste into a new document sets the colors of the detected language (issue 560)", "After New, pasting Markdown, CSS or CSV sets data-lang md, css or csv on the editor, so the syntax colors match the mode", async (appWin) => {
+            const cases = [
+                ['fixtures-syntax-sample.md', 'ace/mode/markdown', 'md'],
+                ['fixtures-syntax-sample.css', 'ace/mode/css', 'css'],
+                ['fixtures-syntax-sample.csv', 'ace/mode/csv', 'csv'],
+                ['fixtures-syntax-sample.js', 'ace/mode/javascript', 'js']
+            ];
+            const ed = appWin.editor;
+            const realConfirm = appWin.confirm;
+            appWin.confirm = () => true; // earlier tests leave the document modified
+            const errors = [];
+            try {
+                for (const [file, wantMode, wantLang] of cases) {
+                    const text = await (await fetch(file)).text();
+                    appWin.newFile();
+                    ed._signal("paste", { text: text });
+                    const lang = ed.container.getAttribute('data-lang');
+                    if (lang !== wantLang) errors.push(`${file}: expected data-lang ${wantLang}, got ${lang}`);
+                    if (appWin.detectPasteMode(text) !== wantMode) errors.push(`${file}: mode is not ${wantMode}`);
+                }
+            } finally {
+                appWin.confirm = realConfirm;
+            }
+            if (errors.length) throw new Error(errors.join('; '));
+        });
+
         window.addEventListener("load", async () => {
             try {
                 const appWin = await loadApp();

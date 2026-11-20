@@ -1,10 +1,10 @@
 # Famouskai Editor 🦊
 
-*Read this in other languages: [English](README.md)*
+*Read this in other languages: [English](README.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=README.md&view=read))*
 
 Famouskai est un éditeur de code et de texte "Local-First", conçu sous forme de PWA (Progressive Web App). Pensé pour la vélocité, le respect de la vie privée et la résilience, il s'ouvre en une seconde, modifie directement les fichiers de votre disque et s'exécute entièrement dans votre navigateur : ni compte, ni serveur, ni base de données distante, ni étape de compilation.
 
-**Ce que Famouskai sera toujours, et ne sera jamais : [DNA.md](./DNA.md)** (en anglais, version unique).
+**Ce que Famouskai sera toujours, et ne sera jamais : [DNA.md](./DNA.md)** ([ouvrir dans Famouskai](https://app.famouskai.com/?open=DNA.md&view=read)) (en anglais, version unique).
 
 Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que comme un IDE lourd. Couplé à **Diffskai**, son outil intégré de comparaison et de fusion, Famouskai garantit que vos modifications locales ne seront jamais écrasées en silence quand un autre programme modifie le même fichier.
 
@@ -16,6 +16,7 @@ Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que co
 
 ## Démarrage rapide
 
+- **Le voir en un clic :** ouvrez un fichier d'exemple directement dans l'application : [un plan Markdown avec des Famous Marks](https://app.famouskai.com/?open=tests/fixtures-outline-sample.md&view=split) (regardez l'onglet **Outline**), [un fichier JavaScript](https://app.famouskai.com/?open=tests/fixtures-syntax-sample.js), [un tableau CSV](https://app.famouskai.com/?open=tests/fixtures-syntax-sample.csv). Rien n'est écrit sur votre disque.
 - **L'essayer en ligne :** ouvrez [app.famouskai.com](https://app.famouskai.com) dans Chrome ou Edge, puis utilisez **Open** pour modifier un fichier de votre disque. Pour l'installer comme une application, utilisez l'icône d'installation de la barre d'adresse.
 - **Le lancer depuis une copie de ce repository :** téléchargez le ZIP (bouton vert **Code**, puis **Download ZIP**), décompressez-le et double-cliquez sur `index.html`. Rien à installer ni à compiler. Le mode hors-ligne exige que l'application soit servie en HTTPS ou sur `localhost` (voir *Limites connues*).
 
@@ -24,7 +25,7 @@ Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que co
 - **Un document par page.** Famouskai n'a volontairement pas de système d'onglets interne : votre navigateur en a déjà un. Besoin d'un second fichier ? Ouvrez une nouvelle fenêtre ou un nouvel onglet (bouton **+**, ou Ctrl+clic sur un fichier de l'Explorer) et gardez autant d'éditeurs côte à côte que vous le souhaitez.
 - **Vos fichiers restent sur votre disque.** Ils sont lus et écrits sur place via l'API File System Access. Famouskai ne conserve dans le stockage local du navigateur que vos préférences, vos fichiers récents et vos snippets.
 - **Diffskai protège votre travail.** Si un autre programme a modifié le fichier sur le disque depuis que vous l'avez ouvert, Famouskai s'arrête avant d'enregistrer et propose d'ouvrir Diffskai, une vue de comparaison et de fusion côte à côte : c'est vous qui choisissez quoi garder, sans perdre aucune des deux versions. Vous pouvez aussi ouvrir Diffskai à tout moment pour comparer le texte courant avec une autre version (bouton **D**).
-- **Facile à personnaliser.** Pas d'écosystème de plugins complexe : les couleurs vivent dans de simples fichiers CSS, les Magic Snippets insèrent vos propres modèles et symboles, et les outils sont de petits fichiers JavaScript que l'on peut lire et écrire en un après-midi (voir [`docs/PLUGIN-ARCHITECTURE.md`](./docs/PLUGIN-ARCHITECTURE.md), en anglais).
+- **Facile à personnaliser.** Pas d'écosystème de plugins complexe : les couleurs vivent dans de simples fichiers CSS, les Magic Snippets insèrent vos propres modèles et symboles, et les outils sont de petits fichiers JavaScript que l'on peut lire et écrire en un après-midi (voir [`docs/PLUGIN-ARCHITECTURE.md`](./docs/PLUGIN-ARCHITECTURE.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=docs/PLUGIN-ARCHITECTURE.md&view=read)), en anglais).
 
 ## Fonctionnalités Clés
 
@@ -32,7 +33,7 @@ Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que co
 *   **Coloration syntaxique** pour CSS, CSV, Diff/Patch, HTML, JavaScript/TypeScript, JSON, Markdown, SVG, XML, YAML, `.log` et texte brut.
 *   **Prévisualisation Markdown :** aperçu en direct et assaini à côté de l'éditeur, export HTML en un seul fichier et impression en PDF.
 *   **Volet latéral à onglets :** Explorer (espaces de travail et fichiers), Outline (structure du document), Tools et Magic Snippets, Windows & Settings.
-*   **Famous Marks :** trois marqueurs (`﹥` Famous Arrow, `•` Magic Dot, `°` Flying Bubble) qui transforment n'importe quel commentaire ou ligne en section repliable, listée dans l'Outline. Voir [`docs/FAMOUS-MARK.md`](./docs/FAMOUS-MARK.md) (en anglais).
+*   **Famous Marks :** trois marqueurs (`﹥` Famous Arrow, `•` Magic Dot, `°` Flying Bubble) qui transforment n'importe quel commentaire ou ligne en signet listé dans l'Outline. Voir [`docs/FAMOUS-MARK.md`](./docs/FAMOUS-MARK.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=docs/FAMOUS-MARK.md&view=read)) (en anglais).
 *   **Outils intégrés :** Beautify, Tidy & Sanitize Text, Sort Lines, Remove Duplicate Lines, Extract & Copy Table, et d'autres.
 *   **PWA :** installable sur Windows, macOS, Linux et ChromeOS ; une fois installée, elle peut ouvrir les fichiers directement depuis votre gestionnaire de fichiers.
 
@@ -45,7 +46,7 @@ Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que co
 
 ## Technologies utilisées (Architecture Zéro-CDN)
 
-Famouskai est conçu pour être résilient. Pour garantir une véritable capacité de fonctionnement hors ligne, **toutes les dépendances sont embarquées localement** (aucun appel CDN). Consultez [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) pour les détails juridiques.
+Famouskai est conçu pour être résilient. Pour garantir une véritable capacité de fonctionnement hors ligne, **toutes les dépendances sont embarquées localement** (aucun appel CDN). Consultez [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=THIRD-PARTY-NOTICES.md&view=read)) pour les détails juridiques.
 
 | Bibliothèque | Version | Rôle | Licence |
 | --- | --- | --- | --- |
@@ -66,7 +67,7 @@ Famouskai est développé avec passion sous le modèle de la **Double Licence** 
 Vous êtes libre d'utiliser, de modifier et de distribuer Famouskai pour vos projets personnels, académiques ou open source, à la stricte condition de partager vos modifications sous la même licence (AGPLv3). L'ouverture appelle l'ouverture. Texte complet : [`LICENSE`](./LICENSE) (en anglais, texte légal officiel).
 
 **2. Licence Commerciale**
-Vous souhaitez intégrer Famouskai au cœur de votre produit propriétaire (SaaS, CMS fermé, outil d'entreprise interne) sans avoir à ouvrir votre propre code source ? C'est tout à fait possible. Voir [`docs/COMMERCIAL-LICENSE.md`](./docs/COMMERCIAL-LICENSE.md) (en anglais) pour le détail, ou contactez-moi directement pour acquérir une licence commerciale abordable et adaptée à vos besoins.
+Vous souhaitez intégrer Famouskai au cœur de votre produit propriétaire (SaaS, CMS fermé, outil d'entreprise interne) sans avoir à ouvrir votre propre code source ? C'est tout à fait possible. Voir [`docs/COMMERCIAL-LICENSE.md`](./docs/COMMERCIAL-LICENSE.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=docs/COMMERCIAL-LICENSE.md&view=read)) (en anglais) pour le détail, ou contactez-moi directement pour acquérir une licence commerciale abordable et adaptée à vos besoins.
 
 ## Sponsoring & Soutien
 
@@ -117,7 +118,7 @@ l'automatisation de GitHub. Cette séparation laisse la racine du repository ent
 ce qui compte quand on parcourt le code : le code lui-même.
 
 Nouveau ici ? Commencez par
-[`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md), un guide pas-à-pas (en anglais,
+[`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=docs/00-START-HERE-HOW-TO.md&view=read)), un guide pas-à-pas (en anglais,
 langue de référence de l'écosystème Open Source) qui ne suppose aucune expérience préalable de
 GitHub, avec un parcours 100% navigateur pour qui, comme le mainteneur, ne souhaite pas
 installer d'interface en ligne de commande (CLI) Git en local.
@@ -128,10 +129,10 @@ Les contributions sont les bienvenues ! Qu'il s'agisse de corriger un bug, d'am�
 
 Avant votre première PR, merci de lire (documents en anglais, langue de référence de l'écosystème
 Open Source) :
-- [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md) : comment se déroulent les contributions ici.
-- [`docs/BRAND-GUIDE.md`](./docs/BRAND-GUIDE.md) : les règles visuelles de tout ce qui est poussé sur ce dépôt (en anglais).
-- [`.github/CODE_OF_CONDUCT.md`](./.github/CODE_OF_CONDUCT.md) : le comportement attendu au sein de cette communauté.
-- [`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md) : un guide complet pas-à-pas (Fork → Pull Request), incluant un parcours 100% navigateur si vous préférez ne rien installer en local.
+- [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=.github/CONTRIBUTING.md&view=read)) : comment se déroulent les contributions ici.
+- [`docs/BRAND-GUIDE.md`](./docs/BRAND-GUIDE.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=docs/BRAND-GUIDE.md&view=read)) : les règles visuelles de tout ce qui est poussé sur ce dépôt (en anglais).
+- [`.github/CODE_OF_CONDUCT.md`](./.github/CODE_OF_CONDUCT.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=.github/CODE_OF_CONDUCT.md&view=read)) : le comportement attendu au sein de cette communauté.
+- [`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=docs/00-START-HERE-HOW-TO.md&view=read)) : un guide complet pas-à-pas (Fork → Pull Request), incluant un parcours 100% navigateur si vous préférez ne rien installer en local.
 
 Votre première Pull Request déclenchera un bot automatique vous demandant de signer le
-[Contributor License Agreement](./docs/CLA.md) (CLA), une étape unique, en un clic.
+[Contributor License Agreement](./docs/CLA.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=docs/CLA.md&view=read)) (CLA), une étape unique, en un clic.

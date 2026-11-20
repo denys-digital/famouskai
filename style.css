@@ -154,6 +154,8 @@
     --color-toc-end-hover: var(--color-text-primary);
     --color-toc-bookmark: var(--fm-lime); /* Famous Marks custom bookmark */
     --color-toc-bookmark-hover: var(--color-text-primary);
+    --color-toc-arrow: #F95B56; /* ﹥ point: a pointer, no border */
+    --color-toc-note: #FF87B4;  /* ° note: temporary, border like TODO and @ */
 
     /* ﹥ --- Snippet Tokens --- */
     --color-snip-custom-dark: var(--fm-dark);
@@ -1869,6 +1871,24 @@ dialog::backdrop {
     color: var(--color-toc-bookmark);
     border-left: 2px solid var(--color-toc-bookmark);
     padding-left: 6px !important; /* Visual indentation for custom marks */
+}
+/* One look per meaning (docs-lab/FAMOUS-MARK-MATRIX.md section 1). A left border means
+   "temporary" (TODO, @, °); the marks that stay in the file (• and ﹥) have none, and the
+   Outline shows the mark itself (• •• ••• for the level, ﹥ as a pointer). */
+.toc-item-famous.toc-item-section {
+    color: var(--color-toc-markdown); /* a • section is a heading, like # */
+    border-left: none;
+    padding-left: 0 !important;
+}
+.toc-item-famous.toc-item-arrow {
+    color: var(--color-toc-arrow);
+    border-left: none;
+    padding-left: 0 !important;
+}
+.toc-item-famous.toc-item-note {
+    color: var(--color-toc-note);
+    border-left-color: var(--color-toc-note);
+    font-style: italic;
 }
 .toc-item-famous:hover {
     color: var(--color-white);

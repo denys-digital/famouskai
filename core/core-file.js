@@ -90,8 +90,8 @@ function applyNativeColoration(filename) {
     else if (ext === 'log') editor.session.setMode("ace/mode/log"); /* Famous custom */
     else editor.session.setMode("ace/mode/text");
 
-    const foldButtons = document.getElementById("markdown-fold-buttons");
-    if (foldButtons) foldButtons.style.display = (ext === 'md') ? "flex" : "none";
+    // The heading tools (+ H1-H4, -# +#) are shown by the Outline: Markdown files, and code or
+    // plain-text files that hold • sections (Outline.updateHeadingTools).
 
     if (window.FamousPluginCore && window.FamousPluginCore.Manager) {
         window.FamousPluginCore.Manager.renderTools(editor, filename);

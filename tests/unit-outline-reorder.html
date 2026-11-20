@@ -100,7 +100,7 @@
                 "﹥ a mark",    // 1
                 "text a",       // 2
                 "## A1",        // 3
-                "• a1 mark",    // 4
+                "° a1 mark",    // 4
                 "# B",          // 5
                 "° b mark",     // 6
                 "text b"        // 7
@@ -123,6 +123,8 @@
             }
 
             window.showToast = function() {};
+            // Saved Markdown file: headings are sections (FamousMark.profile 'markdown')
+            window.currentFileName = 'sample.md';
 
             function itemsOf(lines) {
                 const st = makeEditor(lines);
@@ -143,15 +145,15 @@
                 results.push({ name, pass: JSON.stringify(actual) === JSON.stringify(expected), actual, expected });
             }
 
-            check('parser finds 6 items (A, ﹥, A1, •, B, °)', items.map(i => i.line), [0, 1, 3, 4, 5, 6]);
+            check('parser finds 6 items (A, ﹥, A1, °, B, °)', items.map(i => i.line), [0, 1, 3, 4, 5, 6]);
             check('# A owns its marks, text and ## A1 (lines 0-4)', Outline.sectionRange(items, 0, SAMPLE.length), { start: 0, end: 4 });
-            check('## A1 owns its • line (lines 3-4)', Outline.sectionRange(items, 2, SAMPLE.length), { start: 3, end: 4 });
+            check('## A1 owns its ° line (lines 3-4)', Outline.sectionRange(items, 2, SAMPLE.length), { start: 3, end: 4 });
             check('a ﹥ mark owns lines down to the next item (lines 1-2)', Outline.sectionRange(items, 1, SAMPLE.length), { start: 1, end: 2 });
             check('last heading # B owns the end of the file (lines 5-7)', Outline.sectionRange(items, 4, SAMPLE.length), { start: 5, end: 7 });
 
             check('TSB-05: drop # B on # A moves B with its ° line and text',
                 move(SAMPLE, 4, 0),
-                { text: "# B\n° b mark\ntext b\n# A\n﹥ a mark\ntext a\n## A1\n• a1 mark", replaced: 1 });
+                { text: "# B\n° b mark\ntext b\n# A\n﹥ a mark\ntext a\n## A1\n° a1 mark", replaced: 1 });
             check('drop # A on its own ## A1: nothing changes',
                 move(SAMPLE, 0, 2),
                 { text: SAMPLE.join('\n'), replaced: 0 });
@@ -160,17 +162,68 @@
                 { text: SAMPLE.join('\n'), replaced: 0 });
             check('drop a ﹥ mark on # B moves the mark and its text only',
                 move(SAMPLE, 1, 4),
-                { text: "# A\n## A1\n• a1 mark\n﹥ a mark\ntext a\n# B\n° b mark\ntext b", replaced: 1 });
+                { text: "# A\n## A1\n° a1 mark\n﹥ a mark\ntext a\n# B\n° b mark\ntext b", replaced: 1 });
 
             // Reorder is Markdown only (HTML, JS, CSS items have no clean block)
             check('isReorderable: notes.md', Outline.isReorderable('notes.md', 'ace/mode/markdown'), true);
             check('isReorderable: README.MARKDOWN', Outline.isReorderable('README.MARKDOWN', 'ace/mode/text'), true);
-            check('isReorderable: app.js (even if the mode is still markdown)', Outline.isReorderable('app.js', 'ace/mode/markdown'), false);
-            check('isReorderable: index.html', Outline.isReorderable('index.html', 'ace/mode/html'), false);
-            check('isReorderable: style.css', Outline.isReorderable('style.css', 'ace/mode/css'), false);
-            check('isReorderable: deploy.sh (# comments are not headings here)', Outline.isReorderable('deploy.sh', 'ace/mode/text'), false);
+            check('isReorderable: app.js (• sections)', Outline.isReorderable('app.js', 'ace/mode/javascript'), true);
+            check('isReorderable: style.css (• sections)', Outline.isReorderable('style.css', 'ace/mode/css'), true);
+            check('isReorderable: deploy.sh (plain text rule)', Outline.isReorderable('deploy.sh', 'ace/mode/text'), true);
+            check('isReorderable: data.json (no comment syntax)', Outline.isReorderable('data.json', 'ace/mode/json'), false);
+            check('isReorderable: table.csv (no comment syntax)', Outline.isReorderable('table.csv', 'ace/mode/csv'), false);
             check('isReorderable: unsaved file detected as Markdown', Outline.isReorderable('', 'ace/mode/markdown'), true);
-            check('isReorderable: unsaved file detected as JavaScript', Outline.isReorderable('', 'ace/mode/javascript'), false);
+            check('isReorderable: unsaved file detected as JSON', Outline.isReorderable('', 'ace/mode/json'), false);
+
+            // • sections outside Markdown (lot f, #513): the JS example of docs-lab/FAMOUS-MARK-MATRIX.md section 1
+            const JS_SAMPLE = [
+                "import x from 'y';",                 // 0 (preamble, never moves)
+                "// • Connection",                    // 1
+                "function connect() {}",              // 2
+                "// ﹥ Warning: hard-coded timeout",   // 3
+                "const TIMEOUT = 30;",                // 4
+                "// •• Retry",                        // 5
+                "function retry() {}",                // 6
+                "// • Display",                       // 7
+                "function render() {}"                // 8
+            ];
+            function jsEditor(lines) {
+                window.currentFileName = 'app.js';
+                const st = makeEditor(lines);
+                Outline.update(st.editor);
+                return st;
+            }
+            {
+                const st = jsEditor(JS_SAMPLE);
+                const listed = Outline.items.filter(it => Outline.isReorderItem(it)).map(it => it.text).join(" | ");
+                check('JS: Reorder lists the • sections only', listed, "Connection | Retry | Display");
+                const iDisplay = Outline.items.findIndex(it => it.text === 'Display');
+                const iConnection = Outline.items.findIndex(it => it.text === 'Connection');
+                Outline.reorderSection(iDisplay, iConnection);
+                check('JS: drop Display on Connection moves render() above connect(), the ﹥ line stays in Connection',
+                    { text: st.lines.join('\n'), replaced: st.replaced },
+                    { text: ["import x from 'y';", "// • Display", "function render() {}", "// • Connection", "function connect() {}", "// ﹥ Warning: hard-coded timeout", "const TIMEOUT = 30;", "// •• Retry", "function retry() {}"].join('\n'), replaced: 1 });
+            }
+            {
+                const st = jsEditor(JS_SAMPLE);
+                const iRetry = Outline.items.findIndex(it => it.text === 'Retry');
+                const iConnection = Outline.items.findIndex(it => it.text === 'Connection');
+                Outline.reorderSection(iRetry, iConnection);
+                check('JS: drop •• Retry on Connection moves Retry and its code only',
+                    st.lines.join('\n'),
+                    ["import x from 'y';", "// •• Retry", "function retry() {}", "// • Connection", "function connect() {}", "// ﹥ Warning: hard-coded timeout", "const TIMEOUT = 30;", "// • Display", "function render() {}"].join('\n'));
+            }
+            {
+                // Stale Outline (text changed by an Undo before the 800 ms refresh): no move
+                const st = jsEditor(JS_SAMPLE);
+                const iDisplay = Outline.items.findIndex(it => it.text === 'Display');
+                st.lines = JS_SAMPLE.slice(0, 7).concat(["// new line"], JS_SAMPLE.slice(7));
+                Outline.reorderSection(iDisplay, 1);
+                check('stale Outline: the move is refused and the Outline re-read',
+                    { replaced: st.replaced, displayLine: Outline.items.find(it => it.text === 'Display').line },
+                    { replaced: 0, displayLine: 8 });
+            }
+            window.currentFileName = 'sample.md';
 
             // Reorder mode lists Markdown headings only
             check('isReorderItem: the parser items kept in Reorder mode are # A, ## A1, # B',

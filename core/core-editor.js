@@ -27,7 +27,6 @@
  * What it holds:
  *   - Core UI update function (updateUI)
  *   - Ace Editor configuration, instance creation, and event bindings
- *   - Famous Mark YAML fold mode patching
  *   - Startup lifecycle listeners (DOMContentLoaded, workspace-updated)
  *
  * Globals used:
@@ -40,7 +39,6 @@
  *
  * Globals defined:
  *   - updateUI
- *   - isYamlMode, patchFoldMode, nativeRangeOverlapsMarker, syncFoldWidgetCache
  *   - cleanupCursorLocalStorage, applyScreenLayout, getWindowsSignature, sendWindowHeartbeat, renderActiveWindowsList
  *
  * Note: The editor instance (let editor in core-state.js) is initialized in this file.
@@ -177,6 +175,97 @@ function updateUI() {
     }
 }
 
+// ﹥ • SECTION FOLDING (docs-lab/FAMOUS-MARK-MATRIX.md section 3.2, private issue 512)
+// In code and plain text, a • line folds its section, like a # heading in Markdown.
+// The language's own fold mode is wrapped (session.$setFolding, as YamlFolding does): no Ace
+// prototype is patched. A section is FamousMark.sectionRange, the definition the Outline
+// and Reorder use. ﹥ and ° never fold. Markdown and files with no marks keep native folding.
+window.FamousPluginCore = window.FamousPluginCore || {};
+window.FamousPluginCore.SectionFold = {
+    /**
+     * The • section that starts on `row`, by the Outline's file-type rule, or null.
+     * @returns {{level: number}|null}
+     */
+    sectionAt: function(session, row) {
+        const Outline = window.FamousPluginCore.Outline;
+        if (!Outline || typeof Outline.markOnLine !== 'function') return null;
+        const profile = Outline.fileProfile(Outline.currentFilename(), session.$modeId);
+        if (profile !== 'commented' && profile !== 'plain') return null;
+        const useTokens = profile === 'commented' && Outline.fileProfile('', session.$modeId) === 'commented';
+        const mark = Outline.markOnLine(session.getLine(row), profile, useTokens ? session.getTokens(row) : null);
+        return (mark && mark.kind === 'section') ? { level: mark.level } : null;
+    },
+
+    /**
+     * Last row of the • section that starts on `row` (FamousMark.sectionRange).
+     * @returns {number}
+     */
+    sectionEnd: function(session, row, level) {
+        const total = session.getLength();
+        const items = [{ line: row, level: level }];
+        for (let r = row + 1; r < total; r++) {
+            const next = this.sectionAt(session, r);
+            if (next) {
+                items.push({ line: r, level: next.level });
+                if (next.level <= level) break;
+            }
+        }
+        return window.FamousPluginCore.FamousMark.sectionRange(items, 0, total).end;
+    },
+
+    /**
+     * A fold mode that answers for • lines and hands every other line to `base`
+     * (the language's fold mode, or null in text mode). Where the language already folds
+     * a • line with a real range, its fold wins.
+     */
+    wrap: function(base) {
+        const self = this;
+        const nativeRange = (session, style, row) =>
+            (base && base.getFoldWidget(session, style, row) === 'start') ? base.getFoldWidgetRange(session, style, row) : null;
+        return {
+            $famousSectionFold: true,
+            $base: base,
+            foldingStartMarker: base ? base.foldingStartMarker : null,
+            getFoldWidget: function(session, style, row) {
+                const native = base ? base.getFoldWidget(session, style, row) : '';
+                const section = self.sectionAt(session, row);
+                if (!section) return native;
+                if (native === 'start' && nativeRange(session, style, row)) return native;
+                return self.sectionEnd(session, row, section.level) > row ? 'start' : native;
+            },
+            getFoldWidgetRange: function(session, style, row) {
+                const section = self.sectionAt(session, row);
+                const native = base ? nativeRange(session, style, row) : null;
+                if (!section || native) {
+                    return base ? base.getFoldWidgetRange(session, style, row) : null;
+                }
+                const end = self.sectionEnd(session, row, section.level);
+                if (end <= row) return null;
+                const Range = ace.require('ace/range').Range;
+                return new Range(row, session.getLine(row).length, end, session.getLine(end).length);
+            }
+        };
+    },
+
+    /** Wraps the session's current fold mode once (no double wrap). */
+    apply: function(session) {
+        if (!session || typeof session.$setFolding !== 'function') return;
+        const current = session.$foldMode;
+        if (current && current.$famousSectionFold) return;
+        session.$setFolding(this.wrap(current || null));
+    },
+
+    /**
+     * Re-wraps after every mode change. Deferred one tick so a fold mode set in the
+     * setMode callback (YamlFolding) is the one wrapped.
+     */
+    install: function(editor) {
+        if (!editor) return;
+        this.apply(editor.session);
+        editor.on('changeMode', () => setTimeout(() => this.apply(editor.session), 0));
+    }
+};
+
 if (typeof ace !== 'undefined') {
     ace.config.set('basePath', 'vendor/ace-builds');
     ace.config.set('modePath', 'vendor/ace-builds');
@@ -191,6 +280,7 @@ if (typeof ace !== 'undefined') {
 
     editor.setTheme("ace/theme/famouskai");
     editor.session.setMode("ace/mode/text");
+    window.FamousPluginCore.SectionFold.install(editor);
 
     editor.setOptions({
         fontSize: "18px",
@@ -226,374 +316,8 @@ if (typeof ace !== 'undefined') {
         }
     }
 
-    // ============================================================================
-    // FAMOUS MARK UNIVERSAL FOLDING (U+FE65 "﹥") - STABILIZED PATCH (v8)
-    // ----------------------------------------------------------------------------
-    // Drop-in replacement for the v7 block. Place this single IIFE call right
-    // after editor.session.setMode('ace/mode/text') and editor.setOptions(...),
-    // BEFORE editor.session.setUseWorker(false).
-    //
-    // CHANGES SINCE v7 (v8 - stabilization release):
-    //
-    // 1. YAML EXCLUSION (deliberate scope reduction, not a bug fix):
-    //    All test scenarios are conclusive EXCEPT YAML, which still shows
-    //    intermittent/unstable behavior under real-world usage. To ship a
-    //    reliable v8 now, Famous Mark folding is explicitly DISABLED for any
-    //    session whose current language mode id contains "yaml". Native YAML
-    //    folding is left completely untouched (never patched, never wrapped),
-    //    exactly as if this whole system did not exist for that mode. This is a
-    //    deliberate, explicit early-exit - not a silent failure - and is fully
-    //    reversible by removing the isYamlMode() guard once YAML is revisited.
-    //    See the separate YAML handoff document for the open investigation.
-    //
-    // 2. LOG NOISE REDUCTION: the two highest-frequency trace lines
-    //    ("[FoldPatch] Found on row ..." and "[FoldPatch] Range triggered on
-    //    row ...") fire on almost every keystroke, scroll and redraw and were
-    //    flooding the console during daily use. They are commented out by
-    //    default (search for "UNCOMMENT FOR DEBUG" below to re-enable them) but
-    //    intentionally left in the code, not deleted, so any future
-    //    investigation can turn them back on with a one-line change. All other
-    //    trace logs (patch lifecycle, cache sync, native suppression, mode
-    //    changes, errors) remain active permanently.
-    //
-    // No other logic changed since v7: STEP 5's real session.$setFolding() fix
-    // (fixes brand-new/.txt documents) and the removal of the v6 "safety net"
-    // click handler (fixes the fold-then-instant-unfold race) are both kept as
-    // validated by the latest test round (JS/CSS/HTML/.txt/.log/new documents
-    // all conclusive).
-    // ============================================================================
-    (function initFamousMarkFolding(editor) {
-        if (!editor || editor.session.isFamousFoldPatchInit) {
-            console.log('[FoldPatch] Already initialized for this session, skipping.');
-            return;
-        }
-        editor.session.isFamousFoldPatchInit = true;
-
-        console.log('[FoldPatch] 0. Initializing Famous Mark universal folding system (v8).');
-
-        const Range = ace.require('ace/range').Range;
-        // U+FE65 "﹥" (Famous Arrow) + U+2022 "•" (Magic Dot) + U+00B0 "°" (Flying Bubble)
-        // Read from the single source of truth (ext-famous-core.js) instead of a local
-        // literal, so ACE folding and Outline bookmarking can never drift apart again.
-        // Defensive fallback preserved in case ext-famous-core.js failed to load
-        // (e.g. offline PWA with a partially corrupted cache).
-        const famousRegex = (window.FamousPluginCore && window.FamousPluginCore.FamousMark)
-            ? window.FamousPluginCore.FamousMark.regex
-            : /^\s*[/<*!\-#%;]*\s*[﹥•°]/;
-
-        // Returns true if the CURRENT session language is YAML. Famous Mark
-        // folding is intentionally disabled for this mode (see header comment).
-        function isYamlMode() {
-            const modeId = editor.session.getMode() && editor.session.getMode().$id;
-            return !!modeId && modeId.indexOf('yaml') !== -1;
-        }
-
-        // ------------------------------------------------------------------------
-        // STEP 1 - Universal Fold Support Extension for modes WITHOUT native
-        // folding (ace/mode/text: .txt files and brand new unsaved documents).
-        // Unaffected by the YAML exclusion: YAML always has its own native
-        // foldingRules already, so this injection never applies to it anyway.
-        // ------------------------------------------------------------------------
-        try {
-            const BaseFoldMode = ace.require('ace/mode/folding/fold_mode').FoldMode;
-            const TextMode = ace.require('ace/mode/text').Mode;
-            if (!TextMode.prototype.foldingRules) {
-                console.log('[FoldPatch] 1. Injecting base FoldMode into ace/mode/text prototype.');
-                const fallbackFoldMode = new BaseFoldMode();
-                // Tells patchFoldMode() to NEVER delegate to the native
-                // implementation for this instance: it has no real rules
-                // (foldingStartMarker/foldingStopMarker are null), delegating
-                // would throw "Cannot read properties of null (reading 'test')".
-                fallbackFoldMode.isFamousBaseFallback = true;
-                TextMode.prototype.foldingRules = fallbackFoldMode;
-            } else {
-                console.log('[FoldPatch] 1. ace/mode/text already has foldingRules, skipping injection.');
-            }
-        } catch (e) {
-            console.log('[FoldPatch] ERROR while injecting text-mode folding support.', e);
-        }
-
-        // ------------------------------------------------------------------------
-        // STEP 2 - Core patch: wrap getFoldWidget/getFoldWidgetRange of any
-        // foldMode object to recognize the Famous Mark, falling back to the
-        // native implementation for every other line (except on the injected
-        // empty BaseFoldMode, which has no native implementation to fall back to).
-        // NEVER called for YAML foldMode objects (see the $foldMode trap below).
-        // ------------------------------------------------------------------------
-        function patchFoldMode(foldMode) {
-            if (!foldMode || foldMode.isFamousPatched) {
-                return;
-            }
-            console.log('[FoldPatch] 2. Patching new foldMode instance.');
-            foldMode.isFamousPatched = true;
-
-            const originalGetFoldWidget = foldMode.getFoldWidget;
-            const originalGetFoldWidgetRange = foldMode.getFoldWidgetRange;
-            const canDelegate = !foldMode.isFamousBaseFallback;
-
-            // Does the native fold range for this row swallow a Famous Mark row?
-            // Anti-recursion: some native modes call "this.getFoldWidget(...)"
-            // from inside their own getFoldWidgetRange. We temporarily restore
-            // the native getFoldWidget during the probe so any such internal
-            // call never re-enters our patched version.
-            function nativeRangeOverlapsMarker(session, foldStyle, row) {
-                if (!canDelegate || !originalGetFoldWidgetRange) {
-                    return false;
-                }
-                const patchedGetFoldWidget = foldMode.getFoldWidget;
-                foldMode.getFoldWidget = originalGetFoldWidget;
-                try {
-                    const nativeRange = originalGetFoldWidgetRange.call(foldMode, session, foldStyle, row);
-                    if (!nativeRange) {
-                        return false;
-                    }
-                    for (let r = nativeRange.start.row; r <= nativeRange.end.row; r++) {
-                        const l = session.getLine(r);
-                        if (l && famousRegex.test(l)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                } catch (e) {
-                    console.log('[FoldPatch] Error probing native range overlap, ignoring.', e);
-                    return false;
-                } finally {
-                    foldMode.getFoldWidget = patchedGetFoldWidget;
-                }
-            }
-
-            foldMode.getFoldWidget = function(session, foldStyle, row) {
-                const line = session.getLine(row);
-                if (line && famousRegex.test(line)) {
-                    // UNCOMMENT FOR DEBUG - very high frequency (fires on nearly
-                    // every redraw/keystroke), kept disabled by default since v8.
-                    // console.log('[FoldPatch] Found on row ' + row);
-                    return 'start';
-                }
-                if (canDelegate && originalGetFoldWidget) {
-                    try {
-                        const widget = originalGetFoldWidget.call(this, session, foldStyle, row);
-                        if (widget === 'start' && nativeRangeOverlapsMarker(session, foldStyle, row)) {
-                            console.log('[FoldPatch] Suppressing native fold widget on row ' + row + ' (overlaps a Famous Mark line).');
-                            return '';
-                        }
-                        return widget;
-                    } catch (e) {
-                        console.log('[FoldPatch] originalGetFoldWidget threw, ignoring.', e);
-                        return '';
-                    }
-                }
-                return '';
-            };
-
-            foldMode.getFoldWidgetRange = function(session, foldStyle, row) {
-                const line = session.getLine(row);
-                if (line && famousRegex.test(line)) {
-                    // UNCOMMENT FOR DEBUG - very high frequency (fires on nearly
-                    // every redraw/keystroke), kept disabled by default since v8.
-                    // console.log('[FoldPatch] Range triggered on row ' + row);
-                    const startRow = row;
-                    const startColumn = line.length;
-                    const maxRow = session.getLength();
-                    let endRow = startRow;
-                    for (let i = startRow + 1; i < maxRow; i++) {
-                        if (famousRegex.test(session.getLine(i))) {
-                            break;
-                        }
-                        endRow = i;
-                    }
-                    if (endRow > startRow) {
-                        const endColumn = session.getLine(endRow).length;
-                        return new Range(startRow, startColumn, endRow, endColumn);
-                    }
-                    return null;
-                }
-                if (canDelegate && originalGetFoldWidgetRange) {
-                    try {
-                        if (nativeRangeOverlapsMarker(session, foldStyle, row)) {
-                            console.log('[FoldPatch] Suppressing native fold range on row ' + row + ' (overlaps a Famous Mark line).');
-                            return null;
-                        }
-                        return originalGetFoldWidgetRange.call(this, session, foldStyle, row);
-                    } catch (e) {
-                        console.log('[FoldPatch] originalGetFoldWidgetRange threw, ignoring.', e);
-                        return null;
-                    }
-                }
-                return null;
-            };
-        }
-
-        // ------------------------------------------------------------------------
-        // STEP 3 - Synchronously repopulate session.foldWidgets for every Famous
-        // Mark row so Ace's native gutterclick gate always passes:
-        //   session.foldWidgets && session.foldWidgets[row] && onFoldWidgetClick()
-        // Never called for YAML sessions (see the $foldMode trap below).
-        // ------------------------------------------------------------------------
-        function syncFoldWidgetCache(session) {
-            if (!session || typeof session.getFoldWidget !== 'function') {
-                console.log('[FoldPatch] syncFoldWidgetCache: session.getFoldWidget not wired yet, skipping.');
-                return;
-            }
-            if (!session.foldWidgets) {
-                session.foldWidgets = [];
-            }
-            const len = session.getLength();
-            let synced = 0;
-            for (let row = 0; row < len; row++) {
-                const line = session.getLine(row);
-                if (line && famousRegex.test(line)) {
-                    try {
-                        session.foldWidgets[row] = session.getFoldWidget(row);
-                        synced++;
-                    } catch (e) {
-                        console.log('[FoldPatch] Error syncing foldWidgets cache for row ' + row, e);
-                    }
-                }
-            }
-            if (synced > 0) {
-                console.log('[FoldPatch] 5. foldWidgets cache synced for ' + synced + ' Famous Mark row(s).');
-            }
-        }
-
-        // ------------------------------------------------------------------------
-        // STEP 4 - Trap session.$foldMode so every foldMode Ace assigns (now or
-        // later, for any language, including redundant reassignments) is patched
-        // and the widget cache is resynced immediately and synchronously.
-        //
-        // YAML EXCLUSION: if the mode being assigned is YAML, we deliberately
-        // skip patchFoldMode() and syncFoldWidgetCache() entirely. The native
-        // foldMode object is stored as-is and left 100% untouched, so YAML
-        // folding behaves exactly as stock Ace - Famous Mark folding simply does
-        // not exist for this language for now.
-        // ------------------------------------------------------------------------
-        let internalFoldMode = editor.session.$foldMode;
-        if (internalFoldMode && !isYamlMode()) {
-            patchFoldMode(internalFoldMode);
-        }
-        let lastLanguageModeId = editor.session.getMode() && editor.session.getMode().$id;
-
-        Object.defineProperty(editor.session, '$foldMode', {
-            get: function() {
-                return internalFoldMode;
-            },
-            set: function(newMode) {
-                internalFoldMode = newMode;
-
-                const currentLanguageModeId = editor.session.getMode() && editor.session.getMode().$id;
-                const isYaml = currentLanguageModeId && currentLanguageModeId.indexOf('yaml') !== -1;
-                const isRedundantReassignment = currentLanguageModeId && currentLanguageModeId === lastLanguageModeId;
-                lastLanguageModeId = currentLanguageModeId;
-
-                if (isYaml) {
-                    console.log('[FoldPatch] YAML mode detected - skipping Famous Mark folding entirely, native YAML folding only.');
-                    return;
-                }
-
-                console.log('[FoldPatch] 3. Ace assigned a new $foldMode. Intercepting.');
-                if (newMode) {
-                    patchFoldMode(newMode);
-                }
-
-                // Ace's own $setFolding() just reset session.foldWidgets = []
-                // for this new object instance, REGARDLESS of whether the
-                // language actually changed. Resync our rows synchronously,
-                // right now, so clicks never race the cache.
-                syncFoldWidgetCache(editor.session);
-
-                if (isRedundantReassignment) {
-                    console.log('[FoldPatch] Redundant $foldMode reassignment for ' + currentLanguageModeId + ', skipping disruptive tokenizer restart.');
-                    return;
-                }
-
-                // Real language change: let the tokenizer redraw normally, then
-                // resync again once it settles (defensive double-check).
-                setTimeout(function() {
-                    try {
-                        editor.session.bgTokenizer.start(0);
-                    } catch (e) {
-                        console.log('[FoldPatch] bgTokenizer restart failed, ignoring.', e);
-                    }
-                    setTimeout(function() {
-                        syncFoldWidgetCache(editor.session);
-                    }, 20);
-                }, 10);
-            }
-        });
-
-        // Keep the cache fresh as the user types (adds/removes Famous Marks).
-        // No-ops harmlessly for YAML sessions since syncFoldWidgetCache only
-        // touches Famous Mark rows, and those rows were never patched for YAML
-        // in the first place (session.getFoldWidget still points to the
-        // untouched native YAML implementation).
-        let changeSyncTimer = null;
-        editor.session.on('change', function() {
-            if (isYamlMode()) {
-                return;
-            }
-            clearTimeout(changeSyncTimer);
-            changeSyncTimer = setTimeout(function() {
-                syncFoldWidgetCache(editor.session);
-            }, 150);
-        });
-
-        // ------------------------------------------------------------------------
-        // STEP 5 - Force the currently active session to pick up folding right
-        // now (covers a blank new document loaded in text mode BEFORE our patch
-        // to TextMode.prototype.foldingRules ran). Skipped entirely for YAML.
-        //
-        // Preference order:
-        //   1. session.setFolding(rules)   - public API, if present.
-        //   2. session.$setFolding(rules)  - REAL internal API used by Ace's own
-        //      setMode()/$onChangeMode() pipeline. Performs the full wiring:
-        //      resets foldWidgets, and (re)binds session.getFoldWidget /
-        //      session.getFoldWidgetRange to the new foldMode. Present in every
-        //      Ace build, including this one (setFolding without "$" is the one
-        //      missing here).
-        //   3. Last-resort manual replication, only if neither API exists.
-        // ------------------------------------------------------------------------
-        try {
-            if (isYamlMode()) {
-                console.log('[FoldPatch] 4. Initial mode is YAML, skipping forced fold re-application.');
-            } else {
-                const currentMode = editor.session.getMode();
-                if (currentMode && currentMode.foldingRules) {
-                    console.log('[FoldPatch] 4. Forcing session to re-apply folding for the currently active mode.');
-                    if (typeof editor.session.setFolding === 'function') {
-                        editor.session.setFolding(currentMode.foldingRules);
-                    } else if (typeof editor.session.$setFolding === 'function') {
-                        console.log('[FoldPatch] 4b. Using internal session.$setFolding (real Ace wiring) instead of the missing public setFolding().');
-                        editor.session.$setFolding(currentMode.foldingRules);
-                    } else {
-                        console.log('[FoldPatch] 4c. Neither setFolding nor $setFolding available, falling back to manual wiring.');
-                        editor.session.$foldMode = currentMode.foldingRules;
-                        const foldStyle = editor.session.$foldStyle || 'markbegin';
-                        editor.session.foldWidgets = [];
-                        editor.session.getFoldWidget = function(row) {
-                            return currentMode.foldingRules.getFoldWidget(editor.session, foldStyle, row);
-                        };
-                        editor.session.getFoldWidgetRange = function(row) {
-                            return currentMode.foldingRules.getFoldWidgetRange(editor.session, foldStyle, row);
-                        };
-                    }
-                    if (editor.session.bgTokenizer) {
-                        editor.session.bgTokenizer.start(0);
-                    }
-                    setTimeout(function() {
-                        syncFoldWidgetCache(editor.session);
-                        if (editor.renderer) {
-                            editor.renderer.updateFull(true);
-                        }
-                    }, 30);
-                }
-            }
-        } catch (e) {
-            console.log('[FoldPatch] ERROR while forcing initial fold support.', e);
-        }
-
-        console.log('[FoldPatch] 6. Famous Mark universal folding system ready (YAML excluded by design).');
-    })(editor);
-    // ------------------------------------------------------------------------
+    // Famous Mark folding was removed in 0.2.2 (Denys's decision, 2026-11-13):
+    // folding is Ace's native folding only. Famous Marks stay Outline bookmarks.
 
     editor.session.setUseWorker(false);
 

@@ -109,6 +109,7 @@ const URLS_TO_CACHE = [
     './plugins/ext-sidebar.js',
     './plugins/ext-sidebar-demo.js',
     './plugins/ext-famous-core.js',
+    './plugins/ext-outline-json.js',
     './plugins/ext-outline.js',
     './plugins/ext-snippets.js',
     './plugins/ext-export-html.js',

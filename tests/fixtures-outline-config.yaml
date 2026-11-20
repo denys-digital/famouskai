@@ -1,0 +1,5 @@
+# Settings
+# ﹥ yaml point
+server:
+  port: 8080
+key: "﹥ not a mark"

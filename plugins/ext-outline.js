@@ -125,8 +125,16 @@ window.FamousPluginCore.Outline = {
         }
     },
 
+    /**
+     * Name of the file in the editor, empty for an unsaved new file.
+     * @returns {string}
+     */
+    currentFilename: function() {
+        return (typeof currentFileName !== 'undefined' && currentFileName) ? currentFileName : (window.currentFileName || '');
+    },
+
     updateFilterButtons: function() {
-        let filename = (typeof currentFileName !== 'undefined' && currentFileName) ? currentFileName : (window.currentFileName || '');
+        let filename = this.currentFilename();
         let ext = filename ? filename.split('.').pop().toLowerCase() : '';
         if (!ext && this.editorInstance && this.editorInstance.container) {
             ext = (this.editorInstance.container.getAttribute('data-lang') || '').toLowerCase();
@@ -141,16 +149,26 @@ window.FamousPluginCore.Outline = {
         if (btnXml) btnXml.style.display = isXmlOrHtml ? 'inline-block' : 'none';
         if (btnJs) btnJs.style.display = isJsOrHtml ? 'inline-block' : 'none';
 
-        // Reorder is Markdown only: in HTML, JS or CSS an outline item has no clean block
-        // (no closing tag or brace), so a move would break the code.
+        // Markdown: '#' badge (headings only) shown, '•' badge hidden ('•' is a plain bullet
+        // there, docs-lab/FAMOUS-MARK-MATRIX.md section 2). The file type comes from FamousMark.profile.
+        const session0 = this.editorInstance && this.editorInstance.session;
+        const fileProfile = this.fileProfile(filename, session0 && session0.$modeId);
+        const isMarkdown = fileProfile === 'markdown';
+        const hasMarks = fileProfile !== 'none';
+        const btnMd = document.getElementById('btn-outline-filter-md');
+        const btnDot = document.getElementById('btn-outline-filter-dot');
+        // A file with no comment syntax (JSON, CSV, log) has no marks: no mark badges (matrix section 2).
+        document.querySelectorAll('#outline-mark-filters .fold-btn[data-mark-group="marks"]').forEach(btn => {
+            btn.style.display = hasMarks ? '' : 'none';
+        });
+        if (btnMd) btnMd.style.display = isMarkdown ? 'inline-block' : 'none';
+        if (btnDot) btnDot.style.display = (isMarkdown || !hasMarks) ? 'none' : 'inline-block';
+
+        // Reorder moves sections: # headings in Markdown, • sections in code and plain text.
+        // Files with no comment syntax have none. Whether the file holds sections at all is
+        // checked once the items are read (updateHeadingTools).
         const session = this.editorInstance && this.editorInstance.session;
-        const canReorder = this.isReorderable(filename, session && session.$modeId);
-        const reorderBtn = document.getElementById('btn-outline-reorder-mode');
-        if (reorderBtn) reorderBtn.style.display = canReorder ? '' : 'none';
-        if (!canReorder && this.isReorderMode) {
-            this.isReorderMode = false;
-            if (reorderBtn) reorderBtn.classList.remove('active-filter');
-        }
+        this.setReorderOffered(this.isReorderable(filename, session && session.$modeId));
 
         if (this.activeMarkFilter === '</>' && !isXmlOrHtml) {
             this.resetFilter();
@@ -158,35 +176,87 @@ window.FamousPluginCore.Outline = {
         if ((this.activeMarkFilter === 'js' || this.activeMarkFilter === 'JS') && !isJsOrHtml) {
             this.resetFilter();
         }
+        if ((this.activeMarkFilter === '#' && !isMarkdown) || (this.activeMarkFilter === '•' && isMarkdown)
+            || (!hasMarks && this.activeMarkFilter !== 'all')) {
+            this.resetFilter();
+        }
     },
 
     /**
-     * Whether Reorder mode is offered for the current document.
-     * Only Markdown has a clean block (a heading owns its section). A saved file is judged
-     * by its extension; an unsaved file without a name by its detected Ace mode.
+     * The file's Famous Mark profile, read from the single source of truth
+     * (FamousMark.profile in ext-famous-core.js). Falls back to 'plain' if that file failed to load.
+     *
+     * @param {string} filename - current file name, empty for an unsaved new file
+     * @param {string} [modeId] - Ace mode id of the session
+     * @returns {string} 'markdown', 'commented', 'plain' or 'none'
+     */
+    fileProfile: function(filename, modeId) {
+        const FM = window.FamousPluginCore && window.FamousPluginCore.FamousMark;
+        return (FM && typeof FM.profile === 'function') ? FM.profile(filename, modeId) : 'plain';
+    },
+
+    /**
+     * Sets item.depth on every outline item: the indent step of the tree.
+     * A section (an item with a numeric level: Markdown heading, • line, JSON key) of level N
+     * has depth N - 1. Every other item (Famous Mark, TODO, @,
+     * code symbol) is a leaf of the section that holds it: under a heading of level N it has
+     * depth N (one step to the right of that heading); before the first heading, depth 0.
+     * docs-lab/FAMOUS-MARK-MATRIX.md section 3.1.
+     *
+     * @param {Array<{type: string, level?: number}>} items - outline items, in line order
+     * @returns {Array} the same array, each item with a numeric depth
+     */
+    assignDepths: function(items) {
+        let sectionLevel = 0;
+        (items || []).forEach(item => {
+            if (typeof item.level === 'number') {
+                sectionLevel = item.level;
+                item.depth = item.level - 1;
+            } else {
+                item.depth = sectionLevel;
+            }
+        });
+        return items;
+    },
+
+    /**
+     * Shows or hides the Reorder button; hiding it also leaves Reorder mode.
+     * @param {boolean} offered
+     */
+    setReorderOffered: function(offered) {
+        const reorderBtn = document.getElementById('btn-outline-reorder-mode');
+        if (reorderBtn) reorderBtn.style.display = offered ? '' : 'none';
+        if (!offered && this.isReorderMode) {
+            this.isReorderMode = false;
+            if (reorderBtn) reorderBtn.classList.remove('active-filter');
+        }
+    },
+
+    /**
+     * Whether Reorder mode is offered for the current document (matrix section 3.3).
+     * A section owns a clean block: a # heading in Markdown, a • section in code and plain
+     * text (the user decides where code blocks end by placing the marks). Files with no
+     * comment syntax (JSON, CSV) have no sections. A saved file is judged by its extension,
+     * an unsaved one by its Ace mode (FamousMark.profile).
      *
      * @param {string} filename - current file name, empty for an unsaved new file
      * @param {string} [modeId] - Ace mode id of the session, e.g. 'ace/mode/markdown'
      * @returns {boolean}
      */
     isReorderable: function(filename, modeId) {
-        if (filename) {
-            const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
-            return ext === 'md' || ext === 'markdown';
-        }
-        return modeId === 'ace/mode/markdown';
+        return this.fileProfile(filename, modeId) !== 'none';
     },
 
     /**
-     * Whether an outline item is listed (and draggable) in Reorder mode.
-     * Reorder is a Markdown heading reorder: Famous Mark, TODO and @ lines are not
-     * listed, they move with the heading that owns them (see sectionRange).
+     * Whether an outline item is listed (and draggable) in Reorder mode: a section, i.e. a
+     * Markdown heading or a • line. ﹥, °, TODO, @ lines and code symbols are not listed,
+     * they move with the section that holds them (see sectionRange).
      *
-     * @param {{type: string}} item - outline item
+     * @param {{type: string, level?: number}} item - outline item
      * @returns {boolean}
      */
     isReorderItem: function(item) {
-        return !!item && item.type === 'md';
+        return !!item && (item.type === 'md' || (item.type === 'famous' && typeof item.level === 'number'));
     },
 
     update: function(editor) {
@@ -197,9 +267,36 @@ window.FamousPluginCore.Outline = {
         if (sidebar && sidebar.style.display === "none") return;
 
         this.updateFilterButtons();
+        this.hookModeChange(editor);
 
         this.items = [];
         const lines = editor.session.getDocument().getAllLines();
+        // Text the items were read from: Reorder refuses to move with items older than the text
+        this.itemsText = lines.join('\n');
+        const modeId = editor.session.$modeId;
+        const profile = this.fileProfile(this.currentFilename(), modeId);
+        this.profile = profile;
+
+        // No comment syntax (JSON, CSV, log): no marks, no headings (matrix section 2).
+        // JSON lists the keys of its first two object levels instead (section 3.1).
+        if (profile === 'none') {
+            const JO = window.FamousPluginCore && window.FamousPluginCore.JsonOutline;
+            const isJson = /\.json$/i.test(this.currentFilename()) || (!this.currentFilename() && modeId === 'ace/mode/json');
+            if (isJson && JO && typeof JO.outline === 'function') {
+                this.items = JO.outline(lines.join('\n')).map(k => ({ type: 'json', level: k.level, text: k.text, line: k.line }));
+            }
+            this.assignDepths(this.items);
+            this.updateHeadingTools(profile);
+            this.render();
+            return;
+        }
+
+        // In a code file a mark counts only inside a comment, as the syntax highlighter sees it.
+        // If the highlighter is not loaded for this file type (text mode, mode not switched yet),
+        // the plain rule applies: mark at the start of the line.
+        const useTokens = profile === 'commented'
+            && this.fileProfile('', modeId) === 'commented'
+            && typeof editor.session.getTokens === 'function';
 
         // Standard Document Regexes
         const regexMD = /^(#{1,6})\s+(.*)$/;
@@ -209,21 +306,6 @@ window.FamousPluginCore.Outline = {
         const regexJSArrow = /^\s*(?:(?:const|let|var)\s+)?([a-zA-Z0-9_-]+)\s*[:=]\s*(?:async\s+)?(?:\([^)]*\)|[a-zA-Z0-9_]+)?\s*=>/;
         const regexJSObjMethod = /^\s*([a-zA-Z0-9_]+)\s*:\s*(?:async\s+)?function\s*\(/;
 
-        // Semantic Bookmarks Regexes
-        const regexTODO = /^(?:\s*\/\/\s*|\s*<!--\s*)(TODO|@)(.*)(?:-->)?/i;
-        
-        // Universal Famous Marks: "Famous arrow" (U+FE65), "Magic dot" (U+2022), "Flying bubble" (U+00B0)
-        // Read from the single source of truth (ext-famous-core.js) instead of a local
-        // literal, so Outline bookmarking and ACE folding can never drift apart again.
-        // Defensive fallback preserved verbatim in case ext-famous-core.js failed to load.
-        const regexFamous = (window.FamousPluginCore && window.FamousPluginCore.FamousMark)
-            ? window.FamousPluginCore.FamousMark.regex
-            : /^\s*[/<*!\-#%;]*\s*[﹥•°]\s*(.*?)\s*(?:-->|\*\/)?\s/;
-
-        const famousChars = (window.FamousPluginCore && window.FamousPluginCore.FamousMark && window.FamousPluginCore.FamousMark.CHAR_CLASS)
-            ? window.FamousPluginCore.FamousMark.CHAR_CLASS
-            : '﹥•°';
-            
         const ignoredTags = [
             'div', 'span', 'p', 'a', 'button', 'main', 'meta', 'title',
             'ul', 'li', 'nav', 'header', 'footer', 'br', 'hr', 'img',
@@ -237,31 +319,31 @@ window.FamousPluginCore.Outline = {
         let consecutiveScriptSrc = false;
 
         lines.forEach((line, index) => {
-            if (line.trim().startsWith("```")) { inCodeBlock = !inCodeBlock; return; }
-            if (inCodeBlock) return;
+            // Fenced code blocks hide marks and headings in Markdown only
+            if (profile === 'markdown') {
+                const fence = line.trim();
+                if (fence.startsWith("```") || fence.startsWith("~~~")) { inCodeBlock = !inCodeBlock; return; }
+                if (inCodeBlock) return;
+            }
             if (line.match(/^\s*<\//)) { consecutiveScriptSrc = false; return; }
 
             // 1. Process Custom Famous Marks FIRST (Universal override)
-            const matchFamous = line.match(regexFamous);
-            if (matchFamous) {
-                const markChar = line.split('').find(ch => famousChars.includes(ch)) || '';
-                this.items.push({
-                    type: 'famous', 
-                    mark: markChar,
-                    text: matchFamous[1], 
-                    line: index
-                });
+            const mark = this.markOnLine(line, profile, useTokens ? editor.session.getTokens(index) : null);
+            if (mark) {
+                const famousItem = { type: 'famous', mark: mark.mark, text: mark.label, line: index };
+                // A • line opens a section of level 1 to 4, like a # heading (matrix section 1)
+                if (mark.kind === 'section') famousItem.level = mark.level;
+                this.items.push(famousItem);
                 consecutiveScriptSrc = false;
                 return;
             }
 
             // 2. Process Standard Semantic Bookmarks (TODO / @)
-            const matchTODO = line.match(regexTODO);
-            if (matchTODO) {
-                const isTodo = matchTODO[1].toUpperCase() === 'TODO';
+            const todo = this.todoOnLine(line, profile, useTokens ? editor.session.getTokens(index) : null);
+            if (todo) {
                 this.items.push({
-                    type: isTodo ? 'todo' : 'at-mark', 
-                    text: `${matchTODO[1]}${matchTODO[2]}`, 
+                    type: todo.kind,
+                    text: todo.text,
                     line: index
                 });
                 consecutiveScriptSrc = false;
@@ -269,7 +351,8 @@ window.FamousPluginCore.Outline = {
             }
 
             // 3. Process Standard Code Structure
-            const matchMD = line.match(regexMD);
+            // '#' is a heading in Markdown only ('# comment' in YAML or Python is not one)
+            const matchMD = profile === 'markdown' ? line.match(regexMD) : null;
             const matchXML = line.match(regexXML);
             const matchJSFunc = line.match(regexJSFunc);
             const matchJSClass = line.match(regexJSClass);
@@ -309,7 +392,108 @@ window.FamousPluginCore.Outline = {
             }
         });
 
+        this.assignDepths(this.items);
+        this.updateHeadingTools(profile);
         this.render();
+    },
+
+    /**
+     * Shows the heading tools (+ H1-H4, -# +#) where they have something to act on:
+     * Markdown files, and code or plain-text files that hold • sections (matrix section 3.4).
+     *
+     * @param {string} profile - FamousMark.profile of the current file
+     */
+    updateHeadingTools: function(profile) {
+        const foldButtons = document.getElementById("markdown-fold-buttons");
+        const hasDotSections = this.items.some(i => i.type === 'famous' && typeof i.level === 'number');
+        if (foldButtons) foldButtons.style.display = (profile === 'markdown' || hasDotSections) ? "flex" : "none";
+        // Outside Markdown, Reorder needs • sections to move
+        if (profile !== 'markdown') this.setReorderOffered(profile !== 'none' && hasDotSections);
+    },
+
+    /**
+     * The Famous Mark on one line, by the file-type rule of docs-lab/FAMOUS-MARK-MATRIX.md section 2.
+     * - markdown: ﹥ or ° at the start of the line or right after '<!--'; • is a plain bullet.
+     * - commented: the line's first non-blank token must be a comment token (Ace tokens).
+     *   Without tokens (no highlighter), the plain rule applies.
+     * - plain: a mark at the start of the line, after the tolerated comment prefixes.
+     * - none: never a mark.
+     *
+     * @param {string} line - line text
+     * @param {string} profile - FamousMark.profile result
+     * @param {Array<{type: string, value: string}>|null} [tokens] - Ace tokens of the line (commented profile)
+     * @returns {{kind: string, mark: string, level: number, label: string}|null}
+     */
+    markOnLine: function(line, profile, tokens) {
+        const FM = window.FamousPluginCore && window.FamousPluginCore.FamousMark;
+        if (!FM || typeof FM.parse !== 'function' || profile === 'none') return null;
+
+        if (profile === 'markdown') {
+            if (!/^\s*(?:<!--\s*)?[﹥°]/.test(line)) return null;
+            const md = FM.parse(line);
+            return (md && md.kind !== 'section') ? md : null;
+        }
+
+        if (profile === 'commented' && Array.isArray(tokens)) {
+            const first = tokens.find(t => t.value && t.value.trim() !== '');
+            if (!first || !/comment/.test(first.type)) return null;
+        }
+        return FM.parse(line);
+    },
+
+    /**
+     * The TODO or @ bookmark on one line, by the same file-type rule as the Famous Marks
+     * (docs-lab/FAMOUS-MARK-MATRIX.md section 2):
+     * - markdown: at the start of the line or right after '<!--' ('//' is not a comment in Markdown);
+     * - commented: in a comment only (first non-blank Ace token is a comment), after its opener
+     *   (// /* * <!-- # % ; --); without tokens, the plain rule applies;
+     * - plain: at the start of the line, after the same optional openers;
+     * - none: never.
+     * TODO must be a whole word (TODO, TODO:, todo), not the start of 'TODOs'.
+     *
+     * @param {string} line - line text
+     * @param {string} profile - FamousMark.profile result
+     * @param {Array<{type: string, value: string}>|null} [tokens] - Ace tokens of the line (commented profile)
+     * @returns {{kind: string, text: string}|null} kind 'todo' or 'at-mark', text as listed (e.g. 'TODO: x')
+     */
+    todoOnLine: function(line, profile, tokens) {
+        if (profile === 'none' || typeof line !== 'string') return null;
+        let m;
+        if (profile === 'markdown') {
+            m = line.match(/^\s*(?:<!--\s*)?(TODO\b|@)(.*?)\s*(?:-->)?\s*$/i);
+        } else {
+            if (profile === 'commented' && Array.isArray(tokens)) {
+                const first = tokens.find(t => t.value && t.value.trim() !== '');
+                if (!first || !/comment/.test(first.type)) return null;
+            }
+            m = line.match(/^\s*(?:\/\/+|\/\*+|\*|<!--|#+|%+|;+|--)?\s*(TODO\b|@)(.*?)\s*(?:-->|\*\/)?\s*$/i);
+        }
+        if (!m) return null;
+        return { kind: m[1].toUpperCase() === 'TODO' ? 'todo' : 'at-mark', text: m[1] + m[2] };
+    },
+
+    /**
+     * Re-reads the Outline when the editor's language mode changes. On file open the Outline
+     * is read before the new mode is set (core-file.js), so the file-type rule needs a second pass.
+     */
+    hookModeChange: function(editor) {
+        if (!editor || this._modeHookedOn === editor || typeof editor.on !== 'function') return;
+        this._modeHookedOn = editor;
+        editor.on('changeMode', () => this.update(editor));
+    },
+
+    /**
+     * Text shown for an Outline item. A Famous Mark item shows its mark, so its meaning reads
+     * at a glance: • •• ••• for a section level, ﹥ as a pointer, ° like the @ of a mention.
+     * The label alone stays in item.text (search filter, Copy outline).
+     *
+     * @param {{type: string, text: string, mark?: string, level?: number}} item
+     * @returns {string}
+     */
+    displayText: function(item) {
+        if (!item || item.type !== 'famous' || !item.mark) return item ? item.text : '';
+        const marks = typeof item.level === 'number' ? item.mark.repeat(item.level) : item.mark;
+        return item.text ? marks + " " + item.text : marks;
     },
 
     matchesMarkFilter: function(item, filter) {
@@ -317,6 +501,7 @@ window.FamousPluginCore.Outline = {
         if (filter === "﹥" || filter === "•" || filter === "°") {
             return item.type === 'famous' && item.mark === filter;
         }
+        if (filter === "#") return item.type === 'md';
         if (filter === "TODO") return item.type === 'todo';
         if (filter === "@") return item.type === 'at-mark';
         if (filter === "</>" || filter === "xml") return item.type === 'xml';
@@ -359,8 +544,8 @@ window.FamousPluginCore.Outline = {
                 return;
             }
 
-            // Reorder mode moves Markdown headings only (their ﹥ • ° and TODO lines move with
-            // them), so it lists headings only; otherwise the badge filter applies.
+            // Reorder mode moves sections only (# headings, • sections); their ﹥ ° TODO lines and
+            // code symbols move with them. Otherwise the badge filter applies.
             if (this.isReorderMode) {
                 if (!this.isReorderItem(item)) return;
             } else if (!this.matchesMarkFilter(item, this.activeMarkFilter)) {
@@ -370,11 +555,20 @@ window.FamousPluginCore.Outline = {
             visibleCount++;
             const div = document.createElement("div");
             div.classList.add("toc-item");
-            div.textContent = (this.isReorderMode ? "⋮⋮ " : "") + item.text;
+            div.textContent = (this.isReorderMode ? "⋮⋮ " : "") + this.displayText(item);
 
-            if (item.type === 'md') {
+            // Tree indent (assignDepths): a heading by padding, a leaf by margin so its
+            // left border moves with it. A-Z sort and Reorder mode keep a flat list.
+            const flat = this.isSortedAZ || this.isReorderMode;
+            const indent = flat ? 0 : (item.depth || 0) * 12;
+            if (item.type === 'md' || item.type === 'json') {
+                div.style.paddingLeft = flat ? "4px" : indent + "px";
+            } else if (indent > 0) {
+                div.style.marginLeft = indent + "px";
+            }
+
+            if (item.type === 'md' || item.type === 'json') {
                 div.classList.add("toc-item-md");
-                div.style.paddingLeft = (this.isSortedAZ || this.isReorderMode) ? "4px" : ((item.level - 1) * 12) + "px";
             } else if (item.type === 'xml') {
                 div.classList.add("toc-item-xml");
             } else if (item.type === 'js') {
@@ -385,6 +579,9 @@ window.FamousPluginCore.Outline = {
                 div.classList.add("toc-item-at");
             } else if (item.type === 'famous') {
                 div.classList.add("toc-item-famous");
+                if (typeof item.level === 'number') div.classList.add("toc-item-section");
+                else if (item.mark === '﹥') div.classList.add("toc-item-arrow");
+                else if (item.mark === '°') div.classList.add("toc-item-note");
             }
 
             // Drag & Drop Reordering Mode
@@ -433,6 +630,14 @@ window.FamousPluginCore.Outline = {
             tocList.appendChild(div);
         });
 
+        // A file with no comment syntax and no key outline (CSV, log): say why the list is empty
+        if (this.profile === 'none' && this.items.length === 0) {
+            const noneMsg = document.createElement("div");
+            noneMsg.className = "workspace-empty-msg";
+            noneMsg.textContent = "No outline for this file type";
+            tocList.appendChild(noneMsg);
+        }
+
         // Feedback UX optionnel si filtre actif mais sans résultats
         if (visibleCount === 0 && this.items.length > 0) {
             const emptyMsg = document.createElement("div");
@@ -456,6 +661,22 @@ window.FamousPluginCore.Outline = {
         if (!editor) return;
         editor.session.unfold();
         const lines = editor.session.getDocument().getAllLines();
+
+        // Outside Markdown, H*n* folds every • section of level n and deeper (matrix section 3.4),
+        // through the section fold mode (core-editor.js SectionFold).
+        const profile = this.fileProfile(this.currentFilename(), editor.session.$modeId);
+        const SF = window.FamousPluginCore && window.FamousPluginCore.SectionFold;
+        if (profile !== 'markdown' && SF) {
+            for (let i = lines.length - 1; i >= 0; i--) {
+                const section = SF.sectionAt(editor.session, i);
+                if (section && section.level >= targetLevel) {
+                    const range = editor.session.getFoldWidgetRange(i);
+                    if (range) editor.session.addFold("...", range);
+                }
+            }
+            return;
+        }
+
         const regex = /^(#{1,6})\s+(.*)$/;
 
         for (let i = lines.length - 1; i >= 0; i--) {
@@ -471,10 +692,8 @@ window.FamousPluginCore.Outline = {
     },
 
     /**
-     * Lines of the section that starts at items[idx].
-     * A Markdown heading of level L owns everything down to the next heading of level L or
-     * higher (its sub-headings, Famous Mark lines, TODOs and plain text move with it).
-     * Any other item owns the lines down to the next outline item.
+     * Lines of the section that starts at items[idx]: FamousMark.sectionRange, the one
+     * section definition shared with folding (ext-famous-core.js).
      *
      * @param {Array<{type: string, line: number, level?: number}>} items - outline items, in line order
      * @param {number} idx - index of the section's first item
@@ -482,18 +701,7 @@ window.FamousPluginCore.Outline = {
      * @returns {{start: number, end: number}} first and last line (inclusive)
      */
     sectionRange: function(items, idx, totalLines) {
-        const item = items[idx];
-        let end = totalLines - 1;
-        for (let i = idx + 1; i < items.length; i++) {
-            const next = items[i];
-            if (item.type === 'md') {
-                if (next.type === 'md' && next.level <= item.level) { end = next.line - 1; break; }
-            } else {
-                end = next.line - 1;
-                break;
-            }
-        }
-        return { start: item.line, end: end };
+        return window.FamousPluginCore.FamousMark.sectionRange(items, idx, totalLines);
     },
 
     reorderSection: function(fromIdx, toIdx) {
@@ -503,6 +711,14 @@ window.FamousPluginCore.Outline = {
 
         const doc = editor.session.getDocument();
         const allLines = doc.getAllLines();
+
+        // The text changed since the Outline was read (an Undo, typing within the 800 ms
+        // refresh delay): the item lines are stale, a move would cut the wrong lines.
+        if (typeof this.itemsText === 'string' && allLines.join('\n') !== this.itemsText) {
+            this.update(editor);
+            if (window.showToast) window.showToast("Outline refreshed, drag again", "info");
+            return;
+        }
 
         const fromItem = this.items[fromIdx];
         const toItem = this.items[toIdx];
@@ -603,6 +819,38 @@ window.FamousPluginCore.Outline = {
         return { lines: resultLines, changed };
     },
 
+    /**
+     * Adds (delta 1) or removes (delta -1) one dot on the • section lines, levels 1 to 4
+     * (the +# / -# buttons outside Markdown, matrix section 3.4).
+     *
+     * @param {string[]} lines - lines of the selection
+     * @param {number} delta - 1 or -1
+     * @param {function(number): boolean} [isSection] - whether line i is a • section in this
+     *        file type (default: FamousMark.parse says so)
+     * @returns {{lines: string[], changed: number}}
+     */
+    shiftDotLines: function(lines, delta, isSection) {
+        if (!Array.isArray(lines)) return { lines: [], changed: 0 };
+        const FM = window.FamousPluginCore && window.FamousPluginCore.FamousMark;
+        let changed = 0;
+        const resultLines = lines.map((line, i) => {
+            const mark = FM ? FM.parse(line) : null;
+            if (!mark || mark.kind !== 'section') return line;
+            if (isSection && !isSection(i)) return line;
+            const at = line.indexOf(mark.mark);
+            if (delta === 1 && mark.level < 4) {
+                changed++;
+                return line.slice(0, at) + mark.mark + line.slice(at);
+            }
+            if (delta === -1 && mark.level > 1) {
+                changed++;
+                return line.slice(0, at) + line.slice(at + 1);
+            }
+            return line;
+        });
+        return { lines: resultLines, changed };
+    },
+
     shiftHeadings: function(editor, delta) {
         if (!editor || !editor.session) return;
         const selectionRange = editor.getSelectionRange();
@@ -623,8 +871,18 @@ window.FamousPluginCore.Outline = {
         }
 
         const targetLines = allLines.slice(startRow, endRow + 1);
-        const startsInFence = this.isLineInFence(allLines, startRow);
-        const { lines: shiftedLines, changed } = this.shiftHeadingLines(targetLines, delta, startsInFence);
+        const profile = this.fileProfile(this.currentFilename(), editor.session.$modeId);
+        const SF = window.FamousPluginCore && window.FamousPluginCore.SectionFold;
+        let result;
+        if (profile === 'commented' || profile === 'plain') {
+            // • lines get one dot more or less; the file-type rule decides which lines are sections
+            result = this.shiftDotLines(targetLines, delta,
+                SF ? (i => !!SF.sectionAt(editor.session, startRow + i)) : undefined);
+        } else {
+            result = this.shiftHeadingLines(targetLines, delta, this.isLineInFence(allLines, startRow));
+        }
+        const shiftedLines = result.lines;
+        const changed = result.changed;
 
         if (changed > 0) {
             const Range = (window.ace && window.ace.require) ? window.ace.require('ace/range').Range : null;

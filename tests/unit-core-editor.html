@@ -67,7 +67,7 @@
     Main behaviors of core/core-editor.js:
     - updateUI(): updates document title, modified marker, button enabled/disabled states, snippet UI, and preview button visibility based on file extension.
     - Ace Editor initialization and configuration (theme, options, base paths).
-    - Famous Mark universal folding (initFamousMarkFolding): patches fold modes to create fold widgets on U+FE65 ("﹥") lines across code/text modes, while explicitly excluding YAML.
+    - Folding is Ace's native folding only: Famous Mark lines never fold (Famous Mark folding removed in 0.2.2).
     - LocalStorage cursor position tracking & LRU cleanup (cleanupCursorLocalStorage, cursor_<filename> persistence on changeCursor, cursor restoration on file open).
     - Editor change event handling: sets isModified = true on document mutations.
     - Clickable link handling: opens URLs on click when #toggle-links option is checked.
@@ -262,52 +262,191 @@
             if (btnMove.disabled) throw new Error("Move button should be enabled when fileHandle exists and not modified");
         });
 
-        test("CE-04", "Famous Mark folding: a .js buffer with // \uFE65 Section lines", "fold widgets exist on those rows; folding hides the section body", async (appWin) => {
+        test("CE-04", "A .js buffer with // \uFE65 Section lines and functions", "Famous Mark lines have no fold (removed in 0.2.2); native function folds still work, even around a Famous Mark", async (appWin) => {
             cleanupStorage(appWin);
             appWin.eval("newFile()");
             await delay(100);
 
             const jsContent = [
-                "// \uFE65 Section 1",
-                "const x = 10;",
-                "const y = 20;",
-                "// \uFE65 Section 2",
-                "const z = 30;"
+                "// \uFE65 Section 1",  // 0
+                "function a() {",        // 1
+                "  // \uFE65 inner",     // 2
+                "  return 1;",           // 3
+                "}",                     // 4
+                "// \uFE65 Section 2",  // 5
+                "const z = 30;"          // 6
             ].join("\n");
 
+            const session = appWin.editor.session;
             appWin.editor.setValue(jsContent, -1);
-            appWin.editor.session.setMode("ace/mode/javascript");
+            session.setMode("ace/mode/javascript");
             await delay(150);
 
-            const widget0 = appWin.editor.session.getFoldWidget(0);
-            if (widget0 !== "start") {
-                throw new Error(`Expected fold widget 'start' on row 0 (Famous Mark), got '${widget0}'`);
+            for (const row of [0, 2, 5]) {
+                const widget = session.getFoldWidget(row);
+                if (widget === "start") {
+                    throw new Error(`Famous Mark row ${row} must have no fold widget, got 'start'`);
+                }
             }
-
-            const range = appWin.editor.session.getFoldWidgetRange(0);
-            if (!range) {
-                throw new Error("Expected valid fold widget range for Famous Mark on row 0, got null");
-            }
-            if (range.start.row !== 0 || range.end.row !== 2) {
-                throw new Error(`Expected fold range from row 0 to 2, got start row ${range.start.row}, end row ${range.end.row}`);
-            }
-
-            // Perform fold action
-            const fold = appWin.editor.session.addFold("...", range);
-            const isFolded1 = appWin.editor.session.isRowFolded(1);
-            if (!isFolded1) {
-                throw new Error("Expected row 1 (section body) to be folded after adding fold");
-            }
-
-            // Unfold
-            appWin.editor.session.removeFold(fold);
-            const isFolded1After = appWin.editor.session.isRowFolded(1);
-            if (isFolded1After) {
-                throw new Error("Expected row 1 to be unfolded after removing fold");
+            const range = session.getFoldWidgetRange(1);
+            if (!range || range.start.row !== 1 || range.end.row !== 4) {
+                throw new Error(`Expected function a() to fold rows 1-4, got ${range ? range.start.row + "-" + range.end.row : "null"}`);
             }
         });
 
-        test("CE-05", "YAML buffer (tests/fixtures-syntax-sample.yml)", "Famous Mark folding is skipped, native YAML folding only", async (appWin) => {
+        test("CE-04b", "A .md buffer with # headings holding \uFE65, - \u2022 and \u00B0 lines (tests/fixtures-outline-sample.md shape)", "every # heading folds its whole section; Famous Mark lines have no fold", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const mdContent = [
+                "# Title",            // 0
+                "",                   // 1
+                "\uFE65 todo one",    // 2
+                "\u2022 check",       // 3
+                "\u00B0 ask",         // 4
+                "",                   // 5
+                "## Part A",          // 6
+                "- \u2022 bullet",    // 7
+                "",                   // 8
+                "text a",             // 9
+                "## \uFE65 Marked",   // 10
+                "body",               // 11
+                "",                   // 12
+                "# Other",            // 13
+                "end"                 // 14
+            ].join("\n");
+
+            const session = appWin.editor.session;
+            appWin.editor.setValue(mdContent, -1);
+            session.setMode("ace/mode/markdown");
+            await delay(150);
+
+            const expected = [[0, 11], [6, 9], [10, 11], [13, 14]];
+            for (const [row, endRow] of expected) {
+                const range = session.getFoldWidgetRange(row);
+                if (!range || range.start.row !== row || range.end.row !== endRow) {
+                    throw new Error(`Heading row ${row}: expected fold rows ${row}-${endRow}, got ${range ? range.start.row + "-" + range.end.row : "null"}`);
+                }
+            }
+            for (const row of [2, 3, 4, 7]) {
+                if (session.getFoldWidget(row) === "start") {
+                    throw new Error(`Famous Mark row ${row} must have no fold widget, got 'start'`);
+                }
+            }
+        });
+
+        test("CE-04c", "A .txt buffer with \uFE65 lines", "no fold at all: plain text has no folding", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+
+            const session = appWin.editor.session;
+            appWin.editor.setValue("\uFE65 One\nline\n\uFE65 Two\nline", -1);
+            session.setMode("ace/mode/text");
+            await delay(150);
+
+            if (session.getFoldWidget(0) === "start" || session.getFoldWidgetRange(0)) {
+                throw new Error("Expected no fold on a Famous Mark line in plain text");
+            }
+        });
+
+        test("CE-06", "A .js buffer with // \u2022 and // \u2022\u2022 sections (matrix section 1 example)", "a \u2022 line folds its section down to the next \u2022 of the same or a higher level; \uFE65 and \u00B0 never fold; functions still fold", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+            appWin.eval("currentFileName = 'app.js'");
+
+            const jsContent = [
+                "// \u2022 Connection",          // 0
+                "function connect() {",          // 1
+                "  return 1;",                   // 2
+                "}",                             // 3
+                "// \uFE65 Warning: timeout",     // 4
+                "// \u2022\u2022 Retry",          // 5
+                "const s = '\u2022 not a mark';",  // 6
+                "// \u00B0 note",                 // 7
+                "// \u2022 Display",             // 8
+                "function render() {}"           // 9
+            ].join("\n");
+
+            const session = appWin.editor.session;
+            appWin.editor.setValue(jsContent, -1);
+            session.setMode("ace/mode/javascript");
+            await delay(200);
+
+            const expected = [[0, 7], [5, 7], [8, 9]];
+            for (const [row, endRow] of expected) {
+                const range = session.getFoldWidgetRange(row);
+                if (session.getFoldWidget(row) !== "start" || !range || range.start.row !== row || range.end.row !== endRow) {
+                    throw new Error(`\u2022 row ${row}: expected fold rows ${row}-${endRow}, got ${range ? range.start.row + "-" + range.end.row : "null"}`);
+                }
+            }
+            for (const row of [4, 6, 7]) {
+                if (session.getFoldWidget(row) === "start") throw new Error(`Row ${row} must have no fold widget`);
+            }
+            const fn = session.getFoldWidgetRange(1);
+            if (!fn || fn.start.row !== 1 || fn.end.row !== 3) {
+                throw new Error(`Expected connect() to fold rows 1-3, got ${fn ? fn.start.row + "-" + fn.end.row : "null"}`);
+            }
+        });
+
+        test("CE-06b", "A .css buffer with /* \u2022 Section */ lines", "the \u2022 section folds even though the line starts with /* (a one-line comment has no native fold)", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+            appWin.eval("currentFileName = 'style.css'");
+
+            const session = appWin.editor.session;
+            appWin.editor.setValue("/* \u2022 Theme */\n.a {\n  color: red;\n}\n/* \u2022 Layout */\n.b { margin: 0; }", -1);
+            session.setMode("ace/mode/css");
+            await delay(200);
+
+            const range = session.getFoldWidgetRange(0);
+            if (!range || range.end.row !== 3) {
+                throw new Error(`Expected the Theme section to fold rows 0-3, got ${range ? range.start.row + "-" + range.end.row : "null"}`);
+            }
+            const rule = session.getFoldWidgetRange(1);
+            if (!rule || rule.start.row !== 1 || rule.end.row !== 3) {
+                throw new Error(`Expected the .a rule to keep its native fold 1-3, got ${rule ? rule.start.row + "-" + rule.end.row : "null"}`);
+            }
+        });
+
+        test("CE-06c", "A .txt buffer with \u2022 to \u2022\u2022\u2022 sections: H2 button, then +# and -#", "H2 folds the level 2 and 3 sections only; +# adds one dot, -# removes one, levels 1 to 4", async (appWin) => {
+            cleanupStorage(appWin);
+            appWin.eval("newFile()");
+            await delay(100);
+            appWin.eval("currentFileName = 'notes.txt'");
+
+            const session = appWin.editor.session;
+            appWin.editor.setValue(["\u2022 One", "a", "\u2022\u2022 Two", "b", "\u2022\u2022\u2022 Three", "c", "\u2022 Four", "d"].join("\n"), -1);
+            session.setMode("ace/mode/text");
+            await delay(200);
+
+            appWin.FamousPluginCore.Outline.foldToLevel(2, appWin.editor);
+            const folds = session.getAllFolds().map(f => f.start.row + "-" + f.end.row).join(" ");
+            if (folds !== "2-5") throw new Error(`Expected one fold 2-5 (Three is inside Two), got '${folds}'`);
+            session.unfold();
+
+            appWin.editor.selection.setRange({ start: { row: 0, column: 0 }, end: { row: 4, column: 3 } });
+            appWin.FamousPluginCore.Outline.shiftHeadings(appWin.editor, 1);
+            let text = appWin.editor.getValue().split("\n");
+            if (text[0] !== "\u2022\u2022 One" || text[2] !== "\u2022\u2022\u2022 Two" || text[4] !== "\u2022\u2022\u2022\u2022 Three" || text[1] !== "a") {
+                throw new Error(`+# gave '${text.slice(0, 5).join(" | ")}'`);
+            }
+            appWin.FamousPluginCore.Outline.shiftHeadings(appWin.editor, 1);
+            text = appWin.editor.getValue().split("\n");
+            if (text[4] !== "\u2022\u2022\u2022\u2022 Three") throw new Error("Level 4 must stay level 4");
+            appWin.editor.selection.setRange({ start: { row: 0, column: 0 }, end: { row: 6, column: 3 } });
+            appWin.FamousPluginCore.Outline.shiftHeadings(appWin.editor, -1);
+            appWin.FamousPluginCore.Outline.shiftHeadings(appWin.editor, -1);
+            appWin.FamousPluginCore.Outline.shiftHeadings(appWin.editor, -1);
+            appWin.FamousPluginCore.Outline.shiftHeadings(appWin.editor, -1);
+            text = appWin.editor.getValue().split("\n");
+            if (text[0] !== "\u2022 One" || text[6] !== "\u2022 Four") throw new Error(`-# must stop at level 1, got '${text[0]}' / '${text[6]}'`);
+        });
+
+        test("CE-05", "YAML buffer (tests/fixtures-syntax-sample.yml)", "a Famous Mark comment does not fold; native YAML folding works", async (appWin) => {
             cleanupStorage(appWin);
             appWin.eval("newFile()");
             await delay(100);
@@ -326,14 +465,14 @@
             await delay(150);
 
             // Row 3 has `# ﹥ Famous Mark comment in YAML`
-            // In YAML mode, Famous Mark folding is explicitly skipped.
+            // Famous Marks never fold (removed in 0.2.2).
             // Check that fold widget range for row 3 is not returning a Famous Mark section range across line 3-5.
             const range3 = appWin.editor.session.getFoldWidgetRange(3);
 
             if (range3) {
                 // Native YAML folding shouldn't produce a multi-line section fold starting on a comment line
                 if (range3.end.row > 3) {
-                    throw new Error(`Famous Mark fold was applied on row 3 in YAML mode (range end row: ${range3.end.row}), but YAML should be excluded`);
+                    throw new Error(`Famous Mark fold was applied on row 3 in YAML mode (range end row: ${range3.end.row}), but Famous Marks never fold`);
                 }
             }
 

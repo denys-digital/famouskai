@@ -4,6 +4,8 @@ This test checks that an upgrade of Famouskai never mixes old and new files, wor
 
 Chrome only: no command line, no install. It works on a Chromebook without Linux. About 15 minutes.
 
+No dataset: the steps type their own text (`test 01`, `test 04`).
+
 ---
 
 ## Before you start: 3 rules

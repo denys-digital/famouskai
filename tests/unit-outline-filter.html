@@ -75,6 +75,7 @@
         }
     </style>
     <script src="../plugins/ext-famous-core.js"></script>
+    <script src="../plugins/ext-outline-json.js"></script>
     <script src="../plugins/ext-outline.js"></script>
 </head>
 <body>
@@ -129,6 +130,12 @@
                     expectedText: "TODO: x"
                 },
                 {
+                    name: "filter # keeps only Markdown headings",
+                    filter: "#",
+                    items: sampleItems,
+                    expectedText: "Title"
+                },
+                {
                     name: "filter all keeps all items",
                     filter: "all",
                     items: sampleItems,
@@ -158,7 +165,110 @@
             Outline.update(mockEditor);
             const parsedMarks = Outline.items.map(function(item) { return item.mark; });
 
+            // Tree indent (lot b, #509): a leaf sits one step under the heading that holds it.
+            // Same shape as tests/fixtures-outline-sample.md.
+            const treeLines = [
+                "﹥ Before any heading",
+                "# 1. Travel plan",
+                "﹥ Book the flights",
+                "## 1.1 Tokyo",
+                "<!-- TODO: book the hotel -->",
+                "### 1.1.1 Day 1",
+                "﹥ Buy a Suica card",
+                "## 1.2 Kyoto",
+                "# 2. Budget",
+                "° Flights about 900 euros"
+            ];
+            window.currentFileName = 'sample.md';
+            Outline.update({ session: { getDocument: function() { return { getAllLines: function() { return treeLines; } }; } } });
+            window.currentFileName = '';
+            const treeDepths = Outline.items.map(function(item) { return item.text + "=" + item.depth; }).join(" | ");
+
+            // File-type rule (lot c, #510): docs-lab/FAMOUS-MARK-MATRIX.md section 2
+            function kindOf(line, profile, tokens) {
+                const m = Outline.markOnLine(line, profile, tokens);
+                return m ? m.kind + ":" + m.label : "null";
+            }
+            const markRuleCases = [
+                ["markdown: ﹥ at line start", kindOf("﹥ Book", "markdown"), "point:Book"],
+                ["markdown: • is a plain bullet", kindOf("• Item", "markdown"), "null"],
+                ["markdown: ° in an HTML comment", kindOf("<!-- ° Check -->", "markdown"), "note:Check"],
+                ["markdown: '# ﹥' is a heading, not a mark", kindOf("# ﹥ Title", "markdown"), "null"],
+                ["commented: mark in a comment token", kindOf("// ﹥ x", "commented", [{ type: "comment", value: "// ﹥ x" }]), "point:x"],
+                ["commented: mark in a string token is not a mark", kindOf("  * ﹥ x", "commented", [{ type: "text", value: "  " }, { type: "string", value: "* ﹥ x" }]), "null"],
+                ["commented: no tokens 🡪 plain rule", kindOf("// • Sec", "commented", null), "section:Sec"],
+                ["plain: '# ﹥' in Python or shell", kindOf("# ﹥ x", "plain"), "point:x"],
+                ["none: never a mark", kindOf("﹥ x", "none"), "null"]
+            ];
+            function todoOf(line, profile, tokens) {
+                const t = Outline.todoOnLine(line, profile, tokens);
+                return t ? t.kind + ":" + t.text : "null";
+            }
+            const todoRuleCases = [
+                ["markdown: TODO at line start", todoOf("TODO Three days in Tokyo.", "markdown"), "todo:TODO Three days in Tokyo."],
+                ["markdown: @ at line start", todoOf("@ Two days in Kyoto", "markdown"), "at-mark:@ Two days in Kyoto"],
+                ["markdown: TODO in an HTML comment", todoOf("<!-- TODO: fix -->", "markdown"), "todo:TODO: fix"],
+                ["markdown: '// TODO' is plain text ('//' is not a comment)", todoOf("// TODO: book the hotel", "markdown"), "null"],
+                ["markdown: 'TODOs' is not a TODO", todoOf("TODOs are listed here", "markdown"), "null"],
+                ["commented: TODO in a comment token", todoOf("// TODO: x", "commented", [{ type: "comment", value: "// TODO: x" }]), "todo:TODO: x"],
+                ["commented: @decorator is code, not a bookmark", todoOf("@Component", "commented", [{ type: "storage.type", value: "@Component" }]), "null"],
+                ["plain: '# TODO' in Python or shell", todoOf("# TODO: x", "plain"), "todo:TODO: x"],
+                ["none: never", todoOf("TODO x", "none"), "null"]
+            ];
+            function itemsFor(filename, lines) {
+                window.currentFileName = filename;
+                Outline.update({ session: { getDocument: function() { return { getAllLines: function() { return lines; } }; } } });
+                window.currentFileName = '';
+                return Outline.items.map(function(i) { return i.type + ":" + i.text; }).join(" | ");
+            }
+            const fileCases = [
+                ["config.yaml: '# comment' is not a heading", itemsFor("config.yaml", ["# Settings", "key: 1"]), ""],
+                ["notes.md: • not listed, ﹥ listed", itemsFor("notes.md", ["# T", "• bullet", "﹥ point"]), "md:T | famous:point"],
+                ["package.json: keys of the first two levels", itemsFor("package.json", ["{", '  "name": "x",', '  "scripts": {', '    "test": "y"', "  },", '  "list": [ { "deep": 1 } ]', "}"]), "json:name | json:scripts | json:test | json:list"],
+                ["data.csv: nothing listed", itemsFor("data.csv", ["﹥ a,b", "# c,d"]), ""],
+                ["notes.md: no mark inside a ~~~ fence", itemsFor("notes.md", ["~~~", "﹥ hidden", "~~~", "﹥ shown"]), "famous:shown"]
+            ];
+
+            // • sections (lot d, #511): the JS example of docs-lab/FAMOUS-MARK-MATRIX.md section 1
+            const dotLines = [
+                "// • Connection",            // 0
+                "function connect() {}",      // 1
+                "// ﹥ Warning: timeout",      // 2
+                "function retry() {}",        // 3
+                "// •• Retry",                // 4
+                "function again() {}",        // 5
+                "// • Display",               // 6
+                "function render() {}"        // 7
+            ];
+            window.currentFileName = 'app.js';
+            Outline.update({ session: { getDocument: function() { return { getAllLines: function() { return dotLines; } }; } } });
+            window.currentFileName = '';
+            const dotTree = Outline.items.map(function(i) { return i.text + "=" + i.depth + (i.level ? "/L" + i.level : ""); }).join(" | ");
+            const dotRanges = [0, 2, 4].map(function(k) { const r = Outline.sectionRange(Outline.items, k, dotLines.length); return r.start + "-" + r.end; }).join(" ");
+
             const testCases = [
+                {
+                    name: "• levels: sections indented by level, leaves under their • section",
+                    run: function() {
+                        const expected = "Connection=0/L1 | connect()=1 | Warning: timeout=1 | retry()=1 | Retry=1/L2 | again()=2 | Display=0/L1 | render()=1";
+                        return { pass: dotTree === expected, expected: expected, actual: dotTree };
+                    }
+                },
+                {
+                    name: "shared section definition: • holds down to the next • of the same or a higher level",
+                    run: function() {
+                        const expected = "0-5 2-2 4-5";
+                        return { pass: dotRanges === expected, expected: expected, actual: dotRanges };
+                    }
+                },
+                ...markRuleCases.concat(fileCases, todoRuleCases, [
+                    ["displayText: •• section shows its level", Outline.displayText({ type: 'famous', mark: '•', level: 2, text: 'Retry' }), "•• Retry"],
+                    ["displayText: ﹥ shows the pointer", Outline.displayText({ type: 'famous', mark: '﹥', text: 'Login' }), "﹥ Login"],
+                    ["displayText: ° shows the bubble", Outline.displayText({ type: 'famous', mark: '°', text: 'Check' }), "° Check"],
+                    ["displayText: a heading stays as is", Outline.displayText({ type: 'md', level: 1, text: 'Title' }), "Title"]
+                ]).map(function(c) {
+                    return { name: c[0], run: function() { return { pass: c[1] === c[2], expected: c[2], actual: c[1] }; } };
+                }),
                 ...filterTestCases.map(function(tc) {
                     return {
                         name: tc.name,
@@ -175,6 +285,13 @@
                         }
                     };
                 }),
+                {
+                    name: "assignDepths: headings by level, leaves one step under their heading",
+                    run: function() {
+                        const expected = "Before any heading=0 | 1. Travel plan=0 | Book the flights=1 | 1.1 Tokyo=1 | TODO: book the hotel=2 | 1.1.1 Day 1=2 | Buy a Suica card=3 | 1.2 Kyoto=1 | 2. Budget=0 | Flights about 900 euros=1";
+                        return { pass: treeDepths === expected, expected: expected, actual: treeDepths };
+                    }
+                },
                 {
                     name: "parser extracts mark property for Famous Marks",
                     run: function() {
