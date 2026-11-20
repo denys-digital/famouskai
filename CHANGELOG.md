@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-20
+
 ### Added
 
 - Outline: the list is a tree. A Famous Mark, TODO or `@` line is indented
@@ -276,7 +278,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Saving files requires the File System Access API, so a desktop Chromium browser such as Chrome or Edge is required; other browsers display a warning banner.
 - Monaco Editor (Diffskai) remains pinned at version 0.56.0 for this release.
 
-[Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/denys-digital/famouskai/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/denys-digital/famouskai/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/denys-digital/famouskai/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/denys-digital/famouskai/compare/v0.1.2...v0.1.3
