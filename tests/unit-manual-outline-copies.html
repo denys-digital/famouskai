@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test - Manual Test Outline Copies</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #569cd6;
+            font-size: 1.4rem;
+        }
+        .summary {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .summary.pass {
+            background-color: #0e3a1e;
+            color: #4ec9b0;
+            border: 1px solid #4ec9b0;
+        }
+        .summary.fail {
+            background-color: #3a0e0e;
+            color: #f44747;
+            border: 1px solid #f44747;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            vertical-align: top;
+        }
+        th {
+            background-color: #252526;
+            color: #9cdcfe;
+        }
+        tr.pass td.status {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        tr.fail td.status {
+            color: #f44747;
+            font-weight: bold;
+        }
+        code {
+            color: #ce9178;
+        }
+    </style>
+    <script src="unit-core-harness.js"></script>
+</head>
+<body>
+    <h1>Manual Test Outline Copies (tests/manual-sidebar-tabs.md)</h1>
+    <div id="summary" class="summary">Running tests...</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Test ID</th>
+                <th>Scenario</th>
+                <th>Expected</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody id="results"></tbody>
+    </table>
+
+    <p>Each "Step N (`file`)" block written in an Expected Outcome cell of
+       <code>tests/manual-sidebar-tabs.md</code> and <code>tests/manual-famous-mark.md</code> is a copy of the Outline. This page opens that
+       file of <code>tests/</code> in the app (<code>?fixture=</code>) and checks the copy line by line:
+       text, indentation (4 <code>&amp;nbsp;</code> = one step), the visible mark badges, and
+       "no `⇄ Reorder`". A wrong copy in the manual test fails here.</p>
+
+    <script>
+        const delay = (ms) => new Promise(r => setTimeout(r, ms));
+        const DOCS = ['manual-sidebar-tabs.md', 'manual-famous-mark.md'];
+
+        // Reads every "**Step N (`file`)**, badges ...:<br>row<br>row..." block of the doc.
+        function parseCopies(md) {
+            const copies = [];
+            for (const line of md.split('\n')) {
+                const id = (line.match(/^\| \*\*([A-Z]+-\d+)\*\* \|/) || [])[1];
+                if (!id) continue;
+                const cells = line.split(' | ');
+                const expected = cells[cells.length - 1].replace(/\s*\|\s*$/, '');
+                for (const block of expected.split('<br><br>')) {
+                    const parts = block.split('<br>');
+                    const head = parts[0].match(/^\*\*Step (\d+) \(`(fixtures-[^`]+)`\)\*\*,?\s*(.*):$/);
+                    if (!head) continue;
+                    const [shown, hidden] = head[3].split(/,\s*no\s+/);
+                    const ticks = (s) => (s || '').match(/`[^`]+`/g) || [];
+                    const rows = [];
+                    for (const raw of parts.slice(1)) {
+                        if (/^Not listed:/.test(raw)) break;
+                        const indent = (raw.match(/^(?:&nbsp;)*/)[0].length / 6);
+                        rows.push({ depth: Math.round(indent / 4), text: raw.replace(/^(?:&nbsp;)*/, '') });
+                    }
+                    copies.push({
+                        id, step: head[1], file: head[2],
+                        badges: ticks(shown).map(t => t.slice(1, -1)),
+                        noReorder: ticks(hidden).some(t => /Reorder/.test(t)),
+                        rows
+                    });
+                }
+            }
+            return copies;
+        }
+
+        function readOutline(appWin) {
+            const doc = appWin.document;
+            const rows = [...doc.querySelectorAll('#toc-list > div')].map(d => {
+                const px = (parseInt(d.style.marginLeft || '0', 10) || 0) + (parseInt(d.style.paddingLeft || '0', 10) || 0);
+                return { depth: Math.round(px / 12), text: d.textContent.trim() };
+            });
+            const badges = [...doc.querySelectorAll('#outline-mark-filters .fold-btn')]
+                .filter(b => appWin.getComputedStyle(b).display !== 'none')
+                .map(b => b.textContent.trim());
+            const reorder = doc.getElementById('btn-outline-reorder-mode');
+            const reorderShown = !!reorder && appWin.getComputedStyle(reorder).display !== 'none';
+            return { rows, badges, reorderShown };
+        }
+
+        window.addEventListener("load", async () => {
+            try {
+                const copies = [];
+                for (const DOC of DOCS) {
+                    const md = await (await fetch(DOC, { cache: 'no-store' })).text();
+                    const found = parseCopies(md);
+                    if (!found.length) throw new Error('no "Step N (`fixtures-...`)" block found in ' + DOC);
+                    found.forEach(c => { c.doc = DOC; copies.push(c); });
+                }
+                for (const c of copies) {
+                    test(`${c.id}.${c.step}`, `Outline of ${c.file}`, `${c.rows.length} rows as written in ${c.doc}`, async (appWin) => {
+                        appWin.eval("isModified = false");
+                        appWin.history.replaceState({}, appWin.document.title, '?fixture=tests/' + c.file);
+                        try {
+                            if (await appWin.openFixtureFromUrl() !== true) throw new Error('could not open tests/' + c.file);
+                        } finally {
+                            appWin.history.replaceState({}, appWin.document.title, appWin.location.pathname);
+                        }
+                        await delay(1200); // Outline refresh delay
+                        const got = readOutline(appWin);
+                        const want = c.rows.map(r => '  '.repeat(r.depth) + r.text).join(' / ');
+                        const have = got.rows.map(r => '  '.repeat(r.depth) + r.text).join(' / ');
+                        if (want !== have) throw new Error(`Outline differs.\nWritten: ${want}\nApp:     ${have}`);
+                        if (got.badges.join(' ') !== c.badges.join(' ')) throw new Error(`Badges differ. Written: ${c.badges.join(' ')} / App: ${got.badges.join(' ')}`);
+                        if (c.noReorder && got.reorderShown) throw new Error('⇄ Reorder is shown, the copy says it is not');
+                    });
+                }
+                const appWin = await loadApp();
+                const tab = appWin.document.getElementById('tab-outline');
+                if (tab) tab.click();
+                await delay(300);
+                await run(appWin);
+            } catch (err) {
+                const summaryEl = document.getElementById("summary");
+                summaryEl.textContent = "FATAL: " + err.message;
+                summaryEl.className = "summary fail";
+            }
+        });
+    </script>
+</body>
+</html>

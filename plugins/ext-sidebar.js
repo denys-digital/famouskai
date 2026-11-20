@@ -571,8 +571,10 @@ window.FamousPluginCore.Sidebar = {
         let sidebarRight = 260;
         if (sidebar) {
             const rect = sidebar.getBoundingClientRect();
-            if (rect.width > 0) baseWidth = rect.width;
-            if (rect.right > 0) sidebarRight = rect.right;
+            // Rounded: with a browser zoom (e.g. 90 % or 110 %) the box measures 259.998 px,
+            // which gave drawers of 519.996 px instead of 520 px.
+            if (rect.width > 0) baseWidth = Math.round(rect.width);
+            if (rect.right > 0) sidebarRight = Math.round(rect.right);
         }
 
         const sizeMultipliers = { S: 1, M: 2, L: 3, XL: 4 };

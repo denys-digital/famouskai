@@ -1,0 +1,16 @@
+• Valid prefixes
+// ﹥ slash comment
+# ﹥ hash comment
+-- ° double dash
+; ﹥ semicolon
+% ° percent
+@ ﹥ at sign
+<!-- ﹥ html comment -->
+/* ° block comment */
+• Not marks
+Temperature: 20°C
+/* 45° rotation */
+const s = "﹥ in a string";
+code // ﹥ after code
+/* closed */ ﹥ after a closed comment
+Note • in the middle

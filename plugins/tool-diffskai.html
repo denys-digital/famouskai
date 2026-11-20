@@ -47,8 +47,6 @@
     <link rel="icon" type="image/svg+xml" href="../icon.svg">
     <link rel="stylesheet" href="../style.css">
     
-    <meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob: data:; frame-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
-
     <!-- Local idb-keyval for offline PWA storage -->
     <script src="../vendor/idb-keyval/umd.min.js"></script>
 </head>
@@ -81,6 +79,8 @@
 
     <!-- Global toolbar (Settings) moved to bottom -->
     <div id="toolbar">
+        <button id="btn-scroll-up" title="Left panel: go to the first line">Scroll-up</button>
+        <button id="btn-scroll-down" title="Left panel: go to the last line">Scroll-down</button>
         <button id="btn-swap" title="Swap left and right panels">Swap</button>
         <div class="divider"></div>
         <label class="sidebar-label diffskai-toolbar-label">

@@ -57,6 +57,8 @@
  * Globals defined:
  *   - checkAndPatchSearchBox
  *   - observer
+ *   - detectPasteMode
+ *   - pasteModeToLang
  */
 
 // ﹥ CLICKABLE INTERNET LINKS
@@ -141,86 +143,136 @@ window.addEventListener("keydown", (e) => {
 });
 
 // Colorize new file after pasting (fast detection)
+// Pure function (no editor access) so tests/unit-core-shortcuts.html can call it.
+function detectPasteMode(rawText) {
+    const text = String(rawText || '').trim();
+    let newMode = "ace/mode/text"; // Fallback par défaut
+    // Text without fenced code blocks (Markdown) and without /* */ or line comments (CSS/JS)
+    const outsideFences = text.replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, '');
+    const noComments = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const jsDecl = /\b(?:function\s*[\w$]*\s*\(|(?:const|let|var)\s+[\w$\[{])|=>/;
+    // CSV records: a newline inside double quotes does not end a record
+    const csvRecords = (t) => {
+        const out = []; let cur = ''; let q = false;
+        for (const ch of t) {
+            if (ch === '"') q = !q;
+            if (ch === '\n' && !q) { out.push(cur); cur = ''; } else cur += ch;
+        }
+        out.push(cur);
+        return out;
+    };
+    const countOutsideQuotes = (r, d) => {
+        let n = 0; let q = false;
+        for (const ch of r) { if (ch === '"') q = !q; else if (ch === d && !q) n++; }
+        return n;
+    };
+
+
+    // 1. Diff/patch — signature quasi-infaillible, à tester en premier
+    if (/^--- .+\n\+\+\+ .+/m.test(text) || /^@@ .+@@/m.test(text)) {
+        newMode = 'ace/mode/diff';
+
+    // 2. SVG — retiré de la branche HTML existante, testé avant elle
+    } else if (/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text)) {
+        newMode = 'ace/mode/svg';
+
+    // 3. HTML — inchangé, MOINS les tests <svg et <?xml (déplacés ci-dessus/dessous)
+    } else if (text.startsWith('<html') || text.startsWith('<!DOCTYPE') || text.startsWith('<body') ||
+             text.startsWith('<script') || text.startsWith('<head') || text.startsWith('<style') ||
+             text.startsWith('<div')) {
+        newMode = 'ace/mode/html';
+
+    // 4. XML générique (ex: <?xml sans balise <svg>)
+    } else if (text.startsWith('<?xml')) {
+        newMode = 'ace/mode/xml';
+
+    // YAML — tested before JS/CSS/Markdown so leading # comments, - key: value
+    // lists, and flow mappings ({ key: val }) are not mistaken for Markdown or CSS.
+    // Skip Markdown documents that begin with YAML front matter (--- ... --- + prose).
+    } else if ((() => {
+        const isYamlKey = (l) => {
+            const clean = l.replace(/(?:^|\s+)#.*$/, '').trimEnd();
+            return /^\s*(?:-\s+)?["']?[\w./-]+["']?\s*:(?:\s+.*|\s*)$/.test(clean) && !/[;{]$/.test(clean);
+        };
+        const fm = text.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n([\s\S]*)$/);
+        if (fm) {
+            const bodyNonComment = fm[2].split(/\r?\n/).filter((l) => l.trim() && !/^\s*#/.test(l));
+            const isMdBody = bodyNonComment.length === 0 ? /^#{1,6}\s+\S/m.test(fm[2]) : !isYamlKey(bodyNonComment[0]);
+            if (isMdBody) return false;
+        }
+        const nonComment = text.split(/\r?\n/).filter((l) => l.trim() !== '' && !/^\s*#/.test(l));
+        if (nonComment.length === 0) return false;
+        const first = nonComment[0].trim();
+        if (first === '---') return true;
+        if (/^-\s+["']?[\w./-]+["']?\s*:\s+\S/.test(first)) return true;
+        if (!isYamlKey(nonComment[0])) return false;
+        const sample = nonComment.slice(0, 8);
+        const keyCount = sample.filter(isYamlKey).length;
+        const hasIndented = sample.slice(1).some((l) => /^\s{2,}(?:-\s+|\S)/.test(l));
+        return keyCount >= 3 || (keyCount >= 2 && hasIndented) || (keyCount >= 1 && sample.some((l) => /^\s*-\s+\S/.test(l)));
+    })()) {
+        newMode = 'ace/mode/yaml';
+
+    // Markdown with headings outside code fences — before JS, so a Markdown document
+    // whose code blocks contain const/function stays Markdown (issue 560).
+    } else if (/^#{1,6}\s+\S/m.test(outsideFences)) {
+        newMode = 'ace/mode/markdown';
+
+    // JavaScript — a keyword that declares a name, or an arrow, outside comments
+    } else if (jsDecl.test(noComments)) {
+        newMode = 'ace/mode/javascript';
+
+    // JSON — sur la FORME, pas sur la validité stricte (tolère les fragments copiés)
+    } else if (/["'][\w-]+["']\s*:\s*("|\[|\{|-?\d|true|false|null)/.test(text) && /[{}]/.test(text)) {
+        newMode = 'ace/mode/json';
+
+    // CSS — exige un vrai bloc "sélecteur { propriété: valeur }", pas juste un # isolé
+    } else if (/[.#]?[\w-]+\s*\{[^{}]*:[^{}]*\}/.test(noComments)) {
+        newMode = 'ace/mode/css';
+
+    // Markdown — titre ancré en début de ligne avec espace obligatoire (plus de faux positif CSS)
+    } else if (/^#{1,6}\s+\S/m.test(text) || /^[-*]\s+\S/m.test(text) || /^---\s*\r?\n[\s\S]*?\r?\n---\s*\r?\n[\s\S]*\S/.test(text)) {
+        newMode = 'ace/mode/markdown';
+
+    // 5. CSV — confiance faible, donc testé en tout dernier avant le fallback texte
+    } else {
+        const sample = csvRecords(text).filter(r => r.trim()).slice(0, 5);
+        if (sample.length >= 2) {
+            for (const delim of [',', ';']) {
+                const counts = sample.map(r => countOutsideQuotes(r, delim));
+                if (counts[0] > 0 && counts.every(c => c === counts[0])) {
+                    newMode = 'ace/mode/csv';
+                    break;
+                }
+            }
+        }
+    }
+    return newMode;
+}
+
+/**
+ * Maps an Ace mode id to the data-lang value that syntax-themes.css uses for the
+ * colors of that language (the value applyNativeColoration sets from a file extension).
+ * @param {string} modeId - e.g. 'ace/mode/markdown'
+ * @returns {string} e.g. 'md' ('txt' for plain text or an unknown mode)
+ */
+function pasteModeToLang(modeId) {
+    const map = {
+        'ace/mode/javascript': 'js', 'ace/mode/json': 'json', 'ace/mode/html': 'html',
+        'ace/mode/xml': 'xml', 'ace/mode/svg': 'svg', 'ace/mode/css': 'css',
+        'ace/mode/yaml': 'yml', 'ace/mode/markdown': 'md', 'ace/mode/csv': 'csv',
+        'ace/mode/diff': 'diff', 'ace/mode/log': 'log'
+    };
+    return map[modeId] || 'txt';
+}
+
 if (editor) {
     editor.on("paste", function(e) {
         if (currentFileName === "" || currentFileName === "[New]") {
-            const text = e.text.trim();
-            let newMode = "ace/mode/text"; // Fallback par défaut
-
-            // 1. Diff/patch — signature quasi-infaillible, à tester en premier
-            if (/^--- .+\n\+\+\+ .+/m.test(text) || /^@@ .+@@/m.test(text)) {
-                newMode = 'ace/mode/diff';
-
-            // 2. SVG — retiré de la branche HTML existante, testé avant elle
-            } else if (/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text)) {
-                newMode = 'ace/mode/svg';
-
-            // 3. HTML — inchangé, MOINS les tests <svg et <?xml (déplacés ci-dessus/dessous)
-            } else if (text.startsWith('<html') || text.startsWith('<!DOCTYPE') || text.startsWith('<body') ||
-                     text.startsWith('<script') || text.startsWith('<head') || text.startsWith('<style') ||
-                     text.startsWith('<div')) {
-                newMode = 'ace/mode/html';
-
-            // 4. XML générique (ex: <?xml sans balise <svg>)
-            } else if (text.startsWith('<?xml')) {
-                newMode = 'ace/mode/xml';
-
-            // YAML — tested before JS/CSS/Markdown so leading # comments, - key: value
-            // lists, and flow mappings ({ key: val }) are not mistaken for Markdown or CSS.
-            // Skip Markdown documents that begin with YAML front matter (--- ... --- + prose).
-            } else if ((() => {
-                const isYamlKey = (l) => {
-                    const clean = l.replace(/(?:^|\s+)#.*$/, '').trimEnd();
-                    return /^\s*(?:-\s+)?["']?[\w./-]+["']?\s*:(?:\s+.*|\s*)$/.test(clean) && !/[;{]$/.test(clean);
-                };
-                const fm = text.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n([\s\S]*)$/);
-                if (fm) {
-                    const bodyNonComment = fm[2].split(/\r?\n/).filter((l) => l.trim() && !/^\s*#/.test(l));
-                    const isMdBody = bodyNonComment.length === 0 ? /^#{1,6}\s+\S/m.test(fm[2]) : !isYamlKey(bodyNonComment[0]);
-                    if (isMdBody) return false;
-                }
-                const nonComment = text.split(/\r?\n/).filter((l) => l.trim() !== '' && !/^\s*#/.test(l));
-                if (nonComment.length === 0) return false;
-                const first = nonComment[0].trim();
-                if (first === '---') return true;
-                if (/^-\s+["']?[\w./-]+["']?\s*:\s+\S/.test(first)) return true;
-                if (!isYamlKey(nonComment[0])) return false;
-                const sample = nonComment.slice(0, 8);
-                const keyCount = sample.filter(isYamlKey).length;
-                const hasIndented = sample.slice(1).some((l) => /^\s{2,}(?:-\s+|\S)/.test(l));
-                return keyCount >= 3 || (keyCount >= 2 && hasIndented) || (keyCount >= 1 && sample.some((l) => /^\s*-\s+\S/.test(l)));
-            })()) {
-                newMode = 'ace/mode/yaml';
-
-            // JavaScript — mots-clés en limite de mot, testé en dernier recours
-            } else if (/\b(function|const|let|var|=>)\b/.test(text)) {
-                newMode = 'ace/mode/javascript';
-
-            // JSON — sur la FORME, pas sur la validité stricte (tolère les fragments copiés)
-            } else if (/["'][\w-]+["']\s*:\s*("|\[|\{|-?\d|true|false|null)/.test(text) && /[{}]/.test(text)) {
-                newMode = 'ace/mode/json';
-
-            // CSS — exige un vrai bloc "sélecteur { propriété: valeur }", pas juste un # isolé
-            } else if (/[.#]?[\w-]+\s*\{[^{}]*:[^{}]*\}/.test(text)) {
-                newMode = 'ace/mode/css';
-
-            // Markdown — titre ancré en début de ligne avec espace obligatoire (plus de faux positif CSS)
-            } else if (/^#{1,6}\s+\S/m.test(text) || /^[-*]\s+\S/m.test(text) || /^---\s*\r?\n[\s\S]*?\r?\n---\s*\r?\n[\s\S]*\S/.test(text)) {
-                newMode = 'ace/mode/markdown';
-
-            // 5. CSV — confiance faible, donc testé en tout dernier avant le fallback texte
-            } else {
-                const sample = text.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 5);
-                if (sample.length >= 2) {
-                    for (const delim of [',', ';']) {
-                        const counts = sample.map(l => l.split(delim).length - 1);
-                        if (counts[0] > 0 && counts.every(c => c === counts[0])) {
-                            newMode = 'ace/mode/csv';
-                            break;
-                        }
-                    }
-                }
-            }
+            const newMode = detectPasteMode(e.text);
+            // The colors follow data-lang, not the mode: without this, an unsaved
+            // document keeps the default (JavaScript-like) palette after a paste (issue 560).
+            editor.container.setAttribute('data-lang', pasteModeToLang(newMode));
 
             if (editor.session.$modeId !== newMode) {
                 editor.session.setMode(newMode, () => {

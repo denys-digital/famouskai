@@ -8,14 +8,14 @@ before opening an issue or a pull request.
 - **License:** Famouskai is dual-licensed (the GNU Affero General Public License, version 3 —
   AGPLv3 — plus commercial, see
   [`LICENSE`](https://github.com/denys-digital/famouskai/blob/main/LICENSE) and
-  [`COMMERCIAL-LICENSE.md`](https://github.com/denys-digital/famouskai/blob/main/docs/COMMERCIAL-LICENSE.md)).
+  [`COMMERCIAL-LICENSE.md`](https://github.com/denys-digital/famouskai/blob/main/docs/COMMERCIAL-LICENSE.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/COMMERCIAL-LICENSE.md&view=read))).
   Your first pull request will trigger a bot asking you to sign our lightweight
-  [Contributor License Agreement (CLA)](https://github.com/denys-digital/famouskai/blob/main/docs/CLA.md).
+  [Contributor License Agreement (CLA)](https://github.com/denys-digital/famouskai/blob/main/docs/CLA.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/CLA.md&view=read)).
   This is a one-time step; read it, it's short. You keep the copyright on your contribution; the
   CLA only lets the maintainer distribute it under both licenses. Without it, contributed code
   could not be offered under the commercial license, which is what funds the project's maintenance.
 - **Code of Conduct:** all interactions in this project are governed by our
-  [Code of Conduct](https://github.com/denys-digital/famouskai/blob/main/.github/CODE_OF_CONDUCT.md).
+  [Code of Conduct](https://github.com/denys-digital/famouskai/blob/main/.github/CODE_OF_CONDUCT.md) ([open in Famouskai](https://app.famouskai.com/?open=.github/CODE_OF_CONDUCT.md&view=read)).
 
 ## Response time
 
@@ -69,7 +69,7 @@ too; the same rule then applies to its author.
 ## Development workflow
 
 No prior GitHub experience? Read
-[`docs/00-START-HERE-HOW-TO.md`](https://github.com/denys-digital/famouskai/blob/main/docs/00-START-HERE-HOW-TO.md)
+[`docs/00-START-HERE-HOW-TO.md`](https://github.com/denys-digital/famouskai/blob/main/docs/00-START-HERE-HOW-TO.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/00-START-HERE-HOW-TO.md&view=read))
 first — it covers two paths: a 100% browser-based workflow (no install, works on a Chromebook)
 and a local Git command-line (CLI) workflow. The steps below are the general shape either path
 follows.
@@ -82,7 +82,7 @@ follows.
    - `docs/update-readme-fr`
 3. **Edit and test locally** — Famouskai has no build step. Open `index.html` directly in a
    browser to test your change (see [Testing your change](#testing-your-change) below). See
-   [`docs/00-START-HERE-HOW-TO.md`](https://github.com/denys-digital/famouskai/blob/main/docs/00-START-HERE-HOW-TO.md)
+   [`docs/00-START-HERE-HOW-TO.md`](https://github.com/denys-digital/famouskai/blob/main/docs/00-START-HERE-HOW-TO.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/00-START-HERE-HOW-TO.md&view=read))
    for the full step-by-step setup on either path.
 4. **Commit** using clear, present-tense messages (for example,
    `Add markdown live-preview toggle`, not `added stuff`). Group related changes into a single
@@ -151,18 +151,18 @@ has a specific "local-first, no backend" philosophy, and not every idea fits tha
 
 ## Quality bar
 
-The project's [DNA](https://github.com/denys-digital/famouskai/blob/main/DNA.md) says what
+The project's [DNA](https://github.com/denys-digital/famouskai/blob/main/DNA.md) ([open in Famouskai](https://app.famouskai.com/?open=DNA.md&view=read)) says what
 Famouskai is. These four rules say how we change it:
 
 - **Impact first, code second.** Before writing code, find everything the change touches. There
   is often a surgical change that does the job.
 - **Zero regression.** Every change runs the manual and unit test pages of the area it touches.
 - **By the book.** Follow this guide and the
-  [Plugin & Architecture Guide](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md)
+  [Plugin & Architecture Guide](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/PLUGIN-ARCHITECTURE.md&view=read))
   to the letter.
 - **Open-source grade.** Readable, commented, no shortcut a maintainer would have to undo.
 
-Visual changes (colors, logo, fonts) pushed to this repository follow the [Brand Guide](https://github.com/denys-digital/famouskai/blob/main/docs/BRAND-GUIDE.md). Locally, theme it as you like.
+Visual changes (colors, logo, fonts) pushed to this repository follow the [Brand Guide](https://github.com/denys-digital/famouskai/blob/main/docs/BRAND-GUIDE.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/BRAND-GUIDE.md&view=read)). Locally, theme it as you like.
 
 ## Coding Standards
 
@@ -298,7 +298,7 @@ Famouskai strictly adheres to a **"Local-First, Zero-Build"** philosophy. This m
 
 Because modern browsers block ES Module imports (`<script type="module">`) over the `file://` protocol due to CORS security policies, we use a **Single Global Namespace Pattern** instead of native ES modules.
 
-Before adding a new tool, modifying the editor's behavior, or writing any JavaScript, you **must** read our [Plugin & Architecture Guide](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md). It explains how to register your tools cleanly without polluting the global scope.
+Before adding a new tool, modifying the editor's behavior, or writing any JavaScript, you **must** read our [Plugin & Architecture Guide](https://github.com/denys-digital/famouskai/blob/main/docs/PLUGIN-ARCHITECTURE.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/PLUGIN-ARCHITECTURE.md&view=read)). It explains how to register your tools cleanly without polluting the global scope.
 
 Start from one of the two model files, which follow every rule in this guide and come with a
 zero-build unit test page you can copy:
@@ -325,6 +325,45 @@ Every manual test file MUST include a markdown table defining:
 4. **Action Steps:** Numbered list of user inputs.
 5. **Expected Outcome:** Strict definition of the UI/System state post-action.
 
+**Test files first:** a run must be repeatable by anyone, without typing, saving or deleting
+anything. So every manual test file follows this layout:
+
+1. Every input a test needs is a **repository file** `tests/fixtures-<area>-<name>.<ext>` (the
+   file type matters: it changes what Famouskai does). The existing `tests/fixtures-syntax-sample.*`
+   files can be used as they are. Where the repository has the test hub `tests/index.html`, a new
+   fixture file is also listed in its section 4 "Test files" (the `sanity` check fails otherwise).
+2. A **Test Datasets** table at the top of the doc: `Dataset | File | Used by`.
+3. Tests that only **point** to those files, never to content written inline in a table cell.
+4. **Exact** expected results: what is shown and what is not, in which order, exact texts.
+   "Works as expected" is not an expected result.
+5. An expected **list** (Outline, menu, file list) is a visual copy of the screen: one item per
+   line (`<br>` in a table cell, 4 `&nbsp;` per indent step), in screen order, never a comma list.
+   The tester compares it top to bottom in a few seconds. An Outline copy starts with
+   `**Step N (`fixtures-...`)**`: `tests/unit-manual-outline-copies.html` checks it against the app.
+
+**To open a test file:** open the address under test (for example your local server) followed by
+`?open=tests/<file>`, for example `https://app.famouskai.com/?open=tests/fixtures-syntax-sample.md`.
+The file opens in the app under its own name, unsaved.
+
+A file whose tests need no content (for example an update message or a popup) says so in one line
+instead of the table. Short model:
+
+```markdown
+## Test Datasets
+
+| Dataset | File | Used by |
+| :--- | :--- | :--- |
+| A | `tests/fixtures-notes-sample.md` | NOTE-01 |
+
+## Test Scenarios Matrix
+
+| Test ID | Scenario | Pre-conditions | Action Steps | Expected Outcome |
+| --- | --- | --- | --- | --- |
+| **NOTE-01** | Outline lists the point | `fixtures-notes-sample.md` (Dataset A) | 1. Open the Outline tab. | **Step 1 (`fixtures-notes-sample.md`)**:<br>Title<br>&nbsp;&nbsp;&nbsp;&nbsp;First point<br>Not listed: `Plain line.` |
+```
+
+Full example: [`tests/manual-sidebar-tabs.md`](../tests/manual-sidebar-tabs.md) ([open in Famouskai](https://app.famouskai.com/?open=tests/manual-sidebar-tabs.md&view=read)).
+
 ## What "good first issue" means here
 
 Issues labeled `good first issue` are scoped to be self-contained and don't require deep
@@ -336,7 +375,7 @@ start there — no need to ask permission; just comment on the issue to claim it
 Releases follow [Semantic Versioning](https://semver.org/). `main` collects accepted
 contributions; a release merges `main` into `prod`, the branch that runs on
 [app.famouskai.com](https://app.famouskai.com), and is tagged there (`vMAJOR.MINOR.PATCH`). The changelog is maintained in
-[`CHANGELOG.md`](https://github.com/denys-digital/famouskai/blob/main/CHANGELOG.md).
+[`CHANGELOG.md`](https://github.com/denys-digital/famouskai/blob/main/CHANGELOG.md) ([open in Famouskai](https://app.famouskai.com/?open=CHANGELOG.md&view=read)).
 
 ## Questions?
 

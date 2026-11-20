@@ -166,6 +166,40 @@
             }
         });
 
+        test("WI-05", "getCleanAppUrl() drops open and fixture", "a new window never reopens the file named in the URL (issue 564)", async (appWin) => {
+            const { win: openWin, iframe: openIframe } = await loadAppWithQuery("?open=tests/fixtures-syntax-sample.css&other=123");
+            try {
+                const cleanUrlStr = openWin.getCleanAppUrl();
+                const cleanUrl = new URL(cleanUrlStr);
+                if (cleanUrl.searchParams.has('open')) {
+                    throw new Error(`getCleanAppUrl() should not contain 'open', got '${cleanUrlStr}'`);
+                }
+                if (cleanUrl.searchParams.get('other') !== '123') {
+                    throw new Error(`getCleanAppUrl() lost unrelated parameter 'other=123', got '${cleanUrlStr}'`);
+                }
+            } finally {
+                if (openIframe && openIframe.parentNode) {
+                    openIframe.parentNode.removeChild(openIframe);
+                }
+            }
+
+            const { win: fixtureWin, iframe: fixtureIframe } = await loadAppWithQuery("?fixture=tests/fixtures-syntax-sample.css&other=123");
+            try {
+                const cleanUrlStr = fixtureWin.getCleanAppUrl();
+                const cleanUrl = new URL(cleanUrlStr);
+                if (cleanUrl.searchParams.has('fixture')) {
+                    throw new Error(`getCleanAppUrl() should not contain 'fixture', got '${cleanUrlStr}'`);
+                }
+                if (cleanUrl.searchParams.get('other') !== '123') {
+                    throw new Error(`getCleanAppUrl() lost unrelated parameter 'other=123', got '${cleanUrlStr}'`);
+                }
+            } finally {
+                if (fixtureIframe && fixtureIframe.parentNode) {
+                    fixtureIframe.parentNode.removeChild(fixtureIframe);
+                }
+            }
+        });
+
         test("WI-03", "showToast(msg, type) without options", "toast shows, has no OK link and is not sticky", async (appWin) => {
             appWin.showToast("Plain message", "success");
             const toast = appWin.document.getElementById('toast-msg');

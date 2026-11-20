@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-20
+
+### Added
+
+- Outline: the list is a tree. A Famous Mark, TODO or `@` line is indented
+  one step under the Markdown heading that holds it, instead of flush left.
+  In a Markdown file a `#` badge shows the headings only, and the `•` badge
+  is hidden.
+- Tests: a link ending in `?fixture=tests/fixtures-<name>.<ext>` opens that
+  sample file of the site under its own name, unsaved. Manual test plans use
+  it so testers open their sample in one click, with nothing to save or delete.
+  Only flat `tests/fixtures-*` files are accepted.
+- Tests: the same link also opens a manual test plan (`tests/manual-*.md`)
+  in the app, so it can be read in the Markdown preview, exported or printed.
+  Each manual test plan says how to open its sample files with `?open=`.
+- Links: `?open=<path>` opens a file of the site in the app, unsaved, for
+  every file type Famouskai edits (Markdown, JavaScript, JSON, CSV, YAML...):
+  docs, README, DNA, the contributor guides in `.github/`, files in subfolders
+  (for example a file of a pull request, read on its preview). Other hidden
+  folders and other file types stay closed. `?fixture=` still works and takes
+  the same files.
+- Links: `&view=` sets how the app opens, for that opening only (settings are
+  not changed): `editor` (editor alone), `split` (Outline + editor + preview),
+  `read` (wide preview + Outline) or `read-light` (wide preview alone).
+  `&tab=outline`, `&tab=explorer`... opens that sidebar tab, and
+  `&preview=dark` or `&preview=light` sets the preview theme (the saved theme
+  is kept). All also work without `?open=`. The preview views apply to files the preview shows
+  (Markdown, diff, patch).
+- README: a "See it in one click" line opens three sample files (Markdown with
+  Famous Marks, JavaScript, CSV) in the app, and DNA, CONTRIBUTING,
+  CODE_OF_CONDUCT, the start-here guide and the CLA get an "open in Famouskai"
+  link. Docs open in reader view (`&view=read`), the Markdown sample in split
+  view (`&view=split`), the JavaScript and CSV samples in the editor.
+- Outline: outside Markdown, `•` `••` `•••` `••••` lines are sections of
+  level 1 to 4, like `#` headings: shown in bold, indented by level, with
+  the marks and code symbols they hold one step under them.
+- Folding: outside Markdown, a `•` line folds its section, like a `#`
+  heading. The `+ H1 H2 H3 H4` and `-#` `+#` buttons work on `•` sections
+  (H*n* folds levels n and deeper, `+#` / `-#` add or remove one dot).
+  `﹥` and `°` never fold.
+- Reorder works outside Markdown: in code and plain-text files it moves
+  `•` sections, with the marks and code they hold. One Undo restores the
+  order.
+- Outline: each Famous Mark has its own look and shows its mark. `•`
+  sections show their dots in the heading color; `﹥` points show the arrow
+  in coral red; `°` notes show the bubble in pink italic with a left
+  border, like TODO and `@` (a left border means temporary).
+- Outline for JSON files: the keys of the first two levels of objects
+  (for example `scripts` and `dependencies` in a `package.json`).
+- Diffskai: **Scroll-up** and **Scroll-down** buttons, left of Swap in the
+  bottom toolbar, put the cursor on the first or the last line of the left
+  panel and show it.
+
+### Changed
+
+- Famous Marks follow the file type. In Markdown, `•` is an ordinary
+  bullet again (use `﹥` or `°` for bookmarks) and `#` headings are the
+  structure. In code files a mark counts only inside a comment, so a `﹥`
+  inside a string is no longer listed, and `# comment` in YAML is no longer
+  shown as a heading. CSV, log and diff files show "No outline for this
+  file type".
+- `TODO` and `@` bookmarks follow the file type too: in Markdown they are
+  listed at the start of a line or in `<!-- -->` (`// TODO` is plain text
+  there); in code only inside a comment, so a `@decorator` is not listed.
+- Famous Marks (`﹥`, `•`, `°`) no longer fold: they stay bookmarks in the
+  Outline. Folding is the language's own folding only, so `#` headings in
+  Markdown fold again when their section holds Famous Mark lines, and no
+  fold arrow appears on a mark line that had nothing to fold.
+
+### Fixed
+
+- Markdown preview and HTML export: lines starting with `• ` are shown as a
+  bullet list, like `- ` (they were joined into one paragraph). Code blocks
+  are not changed.
+- Paste detection: pasted CSS and Markdown are no longer taken for JavaScript.
+- Side drawer: whole-pixel widths when the browser is zoomed.
+- A new window or tab opened from the app no longer reopens the file of an
+  `?open=` or `?fixture=` link.
+
+### Removed
+
+- The report-only Content-Security-Policy `<meta>` tag of the app and of
+  Diffskai: browsers ignore it and logged a warning at every opening. The
+  enforced policy is unchanged.
+
 ## [0.2.1] - 2026-11-13
 
 ### Added
@@ -27,6 +112,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Paste detection: pasting a whole CSS file or a Markdown document with code
+  blocks into a new document no longer colors it as JavaScript, and a CSV file
+  with quoted commas or line breaks is colored as CSV.
+  The syntax colors of an unsaved document now follow the detected language
+  (they stayed on the JavaScript colors).
+- Sidebar drawers keep whole-pixel widths (260, 520, 780 px) when the browser
+  is zoomed (they measured 519.996 px).
 - Outline: the ﹥, • and ° filters each show only the lines with their own
   mark. Before, ﹥ showed all three marks and • and ° showed nothing.
 - Outline Reorder: dragging a Markdown heading moves its whole section
@@ -186,7 +278,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Saving files requires the File System Access API, so a desktop Chromium browser such as Chrome or Edge is required; other browsers display a warning banner.
 - Monaco Editor (Diffskai) remains pinned at version 0.56.0 for this release.
 
-[Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/denys-digital/famouskai/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/denys-digital/famouskai/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/denys-digital/famouskai/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/denys-digital/famouskai/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/denys-digital/famouskai/compare/v0.1.1...v0.1.2

@@ -237,6 +237,22 @@
                 }
             });
 
+            // Test 9b: browser zoom gives a fractional sidebar width (Denys, 2026-11-17: 259.998px)
+            testCases.push({
+                name: "Fractional sidebar width (browser zoom) still gives whole-pixel drawer sizes",
+                run: function() {
+                    const realRect = sidebar.getBoundingClientRect;
+                    try {
+                        sidebar.getBoundingClientRect = () => ({ width: 259.998, right: 259.998, left: 0, top: 0, bottom: 800, height: 800 });
+                        Sidebar.openDrawer("Zoomed", "Content", { size: 'M' });
+                        const width = drawer.style.width;
+                        return { pass: width === '520px', detail: `width: ${width}` };
+                    } finally {
+                        sidebar.getBoundingClientRect = realRect;
+                    }
+                }
+            });
+
             // Test 10: onClose callback fired on closeDrawer
             testCases.push({
                 name: "onClose callback is invoked on closeDrawer()",

@@ -1,0 +1,8 @@
+{
+  "name": "famouskai-sample",
+  "scripts": {
+    "test": "node tests/run.js",
+    "lint": "eslint ."
+  },
+  "list": [ { "deep": 1 } ]
+}

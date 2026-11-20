@@ -1,0 +1,84 @@
+<!--
+ * Famouskai Editor - Local-First PWA IDE
+ * Copyright (C) 2026 Denys Poulat (https://github.com/denys-digital)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Unit Test: JSON Outline</title>
+    <style>
+        body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        .summary { font-size: 1.2rem; font-weight: bold; padding: 10px; margin-bottom: 12px; border-radius: 4px; border: 1px solid #555; }
+        .summary.pass { background: #0e3a1e; color: #4ec9b0; border-color: #4ec9b0; }
+        .summary.fail { background: #3a0e0e; color: #f44747; border-color: #f44747; }
+        .pass { color: #4ec9b0; } .fail { color: #f44747; }
+        div { margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+    <div id="summary" class="summary">Running...</div>
+    <div id="console"></div>
+    <script src="../plugins/ext-outline-json.js"></script>
+    <script>
+        const cases = [
+            {
+                input: '{\n  "name": "famouskai",\n  "scripts": {\n    "test": "x",\n    "build": "y"\n  },\n  "list": [ { "inner": 1 } ]\n}',
+                expected: [{line:1,level:1,text:'name'},{line:2,level:1,text:'scripts'},{line:3,level:2,text:'test'},{line:4,level:2,text:'build'},{line:6,level:1,text:'list'}]
+            },
+            {
+                input: '{"a": {"b": {"c": 1}}}',
+                expected: [{line:0,level:1,text:'a'},{line:0,level:2,text:'b'}]
+            },
+            {
+                input: '[{"a":1},{"b":2}]',
+                expected: []
+            },
+            {
+                input: '{"url": "http://x", "q": "say \\"hi\\": ok"}',
+                expected: [{line:0,level:1,text:'url'},{line:0,level:1,text:'q'}]
+            },
+            {
+                input: '',
+                expected: []
+            },
+            {
+                input: '{"a": ',
+                expected: [{line:0,level:1,text:'a'}]
+            },
+            {
+                input: '{"a\\"b": 1}',
+                expected: [{line:0,level:1,text:'a\\"b'}]
+            }
+        ];
+        let passed = 0;
+        const con = document.getElementById('console');
+        cases.forEach((c, idx) => {
+            const res = window.FamousPluginCore.JsonOutline.outline(c.input);
+            const ok = JSON.stringify(res) === JSON.stringify(c.expected);
+            if (ok) passed++;
+            const div = document.createElement('div');
+            div.className = ok ? 'pass' : 'fail';
+            div.textContent = `Case ${idx + 1}: ${ok ? 'PASS' : 'FAIL'} (Got: ${JSON.stringify(res)})`;
+            con.appendChild(div);
+        });
+        const sum = document.getElementById('summary');
+        const allOk = passed === cases.length;
+        sum.className = 'summary ' + (allOk ? 'pass' : 'fail');
+        sum.textContent = `${passed}/${cases.length} passed`;
+    </script>
+</body>
+</html>

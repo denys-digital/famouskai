@@ -70,13 +70,15 @@ function isPopupWindow() {
 }
 
 /**
- * Returns a clean URL for opening a browser tab (removes popup-specific query params).
+ * Returns a clean URL for opening a new window or tab (removes popup and file-opening query params: mode, pos, open, fixture).
  * @returns {string} Clean URL string.
  */
 function getCleanAppUrl() {
     const url = new URL(window.location.href);
     url.searchParams.delete('mode');
     url.searchParams.delete('pos');
+    url.searchParams.delete('open');
+    url.searchParams.delete('fixture');
     return url.toString();
 }
 
