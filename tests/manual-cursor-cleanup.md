@@ -1,37 +1,41 @@
-# Plan de Tests Manuels - Purge Automatique LocalStorage (Position du Curseur)
+# Manual Test Specification: Cursor Position Cleanup (LocalStorage LRU)
 
-## 1. Description du Test
-Validation du bon fonctionnement de la routine de nettoyage (LRU - Least Recently Used) de la position du curseur enregistrée dans `LocalStorage` (`cursor_*`).
+Famouskai remembers the cursor of each file in `localStorage`, one key `cursor_<file name>` per file, and keeps the 50 most recent ones (LRU: least recently used first out). The cleanup runs at start and after each cursor move.
 
----
-
-## 2. Matrice de Test
-
-| Test ID | Scénario | Pré-conditions | Étapes d'exécution | Résultat Attendu |
-| :--- | :--- | :--- | :--- | :--- |
-| **TC-CURSOR-01** | Sauvegarde de la position et présence de `updatedAt` | Application ouverte dans le navigateur | 1. Ouvrir un fichier `test1.txt`.<br>2. Déplacer le curseur à la ligne 5, colonne 10.<br>3. Inspecter `LocalStorage` dans la console DevTools (`localStorage.getItem('cursor_test1.txt')`). | La clé `cursor_test1.txt` contient un JSON au format `{"row": 4, "column": 10, "updatedAt": <timestamp>}`. |
-| **TC-CURSOR-02** | Rétrocompatibilité avec les anciennes entrées sans `updatedAt` | Une ancienne entrée `cursor_old.txt` est simulée dans DevTools : `localStorage.setItem('cursor_old.txt', JSON.stringify({row: 2, column: 3}))` | 1. Executer `window.cleanupCursorLocalStorage(1)`. | L'ancienne entrée `cursor_old.txt` (considérée comme `updatedAt = 0`) est éliminée en priorité par rapport aux nouvelles entrées horodatées. |
-| **TC-CURSOR-03** | Eviction LRU au-delà du seuil de 50 entrées | LocalStorage vide ou contenant peu d'entrées | 1. Exécuter dans la console DevTools un script créant 55 entrées `cursor_doc1.txt` à `cursor_doc55.txt` avec des timestamps croissants.<br>2. Exécuter `window.cleanupCursorLocalStorage(50)`. | Le nombre total d'entrées `cursor_*` dans `LocalStorage` est ramené exactement à 50. Les 5 entrées les plus anciennes ont été supprimées. |
-| **TC-CURSOR-04** | Purge au démarrage (`DOMContentLoaded`) | Plus de 50 entrées `cursor_*` présentes dans LocalStorage au chargement | 1. Créer 52 entrées `cursor_*` via console.<br>2. Recharger la page (F5 / Ctrl+R). | Lors du chargement, la routine au démarrage s'exécute et ramène automatiquement le nombre d'entrées `cursor_*` à 50. |
+Desktop Chromium. The scripts below are pasted in the DevTools **Console** (`Ctrl+Shift+I`) of the Famouskai tab; they only create and count `cursor_*` keys. If Chrome asks, type `allow pasting` first.
 
 ---
 
-## 3. Données de Test & Script Console Rapide
+## Test Datasets
 
-Vous pouvez copier/coller ce snippet dans la console DevTools (F12) pour valider instantanément la routine LRU :
+| Dataset | File | Used by |
+| :--- | :--- | :--- |
+| A | `tests/fixtures-syntax-sample.txt` | TC-CURSOR-01 |
+
+**To open a file:** open the address under test followed by `?open=tests/<file>`, for example `https://app.famouskai.com/?open=tests/fixtures-syntax-sample.txt`. It opens in the app under its own name, unsaved.
+
+**Script S1** (removes every `cursor_*` key, then adds 55 keys `cursor_file_1.txt` to `cursor_file_55.txt`, `file_1` the oldest):
 
 ```javascript
-// Script de test rapide des 50 entrées LRU
-for (let i = 1; i <= 55; i++) {
-    localStorage.setItem(`cursor_file_${i}.txt`, JSON.stringify({
-        row: i,
-        column: 0,
-        updatedAt: Date.now() - (1000 * (60 - i)) // Timestamps croissants (file_1 est le plus ancien)
-    }));
-}
-
-console.log("Nombre d'entrées avant nettoyage :", Object.keys(localStorage).filter(k => k.startsWith('cursor_')).length);
-window.cleanupCursorLocalStorage(50);
-console.log("Nombre d'entrées après nettoyage (attendu : 50) :", Object.keys(localStorage).filter(k => k.startsWith('cursor_')).length);
-console.log("L'entrée la plus ancienne (file_1.txt) existe-t-elle encore ? (attendu : false) :", localStorage.getItem('cursor_file_1.txt') !== null);
+Object.keys(localStorage).filter(k => k.startsWith('cursor_')).forEach(k => localStorage.removeItem(k));
+for (let i = 1; i <= 55; i++) localStorage.setItem(`cursor_file_${i}.txt`, JSON.stringify({ row: i, column: 0, updatedAt: Date.now() - 1000 * (60 - i) }));
+Object.keys(localStorage).filter(k => k.startsWith('cursor_')).length
 ```
+
+**Script S2** (count and oldest entries left):
+
+```javascript
+const keys = Object.keys(localStorage).filter(k => k.startsWith('cursor_'));
+[keys.length, ['cursor_old.txt', 'cursor_file_1.txt', 'cursor_file_5.txt', 'cursor_file_6.txt'].map(k => localStorage.getItem(k) !== null)]
+```
+
+---
+
+## Test Scenarios
+
+| Test ID | Scenario | Pre-conditions | Action Steps | Expected Outcome |
+| :--- | :--- | :--- | :--- | :--- |
+| **TC-CURSOR-01** | Position saved with `updatedAt` | Dataset A open | 1. In the Console: `editor.gotoLine(2, 10)` (line 2 `Plain text has no colors...`, after `Plain text`).<br>2. In the Console: `localStorage.getItem('cursor_fixtures-syntax-sample.txt')` | 1. The cursor is on line 2, right after `Plain text`.<br>2. `'{"row":1,"column":10,"updatedAt":<number>}'`: `row` counts from 0 (line 2 = 1), `updatedAt` is a 13-digit time in milliseconds. |
+| **TC-CURSOR-02** | Old entry without `updatedAt` goes first | Any file open | 1. Run Script S1.<br>2. Run `localStorage.setItem('cursor_old.txt', JSON.stringify({ row: 2, column: 3 }))`<br>3. Run `window.cleanupCursorLocalStorage(55)`, then Script S2. | 1. `55`.<br>3. `[55, [false, true, true, true]]`: `cursor_old.txt` (no `updatedAt`, counted as the oldest) is removed, the 55 others stay. |
+| **TC-CURSOR-03** | LRU above 50 entries | Any file open | 1. Run Script S1.<br>2. Run `window.cleanupCursorLocalStorage(50)`, then Script S2. | 1. `55`.<br>2. `[50, [false, false, false, true]]`: exactly 50 keys; `file_1` to `file_5` (the 5 oldest) are removed, `file_6` stays. |
+| **TC-CURSOR-04** | Cleanup at start | Any file open | 1. Run Script S1.<br>2. Reload the page (`Ctrl+R`), wait for the editor.<br>3. Run Script S2. | 1. `55`.<br>3. `[50, [false, false, false, true]]`, without any action after the reload. |

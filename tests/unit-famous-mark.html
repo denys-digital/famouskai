@@ -122,9 +122,116 @@
                 { name: "Negative: Whitespace line", line: "   \t  ", expectTest: false, expectText: null }
             ];
 
+            const parseTestCases = [
+                { input: "﹥ Login", expect: { kind: "point", mark: "﹥", level: 1, label: "Login" } },
+                { input: "// • Connection", expect: { kind: "section", mark: "•", level: 1, label: "Connection" } },
+                { input: "// •• Retry", expect: { kind: "section", mark: "•", level: 2, label: "Retry" } },
+                { input: "# ••• Cache", expect: { kind: "section", mark: "•", level: 3, label: "Cache" } },
+                { input: "/* •••• Detail */", expect: { kind: "section", mark: "•", level: 4, label: "Detail" } },
+                { input: "••••• Too deep", expect: null },
+                { input: "<!-- ° Check this -->", expect: { kind: "note", mark: "°", level: 1, label: "Check this" } },
+                { input: "°° Reply", expect: null },
+                { input: "﹥﹥ Twice", expect: null },
+                { input: "Text before • mark", expect: null },
+                { input: "•", expect: { kind: "section", mark: "•", level: 1, label: "" } },
+                { input: "  ••Tight", expect: { kind: "section", mark: "•", level: 2, label: "Tight" } }
+            ];
+
+            const profileTestCases = [
+                { args: ["notes.md"], expect: "markdown" },
+                { args: ["README.MARKDOWN"], expect: "markdown" },
+                { args: ["app.js"], expect: "commented" },
+                { args: ["style.css"], expect: "commented" },
+                { args: ["config.yaml"], expect: "commented" },
+                { args: ["data.json"], expect: "none" },
+                { args: ["table.csv"], expect: "none" },
+                { args: ["server.log"], expect: "none" },
+                { args: ["fix.patch"], expect: "none" },
+                { args: ["notes.txt"], expect: "plain" },
+                { args: ["script.py"], expect: "plain" },
+                { args: ["Makefile"], expect: "plain" },
+                { args: ["", "ace/mode/markdown"], expect: "markdown" },
+                { args: ["", "ace/mode/javascript"], expect: "commented" },
+                { args: ["", "ace/mode/json"], expect: "none" },
+                { args: ["", "ace/mode/text"], expect: "plain" },
+                { args: [undefined, undefined], expect: "plain" }
+            ];
+
             let passedCount = 0;
-            const totalCount = testCases.length;
+            const totalCount = testCases.length + parseTestCases.length + profileTestCases.length;
             const resultsBody = document.getElementById("results");
+
+            parseTestCases.forEach((ptc, idx) => {
+                const actual = FamousMark.parse(ptc.input);
+                const testPassed = JSON.stringify(actual) === JSON.stringify(ptc.expect);
+                if (testPassed) {
+                    passedCount++;
+                }
+                const tr = document.createElement("tr");
+                tr.className = testPassed ? "pass" : "fail";
+
+                const tdStatus = document.createElement("td");
+                tdStatus.className = "status";
+                tdStatus.textContent = testPassed ? "PASS" : "FAIL";
+
+                const tdName = document.createElement("td");
+                tdName.textContent = "parse() case " + (idx + 1);
+
+                const tdLine = document.createElement("td");
+                const codeLine = document.createElement("code");
+                codeLine.textContent = JSON.stringify(ptc.input);
+                tdLine.appendChild(codeLine);
+
+                const tdTest = document.createElement("td");
+                tdTest.textContent = "N/A";
+
+                const tdMatch = document.createElement("td");
+                tdMatch.textContent = `Expected: ${JSON.stringify(ptc.expect)} | Actual: ${JSON.stringify(actual)}`;
+
+                tr.appendChild(tdStatus);
+                tr.appendChild(tdName);
+                tr.appendChild(tdLine);
+                tr.appendChild(tdTest);
+                tr.appendChild(tdMatch);
+
+                resultsBody.appendChild(tr);
+            });
+
+            profileTestCases.forEach((prtc, idx) => {
+                const actual = FamousMark.profile(prtc.args[0], prtc.args[1]);
+                const testPassed = actual === prtc.expect;
+                if (testPassed) {
+                    passedCount++;
+                }
+                const tr = document.createElement("tr");
+                tr.className = testPassed ? "pass" : "fail";
+
+                const tdStatus = document.createElement("td");
+                tdStatus.className = "status";
+                tdStatus.textContent = testPassed ? "PASS" : "FAIL";
+
+                const tdName = document.createElement("td");
+                tdName.textContent = "profile() case " + (idx + 1);
+
+                const tdLine = document.createElement("td");
+                const codeLine = document.createElement("code");
+                codeLine.textContent = JSON.stringify(prtc.args);
+                tdLine.appendChild(codeLine);
+
+                const tdTest = document.createElement("td");
+                tdTest.textContent = "N/A";
+
+                const tdMatch = document.createElement("td");
+                tdMatch.textContent = `Expected: ${JSON.stringify(prtc.expect)} | Actual: ${JSON.stringify(actual)}`;
+
+                tr.appendChild(tdStatus);
+                tr.appendChild(tdName);
+                tr.appendChild(tdLine);
+                tr.appendChild(tdTest);
+                tr.appendChild(tdMatch);
+
+                resultsBody.appendChild(tr);
+            });
 
             testCases.forEach((tc) => {
                 const actualTest = FamousMark.test(tc.line);

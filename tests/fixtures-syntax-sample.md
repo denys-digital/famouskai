@@ -6,7 +6,7 @@ preview, one short example each. Open the preview (**Preview** button) next to t
 both views. The long sample, for printing and reading tests, is
 `fixtures-syntax-sample-extended.md`.
 
-﹥ Famous Arrow: this line is a bookmark in the Outline tab, and folds down to the next mark.
+﹥ Famous Arrow: this line is a bookmark in the Outline tab (it does not fold).
 
 ## 1. Headings
 

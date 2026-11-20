@@ -3,21 +3,26 @@
 ## Overview
 This document outlines manual testing scenarios for inserting snippets and triggering the help dialog by clicking anywhere on the full width of snippet entries in the sidebar lexicon panel.
 
-## Sample Test Dataset
-```markdown
-Sample document content for testing selection replacement and snippet insertion:
-Hello World Famouskai Editor
-This is line two for testing selection.
-```
+## Test Datasets
+
+Every test opens its sample file from the repository, so each run starts from the same content and there is nothing to type, save or delete.
+
+**To open a file:** open the address under test followed by `?open=tests/<file>`, for example `https://app.famouskai.com/?open=tests/fixtures-snippets-sample.md`. It opens in the app under its own name, unsaved. Open it again before each test.
+
+| Dataset | File | Used by |
+| :--- | :--- | :--- |
+| A | `tests/fixtures-snippets-sample.md` (3 lines; line 2 `Hello World Famouskai Editor`, line 3 `This is line two for testing selection.`) | TS-SNIP-01 to 07 |
+
+TS-SNIP-03 also needs one custom snippet, created once in Tools tab > `Manage snippets` > add: Key `wrap`, Help Description `Wrap selection`, Snippet Content `[{{selection}}]$1`, Allowed Extensions empty. Delete it after the run.
 
 ## Test Matrix
 
 | Test ID | Scenario | Pre-conditions | Action Steps | Expected Outcome |
 | :--- | :--- | :--- | :--- | :--- |
-| **TS-SNIP-01** | Full-width row click insertion without selection | Active editor with cursor at end of document | 1. Expand sidebar if hidden<br>2. Hover over a snippet entry (e.g. `/code`) in the sidebar lexicon<br>3. Click anywhere on the full width of the row | Snippet content is inserted at current cursor position in Ace editor. Cursor moves to `$1` location if present. Focus returns to editor. |
-| **TS-SNIP-02** | Snippet insertion with existing text selection (no `{{selection}}` in snippet) | Active text selection in editor (e.g. "Hello World") | 1. Click on snippet row `/date` in sidebar lexicon | Selected text is replaced by the snippet. Focus returns to Ace editor. |
-| **TS-SNIP-03** | Snippet insertion with existing text selection (`{{selection}}` variable in snippet) | Active text selection in editor (e.g. "my_var") | 1. Click on custom snippet row containing `{{selection}}` | Selected text is preserved inside `{{selection}}` variable slot within inserted snippet. Focus returns to Ace editor. |
-| **TS-SNIP-04** | Click on `/help` row | Sidebar open | 1. Click on `/help: Show alert list` entry in sidebar lexicon | Alert dialog pops up listing all available snippets for current file extension. After closing alert, focus returns to Ace editor. |
-| **TS-SNIP-05** | Visual styling & hover effect | Sidebar open | 1. Move mouse over snippet row | Row background changes to `--color-bg-hover` and text highlights with `--color-accent` across full width with pointer cursor. |
-| **TS-SNIP-06** | Click-to-insert from the Manage Snippets drawer | Sidebar open, Tools tab | 1. Click `Manage snippets`<br>2. Click the text of a snippet card (not the Edit or Delete button) | Snippet is inserted at the cursor, a toast `Snippet /key inserted` shows, the file shows as modified, focus returns to the editor. Edit and Delete buttons do not insert. |
-| **TS-SNIP-07** | Toast after a click in the Tools tab list | Sidebar open, Tools tab | 1. Click a snippet row (not `/help`) in the sidebar lexicon | Snippet is inserted at the cursor and a toast `Snippet /key inserted` shows, as in the drawer (TS-SNIP-06). Clicking `/help` shows the alert and no toast. |
+| **TS-SNIP-01** | Full-width row click insertion without selection | Dataset A open, cursor at the end of the file (Ctrl+End, empty line 4) | 1. Open the Tools tab.<br>2. Click the far right end of the `/code: Insert a code section` row. | 1. Line 4 and line 5 are each three backticks (an empty code section). The cursor is at the end of line 4, in the editor. Toast `Snippet /code inserted`. The file shows as unsaved. |
+| **TS-SNIP-02** | Snippet insertion with existing text selection (no `{{selection}}` in snippet) | Dataset A open | 1. Select `Hello World` on line 2 (first 11 characters).<br>2. Click the `/fa: Famous arrow` row. | 1. Line 2 is `﹥  Famouskai Editor` (the arrow, then 2 spaces: the one of the snippet and the one that followed `World`). Focus in the editor. |
+| **TS-SNIP-03** | Snippet insertion with existing text selection (`{{selection}}` variable in snippet) | Dataset A open, custom snippet `wrap` created (see Test Datasets) | 1. Select `line two` on line 3.<br>2. Click the `/wrap: Wrap selection` row. | 1. Line 3 is `This is [line two] for testing selection.` Focus in the editor. |
+| **TS-SNIP-04** | Click on `/help` row | Dataset A open, custom snippet `wrap` not created | 1. Click the `/help: Show alert list` row.<br>2. Close the alert. | 1. The alert reads, top to bottom:<br>MAGIC SNIPPETS FOR .MD:<br>/fa ➔ Famous arrow<br>/fb ➔ Flying bubble<br>/md ➔ Magic dot<br>/date ➔ Insert current date (YYYY-MM-DD)<br>/time ➔ Insert current time (HH:MM)<br>/cmt ➔ Multiline comment<br>/pb ➔ Force page break (PDF)<br>/br ➔ Insert a line break<br>/code ➔ Insert a code section<br>2. Focus back in the editor, text unchanged. |
+| **TS-SNIP-05** | Visual styling & hover effect | Dataset A open, Tools tab | 1. Move the mouse over the `/fa` row, from its left end to its right end. | 1. On the whole row width: hover background, accent text color, pointer cursor. |
+| **TS-SNIP-06** | Click-to-insert from the Manage Snippets drawer | Dataset A open, Tools tab, cursor at the start of line 1 | 1. Click `Manage snippets`.<br>2. Click the text of the `/fb` card (not Edit or Delete).<br>3. Click Edit, then Delete (Cancel the confirm) on another card. | 1. The drawer opens.<br>2. Line 1 starts with `° ` . Toast `Snippet /fb inserted`. The file shows as unsaved. Focus in the editor.<br>3. Nothing is inserted. |
+| **TS-SNIP-07** | Toast after a click in the Tools tab list | Dataset A open, Tools tab, cursor at the start of line 1 | 1. Click the `/md: Magic dot` row.<br>2. Click the `/help` row. | 1. Line 1 starts with `• `. Toast `Snippet /md inserted`.<br>2. The help alert (TS-SNIP-04), no toast. |

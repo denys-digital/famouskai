@@ -35,7 +35,7 @@
  * Globals used:
  *   - currentFileName
  *   - editor
- *   - isPreviewDark
+ *   - isPreviewDark, previewDarkSetting
  *   - updatePreviewThemeUI
  *   - savePreferences
  *   - isPopupWindow
@@ -218,6 +218,25 @@ function toggleFullPreview() {
     if (ext === 'patch' || ext === 'diff') updatePreviewContent();
 }
 
+/**
+ * Markdown preview only: a line "• text" (optional leading spaces, one •, one space)
+ * becomes "- text", so marked renders it as a list. In Markdown, • is an ordinary
+ * bullet (docs-lab/FAMOUS-MARK-MATRIX.md). Fenced code blocks are never changed.
+ * Returns a new string: the editor text is never changed.
+ */
+function magicDotToMarkdownList(text) {
+    let inFence = false;
+    return String(text).split('\n').map(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+            inFence = !inFence;
+            return line;
+        }
+        if (inFence) return line;
+        return line.replace(/^( *)• (.*)$/, '$1- $2');
+    }).join('\n');
+}
+
 function updatePreviewContent() {
     if (!isPreviewOpen || !editor) return;
 
@@ -235,7 +254,7 @@ function updatePreviewContent() {
         previewEl.classList.add('markdown-body');
         previewEl.style.display = 'block';
         if (typeof DOMPurify !== 'undefined') {
-            previewEl.innerHTML = DOMPurify.sanitize(marked.parse(content));
+            previewEl.innerHTML = DOMPurify.sanitize(marked.parse(magicDotToMarkdownList(content)));
         } else {
             previewEl.textContent = content;
             console.warn("DOMPurify is undefined, falling back to textContent for Markdown preview");
@@ -294,6 +313,7 @@ document.getElementById("btn-preview-full").addEventListener("click", toggleFull
 const btnPreviewTheme = document.getElementById("btn-preview-theme");
 if (btnPreviewTheme) {
     btnPreviewTheme.addEventListener("click", () => {
+        previewDarkSetting = null; // a click is the user's own choice: it is saved
         isPreviewDark = !isPreviewDark;
         updatePreviewThemeUI();
         savePreferences();

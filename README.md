@@ -1,10 +1,10 @@
 # Famouskai Editor 🦊
 
-*Read this in other languages: [Français](README.fr.md)*
+*Read this in other languages: [Français](README.fr.md) ([open in Famouskai](https://app.famouskai.com/?open=README.fr.md&view=read))*
 
 Famouskai is a "Local-First" code and text editor built as a Progressive Web App (PWA). Designed for speed, privacy and resilience, it opens in a second, edits the files on your disk directly, and runs entirely in your browser: no account, no backend, no remote database, no build step.
 
-**What Famouskai will always be, and never be: [DNA.md](./DNA.md).**
+**What Famouskai will always be, and never be: [DNA.md](./DNA.md)** ([open in Famouskai](https://app.famouskai.com/?open=DNA.md&view=read)).
 
 Think of it as a reliable, editable post-it for your files rather than a heavyweight IDE. Coupled with **Diffskai**, its built-in comparison and merge tool, Famouskai makes sure your local edits are never silently overwritten when another program changes the same file.
 
@@ -16,6 +16,7 @@ Think of it as a reliable, editable post-it for your files rather than a heavywe
 
 ## Quick start
 
+- **See it in one click:** open a sample file straight in the app: [a Markdown plan with Famous Marks](https://app.famouskai.com/?open=tests/fixtures-outline-sample.md&view=split) (look at the **Outline** tab), [a JavaScript file](https://app.famouskai.com/?open=tests/fixtures-syntax-sample.js), [a CSV table](https://app.famouskai.com/?open=tests/fixtures-syntax-sample.csv). Nothing is written to your disk.
 - **Try it online:** open [app.famouskai.com](https://app.famouskai.com) in Chrome or Edge, then use **Open** to edit a file from your disk. To install it as an app, use the install icon in the address bar.
 - **Run it from a copy of this repository:** download the ZIP (green **Code** button, then **Download ZIP**), unzip it, and double-click `index.html`. There is nothing to install or build. Offline mode needs the app to be served over HTTPS or `localhost` (see *Known limitations*).
 
@@ -24,7 +25,7 @@ Think of it as a reliable, editable post-it for your files rather than a heavywe
 - **One document per page.** Famouskai deliberately has no internal tab system: your browser already has one. Need a second file? Open a new window or browser tab (the **+** button, or Ctrl+click a file in the Explorer) and keep as many editors side by side as you like.
 - **Your files stay on your disk.** Files are read and written in place through the File System Access API. Famouskai only keeps preferences, recent files and your snippets in the browser's local storage.
 - **Diffskai protects your work.** If another program changed the file on disk since you opened it, Famouskai stops before saving and offers to open Diffskai, a side-by-side comparison and merge view, so you decide what to keep instead of losing either version. You can also open Diffskai at any time to compare the current text with another version (the **D** button).
-- **Easy to personalize.** No complex plugin ecosystem: colors live in plain CSS files, Magic Snippets insert your own templates and symbols, and tools are small JavaScript files you can read and write in an afternoon (see [`docs/PLUGIN-ARCHITECTURE.md`](./docs/PLUGIN-ARCHITECTURE.md)).
+- **Easy to personalize.** No complex plugin ecosystem: colors live in plain CSS files, Magic Snippets insert your own templates and symbols, and tools are small JavaScript files you can read and write in an afternoon (see [`docs/PLUGIN-ARCHITECTURE.md`](./docs/PLUGIN-ARCHITECTURE.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/PLUGIN-ARCHITECTURE.md&view=read))).
 
 ## Core Features
 
@@ -32,7 +33,7 @@ Think of it as a reliable, editable post-it for your files rather than a heavywe
 *   **Syntax coloring** for CSS, CSV, Diff/Patch, HTML, JavaScript/TypeScript, JSON, Markdown, SVG, XML, YAML, `.log` and plain text.
 *   **Markdown preview:** live, sanitized preview side by side with the editor, single-file HTML export and Print to PDF.
 *   **Tabbed sidebar:** Explorer (workspaces and files), Outline (document structure), Tools and Magic Snippets, Windows & Settings.
-*   **Famous Marks:** three markers (`﹥` Famous Arrow, `•` Magic Dot, `°` Flying Bubble) that turn any comment or line into a foldable section listed in the Outline. See [`docs/FAMOUS-MARK.md`](./docs/FAMOUS-MARK.md).
+*   **Famous Marks:** three markers (`﹥` Famous Arrow, `•` Magic Dot, `°` Flying Bubble) that turn any comment or line into a bookmark listed in the Outline. See [`docs/FAMOUS-MARK.md`](./docs/FAMOUS-MARK.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/FAMOUS-MARK.md&view=read)).
 *   **Built-in tools:** Beautify, Tidy & Sanitize Text, Sort Lines, Remove Duplicate Lines, Extract & Copy Table, and more.
 *   **PWA:** installable on Windows, macOS, Linux and ChromeOS; once installed, it can open files straight from your file manager.
 
@@ -45,7 +46,7 @@ Think of it as a reliable, editable post-it for your files rather than a heavywe
 
 ## Built With (Zero-CDN Architecture)
 
-Famouskai is built to be resilient. To guarantee true offline capability, **all dependencies are vendored locally** (no CDN calls). See [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) for legal details.
+Famouskai is built to be resilient. To guarantee true offline capability, **all dependencies are vendored locally** (no CDN calls). See [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) ([open in Famouskai](https://app.famouskai.com/?open=THIRD-PARTY-NOTICES.md&view=read)) for legal details.
 
 | Library | Version | Role | License |
 | --- | --- | --- | --- |
@@ -66,7 +67,7 @@ Famouskai is passionately developed under a **Dual License** model to guarantee 
 You are free to use, modify, and distribute Famouskai for personal, academic, or open-source projects, provided you share your modifications under the exact same license (AGPLv3). Openness breeds openness. Full text: [`LICENSE`](./LICENSE).
 
 **2. Commercial License**
-Want to integrate Famouskai into your proprietary product (SaaS, closed CMS, internal corporate tool) without open-sourcing your own codebase? See [`docs/COMMERCIAL-LICENSE.md`](./docs/COMMERCIAL-LICENSE.md) for details, or contact me directly to acquire an affordable commercial license tailored to your needs.
+Want to integrate Famouskai into your proprietary product (SaaS, closed CMS, internal corporate tool) without open-sourcing your own codebase? See [`docs/COMMERCIAL-LICENSE.md`](./docs/COMMERCIAL-LICENSE.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/COMMERCIAL-LICENSE.md&view=read)) for details, or contact me directly to acquire an affordable commercial license tailored to your needs.
 
 ## Sponsorship & Support
 
@@ -114,7 +115,7 @@ templates, the Sponsor button, the CLA bot); they only work if placed exactly th
 root. `docs/` holds everything meant for humans, not for GitHub's automation. Splitting the two
 keeps the repository root free for what actually matters when browsing the code: the code itself.
 
-New here? Start with [`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md), a step-by-step guide
+New here? Start with [`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/00-START-HERE-HOW-TO.md&view=read)), a step-by-step guide
 that assumes zero prior GitHub experience, including a no-install/browser-only path for anyone
 who (like the maintainer) doesn't want to set up a local Git command-line interface (CLI).
 
@@ -123,10 +124,10 @@ who (like the maintainer) doesn't want to set up a local Git command-line interf
 Contributions are highly appreciated! Whether it's fixing a bug, improving documentation, or proposing a feature, feel free to open an *Issue* or a *Pull Request (PR)*.
 
 Before your first PR, please read:
-- [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md): how contributions work here.
-- [`docs/BRAND-GUIDE.md`](./docs/BRAND-GUIDE.md): the visual rules for anything pushed to this repository.
-- [`.github/CODE_OF_CONDUCT.md`](./.github/CODE_OF_CONDUCT.md): expected behavior in this community.
-- [`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md): a complete, beginner-friendly walkthrough (Fork → Pull Request), including a browser-only path if you'd rather not install anything locally.
+- [`.github/CONTRIBUTING.md`](./.github/CONTRIBUTING.md) ([open in Famouskai](https://app.famouskai.com/?open=.github/CONTRIBUTING.md&view=read)): how contributions work here.
+- [`docs/BRAND-GUIDE.md`](./docs/BRAND-GUIDE.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/BRAND-GUIDE.md&view=read)): the visual rules for anything pushed to this repository.
+- [`.github/CODE_OF_CONDUCT.md`](./.github/CODE_OF_CONDUCT.md) ([open in Famouskai](https://app.famouskai.com/?open=.github/CODE_OF_CONDUCT.md&view=read)): expected behavior in this community.
+- [`docs/00-START-HERE-HOW-TO.md`](./docs/00-START-HERE-HOW-TO.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/00-START-HERE-HOW-TO.md&view=read)): a complete, beginner-friendly walkthrough (Fork → Pull Request), including a browser-only path if you'd rather not install anything locally.
 
 Your first Pull Request will trigger an automated bot asking you to sign the lightweight
-[Contributor License Agreement](./docs/CLA.md) (CLA), a one-time, one-click step.
+[Contributor License Agreement](./docs/CLA.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/CLA.md&view=read)) (CLA), a one-time, one-click step.

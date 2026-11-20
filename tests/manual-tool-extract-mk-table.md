@@ -1,35 +1,25 @@
 # Manual Test Specification: Extract & Copy Markdown Table (`manual-tool-extract-mk-table.md`)
 
-## Sample Dataset
+## Test Datasets
 
-Copy and paste the following Markdown table into editor (`test.md`):
+Every test opens its sample file from the repository, so each run starts from the same content and there is nothing to type, save or delete.
 
-```markdown
-# Table Test Document
+**To open a file:** open the address under test followed by `?open=tests/<file>`, for example `https://app.famouskai.com/?open=tests/fixtures-extract-table-team.md`. It opens in the app under its own name, unsaved.
 
-| ID | Name | Role | Status |
-|---|:---|---:|:---:|
-| 101 | Alice | Lead Architect | Active |
-| 102 | Bob | Frontend Engineer | Active |
-| 103 | Charlie | QA Lead | On Leave |
-| 104 | Diana | Designer | Active |
-| 105 | Evan | DevOps | Inactive |
-| 106 | Fiona | Product Manager | Active |
-| 107 | George | Backend Engineer | Active |
-| 108 | Hannah | Security Engineer | Active |
-| 109 | Ian | Data Scientist | On Leave |
-| 110 | Julia | Systems Architect | Active |
+| Dataset | File | Used by |
+| :--- | :--- | :--- |
+| A | `tests/fixtures-extract-table-team.md` (16 lines: title line 1, header line 3, alignment line 4, rows `101` to `110` on lines 5 to 14, plain text line 16) | TC-MK-TBL-01, 02, 03, 05, 06 |
+| - | `tests/fixtures-syntax-sample.js` | TC-MK-TBL-04 |
 
-Some plain text after the table.
-```
+To check the clipboard, open a new window with `+` and paste (Ctrl+V).
 
 ## Manual Test Scenarios
 
 | Test ID | Scenario | Pre-conditions | Action Steps | Expected Outcome |
 |---|---|---|---|---|
-| TC-MK-TBL-01 | Extract specific rows from middle of Markdown table | Markdown file active in editor containing the sample table | Select rows 102 and 103 (`| 102 | ...` and `| 103 | ...`), click "Extract & Copy Table" from Tools menu | Success toast `"Extracted and copied to clipboard!"` is shown. Clipboard contains header, alignment row, and selected rows 102 and 103. |
-| TC-MK-TBL-02 | Extract when selection already includes header & alignment rows | Markdown file active in editor containing the sample table | Select entire table including header and alignment rows, click "Extract & Copy Table" | Toast shown. Extracted output contains header, alignment row, and data rows without duplication. |
-| TC-MK-TBL-03 | Non-table selection error handling | Markdown file active in editor containing the sample document | Select `# Table Test Document` or `Some plain text after the table.`, click "Extract & Copy Table" | Browser alert `"Please select one or more lines from the Markdown table."` is displayed. |
-| TC-MK-TBL-04 | Tool visibility on non-markdown files | Open a `.txt` or `.js` file in editor | Open Tools menu | "Extract & Copy Table" tool is not listed in Tools menu (restricted to `.md` files). |
-| TC-MK-TBL-05 | Mixed selection (table rows + non-table text) | Markdown file active in editor containing the sample document | Select from row 105 down to `Some plain text after the table.`, click "Extract & Copy Table" | Toast shown. Non-table plain text line is automatically omitted from extracted clipboard output. |
-| TC-MK-TBL-06 | Disjoint multi-selection (Ctrl/Cmd + selection) | Markdown file active in editor containing the 10-row sample table | Using Ctrl+click/drag (or Cmd+click/drag on macOS), select disjoint rows (e.g. 102, 105, and 108), click "Extract & Copy Table" | Toast shown. Extracted clipboard output clean-reconstructs the table with header, alignment row, and strictly rows 102, 105, and 108 (no empty or unselected lines). |
+| **TC-MK-TBL-01** | Extract specific rows from middle of Markdown table | `fixtures-extract-table-team.md` (Dataset A) open | 1. Select lines 6 and 7 (rows `102` and `103`).<br>2. Click "Extract & Copy Table" in the Tools tab.<br>3. Paste in a new window. | 1. Toast `Extracted and copied to clipboard!`<br>2. 4 lines, top to bottom:<br>line 3 of Dataset A (header)<br>line 4 (alignment)<br>line 6 (`102` Bob)<br>line 7 (`103` Charlie) |
+| **TC-MK-TBL-02** | Extract when selection already includes header & alignment rows | `fixtures-extract-table-team.md` (Dataset A) open | 1. Select lines 3 to 14 (the whole table).<br>2. Click "Extract & Copy Table".<br>3. Paste in a new window. | 1. Toast `Extracted and copied to clipboard!`<br>2. Lines 3 to 14 of Dataset A, 12 lines: header and alignment rows only once. |
+| **TC-MK-TBL-03** | Non-table selection error handling | `fixtures-extract-table-team.md` (Dataset A) open | 1. Select line 1 (`# Table Test Document`), click "Extract & Copy Table".<br>2. Select line 16 (`Some plain text after the table.`), click "Extract & Copy Table". | 1. and 2. Browser alert `Please select one or more lines from the Markdown table.` The clipboard is not changed. |
+| **TC-MK-TBL-04** | Tool visibility on non-markdown files | `fixtures-syntax-sample.js` open | 1. Open the Tools tab. | 1. "Extract & Copy Table" is not listed (Markdown files only). |
+| **TC-MK-TBL-05** | Mixed selection (table rows + non-table text) | `fixtures-extract-table-team.md` (Dataset A) open | 1. Select from line 9 (row `105`) to line 16.<br>2. Click "Extract & Copy Table".<br>3. Paste in a new window. | 1. Toast `Extracted and copied to clipboard!`<br>2. 8 lines, top to bottom:<br>line 3 (header)<br>line 4 (alignment)<br>line 9 (`105`)<br>line 10 (`106`)<br>line 11 (`107`)<br>line 12 (`108`)<br>line 13 (`109`)<br>line 14 (`110`)<br>Not pasted: `Some plain text after the table.` |
+| **TC-MK-TBL-06** | Disjoint multi-selection (Ctrl/Cmd + selection) | `fixtures-extract-table-team.md` (Dataset A) open | 1. Select line 6, then hold Ctrl (Cmd on macOS) and select line 9, then line 12.<br>2. Click "Extract & Copy Table".<br>3. Paste in a new window. | 1. Toast `Extracted and copied to clipboard!`<br>2. 5 lines, top to bottom:<br>line 3 (header)<br>line 4 (alignment)<br>line 6 (`102`)<br>line 9 (`105`)<br>line 12 (`108`)<br>No empty line between them. |

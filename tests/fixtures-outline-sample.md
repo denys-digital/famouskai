@@ -10,7 +10,7 @@ It has two lines.
 ## 1.1 Tokyo
 
 Three days in Tokyo.
-// TODO: book the hotel
+<!-- TODO: book the hotel -->
 
 ### 1.1.1 Day 1
 

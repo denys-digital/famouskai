@@ -1,0 +1,24 @@
+# Test Suite - Edge Cases for Text Cleanup
+
+1. Trailing spaces testing:
+This line has 4 trailing spaces.
+This line has 2 trailing tabs.
+This line has trailing spaces and tabs mixed.
+
+2. White lines testing (lines with spaces or tabs only):
+
+3. Double spaces vs Indentation testing:
+    const variable  =  "hello  world";
+	function  testFunction(  param1,   param2  )  {
+        if  (true)  {
+            return   "preserved  indentation  tests";
+        }
+    }
+
+4. Consecutive blank lines testing:
+
+Line after 3 blank lines.
+
+Line after 4 blank lines.
+
+5. Trailing newlines testing (3 blank lines at the end of file):

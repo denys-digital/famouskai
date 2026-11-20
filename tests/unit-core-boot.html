@@ -304,6 +304,261 @@
             link.remove();
         });
 
+        test("BO-06", "openFixtureFromUrl(): ?fixture=tests/fixtures-syntax-sample.js", "file opened under its name, unsaved (fileHandle null, isModified false)", async (appWin) => {
+            const expected = await (await fetch('fixtures-syntax-sample.js', { cache: 'no-store' })).text();
+            appWin.eval("isModified = false"); // BO-03 leaves a dirty buffer and a confirm() that answers false
+            appWin.eval("newFile()");
+            appWin.history.replaceState({}, appWin.document.title, "?fixture=tests/fixtures-syntax-sample.js");
+            try {
+                const ok = await appWin.openFixtureFromUrl();
+                if (ok !== true) throw new Error(`expected true, got ${ok}`);
+                const name = appWin.eval("currentFileName");
+                if (name !== 'fixtures-syntax-sample.js') throw new Error(`currentFileName expected 'fixtures-syntax-sample.js', got '${name}'`);
+                if (appWin.eval("fileHandle") !== null) throw new Error("fileHandle expected null");
+                if (appWin.eval("isModified") !== false) throw new Error("isModified expected false");
+                if (appWin.editor.getValue() !== expected) throw new Error("editor content differs from the fixture file");
+            } finally {
+                appWin.history.replaceState({}, appWin.document.title, appWin.location.pathname);
+                appWin.eval("newFile()");
+            }
+        });
+
+        test("BO-06b", "openFixtureFromUrl(): ?fixture=tests/manual-sidebar-tabs.md (a manual test plan)", "plan opened under its name, unsaved, Markdown mode", async (appWin) => {
+            const expected = await (await fetch('manual-sidebar-tabs.md', { cache: 'no-store' })).text();
+            appWin.eval("isModified = false");
+            appWin.eval("newFile()");
+            appWin.history.replaceState({}, appWin.document.title, "?fixture=tests/manual-sidebar-tabs.md");
+            try {
+                const ok = await appWin.openFixtureFromUrl();
+                if (ok !== true) throw new Error(`expected true, got ${ok}`);
+                const name = appWin.eval("currentFileName");
+                if (name !== 'manual-sidebar-tabs.md') throw new Error(`currentFileName expected 'manual-sidebar-tabs.md', got '${name}'`);
+                if (appWin.eval("fileHandle") !== null) throw new Error("fileHandle expected null");
+                if (appWin.editor.getValue() !== expected) throw new Error("editor content differs from the plan file");
+                let mode = '';
+                for (let i = 0; i < 40 && mode !== 'ace/mode/markdown'; i++) { // Ace loads the mode asynchronously
+                    mode = appWin.editor.session.getMode().$id;
+                    if (mode !== 'ace/mode/markdown') await new Promise(r => setTimeout(r, 50));
+                }
+                if (mode !== 'ace/mode/markdown') throw new Error(`mode expected ace/mode/markdown, got ${mode}`);
+            } finally {
+                appWin.history.replaceState({}, appWin.document.title, appWin.location.pathname);
+                appWin.eval("isModified = false");
+                appWin.eval("newFile()");
+            }
+        });
+
+        test("BO-06c", "openFixtureFromUrl(): ?open=docs/FAMOUS-MARK.md (a doc of the site)", "doc opened under its name, unsaved", async (appWin) => {
+            const expected = await (await fetch('../docs/FAMOUS-MARK.md', { cache: 'no-store' })).text();
+            appWin.eval("isModified = false");
+            appWin.eval("newFile()");
+            appWin.history.replaceState({}, appWin.document.title, "?open=docs/FAMOUS-MARK.md");
+            try {
+                const ok = await appWin.openFixtureFromUrl();
+                if (ok !== true) throw new Error(`expected true, got ${ok}`);
+                const name = appWin.eval("currentFileName");
+                if (name !== 'FAMOUS-MARK.md') throw new Error(`currentFileName expected 'FAMOUS-MARK.md', got '${name}'`);
+                if (appWin.eval("fileHandle") !== null) throw new Error("fileHandle expected null");
+                if (appWin.editor.getValue() !== expected) throw new Error("editor content differs from the doc file");
+            } finally {
+                appWin.history.replaceState({}, appWin.document.title, appWin.location.pathname);
+                appWin.eval("isModified = false");
+                appWin.eval("newFile()");
+            }
+        });
+
+        test("BO-06d", "openFixtureFromUrl(): ?open= any editable file of the site (md, js, json, html, yml; subfolders, .github/)", "each file opened under its name, unsaved", async (appWin) => {
+            const files = ["DNA.md", "README.fr.md", ".github/CONTRIBUTING.md", ".github/CODE_OF_CONDUCT.md", ".github/SECURITY.md", ".github/PULL_REQUEST_TEMPLATE.md", ".github/ISSUE_TEMPLATE/bug_report.md", "core/core-boot.js", "manifest.json", "index.html", ".github/FUNDING.yml", "tests/fixtures-syntax-sample.css"];
+            try {
+                for (const path of files) {
+                    const expected = await (await fetch('../' + path, { cache: 'no-store' })).text();
+                    appWin.eval("isModified = false");
+                    appWin.eval("newFile()");
+                    appWin.history.replaceState({}, appWin.document.title, "?open=" + encodeURIComponent(path));
+                    const ok = await appWin.openFixtureFromUrl();
+                    if (ok !== true) throw new Error(`'${path}' expected true, got ${ok}`);
+                    const name = appWin.eval("currentFileName");
+                    if (name !== path.split('/').pop()) throw new Error(`'${path}' opened as '${name}'`);
+                    if (appWin.eval("fileHandle") !== null) throw new Error(`'${path}' fileHandle expected null`);
+                    if (appWin.editor.getValue() !== expected) throw new Error(`'${path}' editor content differs from the file`);
+                }
+            } finally {
+                appWin.history.replaceState({}, appWin.document.title, appWin.location.pathname);
+                appWin.eval("isModified = false");
+                appWin.eval("newFile()");
+            }
+        });
+
+        test("BO-07", "openFixtureFromUrl(): paths outside the allowed files and missing files", "nothing opened, returns false", async (appWin) => {
+            const bad = ["tests/manual-sidebar-tabs.txt", "tests/manual-../sw.md", "../sw.js", "tests/../sw.js", "tests/sub/fixtures-a.js", "tests/fixtures-..js", "https://example.com/tests/fixtures-a.js", "//example.com/tests/fixtures-a.js", "tests/fixtures-does-not-exist.txt", "docs/sub/a.md", "docs/FAMOUS-MARK.txt", "docs/../sw.md", "docs/does-not-exist.md", ".github/sub/CONTRIBUTING.md", "github/CONTRIBUTING.md", ".github/AGENTS.md", "dna.md", "/README.md", ".git/config.md", "docs/.hidden/a.md", "a/.github/CONTRIBUTING.md", "docs/FAMOUS-MARK.md?x=1", "docs/FAMOUS-MARK.md#x", "docs\\FAMOUS-MARK.md", "docs/screenshot-outline-preview.png", "LICENSE", "icon"];
+            appWin.eval("isModified = false");
+            appWin.eval("newFile()");
+            appWin.editor.setValue("keep me", -1);
+            appWin.eval("isModified = false");
+            try {
+                for (const path of bad) {
+                    for (const param of ['fixture', 'open']) {
+                        appWin.history.replaceState({}, appWin.document.title, "?" + param + "=" + encodeURIComponent(path));
+                        const ok = await appWin.openFixtureFromUrl();
+                        if (ok !== false) throw new Error(`${param}='${path}' expected false, got ${ok}`);
+                    }
+                    if (appWin.editor.getValue() !== "keep me") throw new Error(`'${path}' changed the editor content`);
+                }
+            } finally {
+                appWin.history.replaceState({}, appWin.document.title, appWin.location.pathname);
+                appWin.eval("newFile()");
+            }
+        });
+
+        test("BO-08", "openFixtureFromUrl() when the buffer is modified and confirm returns false", "buffer kept", async (appWin) => {
+            appWin.eval("newFile()");
+            appWin.editor.setValue("Dirty buffer", -1);
+            appWin.eval("isModified = true");
+            const origConfirm = appWin.confirm;
+            appWin.confirm = () => false;
+            appWin.history.replaceState({}, appWin.document.title, "?fixture=tests/fixtures-syntax-sample.txt");
+            try {
+                const ok = await appWin.openFixtureFromUrl();
+                if (ok !== false) throw new Error(`expected false, got ${ok}`);
+                if (appWin.editor.getValue() !== "Dirty buffer") throw new Error("buffer replaced");
+            } finally {
+                appWin.confirm = origConfirm;
+                appWin.history.replaceState({}, appWin.document.title, appWin.location.pathname);
+                appWin.eval("isModified = false");
+                appWin.eval("newFile()");
+            }
+        });
+
+        // ﹥ &view= and &tab= (applyViewFromUrl): each case boots the app with its own URL.
+        // Every check reads the boot iframe once the condition holds or after 4 s.
+        async function bootWithView(query, ready) {
+            const { win, iframe } = await loadAppWithQuery(query);
+            const start = Date.now();
+            while (Date.now() - start < 4000) {
+                try { if (ready(win)) break; } catch (e) { /* not ready yet */ }
+                await delay(50);
+            }
+            await delay(150);
+            return { win, iframe };
+        }
+        function viewState(win) {
+            const sb = win.FamousPluginCore && win.FamousPluginCore.Sidebar;
+            return {
+                name: win.eval("currentFileName"),
+                open: win.eval("isPreviewOpen"),
+                full: win.eval("isPreviewFull"),
+                sidebar: !!(sb && sb.isOpen),
+                tab: sb ? sb.activeTab : null
+            };
+        }
+        function expectState(got, want) {
+            for (const key of Object.keys(want)) {
+                if (got[key] !== want[key]) throw new Error(`${key} expected ${JSON.stringify(want[key])}, got ${JSON.stringify(got[key])} (state ${JSON.stringify(got)})`);
+            }
+        }
+        async function withViewBoot(query, ready, check) {
+            const savedTab = localStorage.getItem('famouskai_active_sidebar_tab');
+            const { win, iframe } = await bootWithView(query, ready);
+            try {
+                await check(win);
+                const tabAfter = localStorage.getItem('famouskai_active_sidebar_tab');
+                if (tabAfter !== savedTab) throw new Error(`remembered sidebar tab changed: ${savedTab} 🡪 ${tabAfter}`);
+            } finally {
+                iframe.remove();
+                if (savedTab === null) localStorage.removeItem('famouskai_active_sidebar_tab');
+                else localStorage.setItem('famouskai_active_sidebar_tab', savedTab);
+            }
+        }
+        const mdOpened = (w) => w.eval("currentFileName") === 'FAMOUS-MARK.md' && w.eval("isPreviewOpen");
+
+        test("BO-09", "?open=docs/FAMOUS-MARK.md&view=split", "Outline + editor + preview (not full), remembered tab unchanged", async () => {
+            await withViewBoot("?open=docs/FAMOUS-MARK.md&view=split", mdOpened, (w) => {
+                expectState(viewState(w), { name: 'FAMOUS-MARK.md', open: true, full: false, sidebar: true, tab: 'outline' });
+            });
+        });
+
+        test("BO-09b", "?open=docs/FAMOUS-MARK.md&view=read", "reader: full preview + Outline", async () => {
+            await withViewBoot("?open=docs/FAMOUS-MARK.md&view=read", (w) => mdOpened(w) && w.eval("isPreviewFull"), (w) => {
+                expectState(viewState(w), { open: true, full: true, sidebar: true, tab: 'outline' });
+            });
+        });
+
+        test("BO-09c", "?open=docs/FAMOUS-MARK.md&view=read-light", "full preview alone, sidebar closed", async () => {
+            await withViewBoot("?open=docs/FAMOUS-MARK.md&view=read-light", (w) => mdOpened(w) && w.eval("isPreviewFull"), (w) => {
+                expectState(viewState(w), { open: true, full: true, sidebar: false });
+            });
+        });
+
+        test("BO-09d", "?open=docs/FAMOUS-MARK.md&view=read&tab=explorer", "full preview, &tab= wins over the Outline", async () => {
+            await withViewBoot("?open=docs/FAMOUS-MARK.md&view=read&tab=explorer", (w) => mdOpened(w) && w.eval("isPreviewFull"), (w) => {
+                expectState(viewState(w), { open: true, full: true, sidebar: true, tab: 'explorer' });
+            });
+        });
+
+        test("BO-09e", "?open=docs/FAMOUS-MARK.md&view=split with the setting 'full preview at startup' on", "the link wins: split view, setting kept", async () => {
+            const savedPrefs = localStorage.getItem('famouskai_prefs');
+            const prefs = Object.assign({}, savedPrefs ? JSON.parse(savedPrefs) : {}, { fullPreviewStartup: true });
+            localStorage.setItem('famouskai_prefs', JSON.stringify(prefs));
+            try {
+                await withViewBoot("?open=docs/FAMOUS-MARK.md&view=split", mdOpened, (w) => {
+                    expectState(viewState(w), { open: true, full: false, sidebar: true, tab: 'outline' });
+                    if (!w.document.getElementById("toggle-full-preview-startup").checked) throw new Error("setting changed by the link");
+                });
+            } finally {
+                if (savedPrefs === null) localStorage.removeItem('famouskai_prefs');
+                else localStorage.setItem('famouskai_prefs', savedPrefs);
+            }
+        });
+
+        test("BO-09f", "?open=docs/FAMOUS-MARK.md&view=editor, then ?tab=explorer without a file", "editor alone; tab opened on its own", async () => {
+            await withViewBoot("?open=docs/FAMOUS-MARK.md&view=editor", (w) => w.eval("currentFileName") === 'FAMOUS-MARK.md', (w) => {
+                expectState(viewState(w), { name: 'FAMOUS-MARK.md', open: false });
+            });
+            await withViewBoot("?tab=explorer", (w) => w.FamousPluginCore.Sidebar.isOpen, (w) => {
+                expectState(viewState(w), { open: false, sidebar: true, tab: 'explorer' });
+            });
+        });
+
+        test("BO-09g", "?open=tests/fixtures-syntax-sample.js&view=read, ?open=docs/missing.md&view=read, ?view=nope", "no preview for a JS file, nothing applied for a missing file or an unknown view", async () => {
+            await withViewBoot("?open=tests/fixtures-syntax-sample.js&view=read", (w) => w.eval("currentFileName") === 'fixtures-syntax-sample.js', (w) => {
+                expectState(viewState(w), { open: false, full: false });
+            });
+            await withViewBoot("?open=docs/missing.md&view=read", () => false, (w) => {
+                expectState(viewState(w), { open: false, full: false });
+                if (w.applyViewFromUrl.length !== 0) throw new Error("applyViewFromUrl signature changed");
+            });
+            const { win, iframe } = await bootWithView("?view=nope", () => false);
+            try {
+                if (win.applyViewFromUrl() !== false) throw new Error("unknown view expected false");
+                expectState(viewState(win), { open: false });
+            } finally {
+                iframe.remove();
+            }
+        });
+
+        test("BO-09h", "?open=DNA.md&view=read&preview=dark, then savePreferences() and a theme button click", "dark preview for this opening; saved theme kept until the user clicks", async () => {
+            const savedPrefs = localStorage.getItem('famouskai_prefs');
+            const prefs = Object.assign({}, savedPrefs ? JSON.parse(savedPrefs) : {}, { previewDark: false });
+            localStorage.setItem('famouskai_prefs', JSON.stringify(prefs));
+            const storedDark = () => JSON.parse(localStorage.getItem('famouskai_prefs')).previewDark;
+            try {
+                await withViewBoot("?open=DNA.md&view=read&preview=dark", (w) => w.eval("currentFileName") === 'DNA.md' && w.eval("isPreviewFull"), (w) => {
+                    if (!w.document.getElementById("preview-render").classList.contains("preview-dark")) throw new Error("preview not dark");
+                    if (storedDark() !== false) throw new Error("saved theme changed on opening");
+                    w.eval("savePreferences()");
+                    if (storedDark() !== false) throw new Error("savePreferences() stored the forced theme");
+                    w.document.getElementById("btn-preview-theme").click();
+                    if (w.document.getElementById("preview-render").classList.contains("preview-dark")) throw new Error("click did not switch to light");
+                    if (storedDark() !== false) throw new Error("click to light should save light");
+                    w.document.getElementById("btn-preview-theme").click();
+                    if (storedDark() !== true) throw new Error("click to dark should save dark");
+                });
+            } finally {
+                if (savedPrefs === null) localStorage.removeItem('famouskai_prefs');
+                else localStorage.setItem('famouskai_prefs', savedPrefs);
+            }
+        });
+
         window.addEventListener("load", async () => {
             try {
                 const appWin = await loadApp();

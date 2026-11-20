@@ -293,6 +293,21 @@
                 diffEditor.updateOptions({ wordWrap: e.target.checked ? "on" : "off" });
             });
 
+            // SCROLL-UP / SCROLL-DOWN (private issue 547): cursor on the first or the
+            // last line of the left panel, focus in it, view on that line.
+            function goToLeftLine(toEnd) {
+                const left = diffEditor.getOriginalEditor();
+                const model = left.getModel();
+                if (!model) return;
+                const lineNumber = toEnd ? model.getLineCount() : 1;
+                const column = toEnd ? model.getLineMaxColumn(lineNumber) : 1;
+                left.setPosition({ lineNumber, column });
+                left.revealLine(lineNumber);
+                left.focus();
+            }
+            document.getElementById('btn-scroll-up').addEventListener('click', () => goToLeftLine(false));
+            document.getElementById('btn-scroll-down').addEventListener('click', () => goToLeftLine(true));
+
             // SWAP ACTION
             document.getElementById('btn-swap').addEventListener('click', () => {
                 if (isConflictMode) return;

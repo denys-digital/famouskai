@@ -56,8 +56,6 @@
     <!-- Preview Themes ready for user customization -->
     <link rel="stylesheet" href="preview-themes.css">
     
-    <meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob: data:; frame-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
-
     <style id="ace_searchbox"></style>
 </head>
 
@@ -192,11 +190,12 @@
                     <!-- Compact Famous Marks & Headings Quick Filter Badges -->
                     <div id="outline-mark-filters" class="sidebar-actions" style="margin-bottom: 10px; gap: 4px; flex-wrap: wrap;">
                         <button class="fold-btn active-filter" data-mark-filter="all" title="Show All">All</button>
-                        <button class="fold-btn" data-mark-filter="﹥" title="Filter Famous Arrow (﹥)">﹥</button>
-                        <button class="fold-btn" data-mark-filter="•" title="Filter Magic Dot (•)">•</button>
-                        <button class="fold-btn" data-mark-filter="°" title="Filter Flying Bubble (°)">°</button>
-                        <button class="fold-btn" data-mark-filter="TODO" title="Filter TODOs">TODO</button>
-                        <button class="fold-btn" data-mark-filter="@" title="Filter @ mentions">@</button>
+                        <button class="fold-btn" data-mark-filter="#" id="btn-outline-filter-md" title="Show Markdown headings only (#)" style="display: none;">#</button>
+                        <button class="fold-btn" data-mark-filter="﹥" data-mark-group="marks" title="Filter Famous Arrow (﹥)">﹥</button>
+                        <button class="fold-btn" data-mark-filter="•" data-mark-group="marks" id="btn-outline-filter-dot" title="Filter Magic Dot (•)">•</button>
+                        <button class="fold-btn" data-mark-filter="°" data-mark-group="marks" title="Filter Flying Bubble (°)">°</button>
+                        <button class="fold-btn" data-mark-filter="TODO" data-mark-group="marks" title="Filter TODOs">TODO</button>
+                        <button class="fold-btn" data-mark-filter="@" data-mark-group="marks" title="Filter @ mentions">@</button>
                         <button class="fold-btn" data-mark-filter="</>" id="btn-outline-filter-xml" title="Filter HTML/XML tags" style="display: none;">&lt;/&gt;</button>
                         <button class="fold-btn" data-mark-filter="JS" id="btn-outline-filter-js" title="Filter JavaScript symbols" style="display: none;">JS</button>
                     </div>
@@ -374,6 +373,7 @@
     <script src="plugins/ext-sidebar.js"></script>
     <script src="plugins/ext-sidebar-demo.js"></script>
     <script src="plugins/ext-famous-core.js"></script>
+    <script src="plugins/ext-outline-json.js"></script>
     <script src="plugins/ext-outline.js"></script>
     <script src="plugins/ext-snippets.js"></script>
     <script src="plugins/ext-export-html.js"></script>

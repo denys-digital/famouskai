@@ -177,7 +177,7 @@ window.FamousPluginCore.ExportHTML = {
         let bodyHTML = "";
         if (typeof marked !== "undefined" && typeof marked.parse === "function") {
             if (typeof DOMPurify !== 'undefined') {
-                bodyHTML = DOMPurify.sanitize(marked.parse(markdownText));
+                bodyHTML = DOMPurify.sanitize(marked.parse(typeof magicDotToMarkdownList === "function" ? magicDotToMarkdownList(markdownText) : markdownText));
             } else {
                 console.warn("DOMPurify is undefined, falling back to preview content for HTML export");
                 const previewEl = document.getElementById("preview-render");

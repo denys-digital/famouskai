@@ -493,6 +493,41 @@
             cleanupPreviewState(appWin);
         });
 
+        test("CP-12", "magicDotToMarkdownList() turns '• ' lines into '- ' lines, outside code fences only", "exact output string", async (appWin) => {
+            const input = "Liste :\n\n• premier\n• deuxième\n  • sous-point\n\n```\n• code\n```\n•• deux\ntexte • milieu\n•collé";
+            const expected = "Liste :\n\n- premier\n- deuxième\n  - sous-point\n\n```\n• code\n```\n•• deux\ntexte • milieu\n•collé";
+            const got = appWin.magicDotToMarkdownList(input);
+            if (got !== expected) {
+                throw new Error("Expected " + JSON.stringify(expected) + ", got " + JSON.stringify(got));
+            }
+        });
+
+        test("CP-13", "Open a mock a.md with two '• ' lines, togglePreview()", "#preview-render has exactly 2 li ('un', 'deux') and no '•'", async (appWin) => {
+            cleanupPreviewState(appWin);
+
+            appWin.eval("newFile()");
+            appWin.eval("currentFileName = 'a.md'");
+            appWin.applyNativeColoration("a.md");
+            appWin.editor.setValue("• un\n• deux", 1);
+
+            appWin.togglePreview();
+            await delay(100);
+
+            const renderEl = appWin.document.getElementById("preview-render");
+            const items = Array.from(renderEl.querySelectorAll("li")).map(li => li.textContent.trim());
+            if (items.length !== 2 || items[0] !== "un" || items[1] !== "deux") {
+                throw new Error("Expected 2 li 'un', 'deux', got " + JSON.stringify(items));
+            }
+            if (renderEl.textContent.indexOf("•") !== -1) {
+                throw new Error("#preview-render still contains a '•' character");
+            }
+            if (appWin.editor.getValue() !== "• un\n• deux") {
+                throw new Error("Editor text was changed");
+            }
+
+            cleanupPreviewState(appWin);
+        });
+
         window.addEventListener("load", async () => {
             try {
                 const appWin = await loadApp();

@@ -28,7 +28,8 @@
  * 100% Famouskai-proprietary concept: "Famous Marks" is the family name of
  * three Unicode characters (Famous Arrow ﹥, Magic Dot •, Flying Bubble °)
  * that act as universal markers recognized by EVERY module that needs them
- * (Outline bookmarking, ACE code-folding, Snippets contextual help).
+ * (Outline, Snippets contextual help, section folding). Only • sections fold,
+ * outside Markdown (core-editor.js SectionFold); ﹥ and ° never fold.
  *
  * This file is the ONLY place where:
  *   - the list of characters is declared,
@@ -38,9 +39,8 @@
  * No other file should redefine its own detection regex.
  * Every consumer MUST read from window.FamousPluginCore.FamousMark.
  *
- * LOAD ORDER: this script must be loaded BEFORE ext-outline.js, ext-snippets.js,
- * and before the main inline script of index.html (which uses it for the
- * ACE folding patch). See index.html, <script> section of <head>/<body>.
+ * LOAD ORDER: this script must be loaded BEFORE ext-outline.js and ext-snippets.js.
+ * See index.html, <script> section of <head>/<body>.
  * -------------------------------------------------------------------------
  */
 
@@ -98,11 +98,17 @@ window.FamousPluginCore.FamousMark = (function () {
     );
 
     // --- 5. Lightweight "detection only" variant for test()-style needs ----
-    // Used by the ACE folding patch: same anchoring guarantees,
-    // no capture group (marginal perf gain, but mainly a dedicated API
-    // so folding logic never depends on the exact shape of the captured group).
+    // Used by FamousMark.test(): same anchoring guarantees, no capture group.
     const detectRegex = new RegExp(
         "^\\s*[" + PREFIX_CLASS + "]*\\s*[" + CHAR_CLASS + "]"
+    );
+
+    /**
+     * Regex used by parse(): group 1 = mark character, group 2 = repeats of the same mark, group 3 = label.
+     * @type {RegExp}
+     */
+    const parseRegex = new RegExp(
+        "^\\s*[" + PREFIX_CLASS + "]*\\s*([" + CHAR_CLASS + "])(\\1*)\\s*(.*?)\\s*(?:-->|\\*/)?\\s*$"
     );
 
     return {
@@ -140,7 +146,7 @@ window.FamousPluginCore.FamousMark = (function () {
 
         /**
          * Fast boolean check to test if a line begins with a Famous Mark (with optional comment prefix).
-         * Used for code folding and quick detection.
+         * Used for quick detection.
          * @param {string} line - The text line to test.
          * @returns {boolean} True if line starts with a valid Famous Mark pattern, false otherwise.
          * @example
@@ -161,6 +167,106 @@ window.FamousPluginCore.FamousMark = (function () {
          */
         match: function (line) {
             return line.match(regex);
+        },
+
+        /**
+         * Returns the file's Famous Mark profile based on filename extension or Ace mode ID.
+         * @param {string} [filename] - The filename.
+         * @param {string} [modeId] - The Ace editor mode ID.
+         * @returns {string} One of 'markdown', 'commented', 'plain', or 'none'.
+         */
+        profile: function (filename, modeId) {
+            if (typeof filename === "string" && filename.trim() !== "") {
+                const lastDot = filename.lastIndexOf(".");
+                const ext = lastDot === -1 ? "" : filename.substring(lastDot + 1).toLowerCase();
+                if (ext === "md" || ext === "markdown") {
+                    return "markdown";
+                }
+                if (ext === "css" || ext === "html" || ext === "js" || ext === "ts" || ext === "svg" || ext === "xml" || ext === "yml" || ext === "yaml") {
+                    return "commented";
+                }
+                if (ext === "json" || ext === "csv" || ext === "tsv" || ext === "log" || ext === "diff" || ext === "patch") {
+                    return "none";
+                }
+                return "plain";
+            } else {
+                if (modeId === "ace/mode/markdown") {
+                    return "markdown";
+                }
+                if (modeId === "ace/mode/css" || modeId === "ace/mode/html" || modeId === "ace/mode/javascript" || modeId === "ace/mode/svg" || modeId === "ace/mode/xml" || modeId === "ace/mode/yaml") {
+                    return "commented";
+                }
+                if (modeId === "ace/mode/json" || modeId === "ace/mode/csv" || modeId === "ace/mode/log" || modeId === "ace/mode/diff") {
+                    return "none";
+                }
+                return "plain";
+            }
+        },
+
+        /**
+         * Parses a line into a structured mark object or null.
+         * @param {string} line - The text line to parse.
+         * @returns {Object|null} { kind, mark, level, label } or null.
+         */
+        parse: function (line) {
+            if (typeof line !== "string") {
+                return null;
+            }
+            const m = line.match(parseRegex);
+            if (!m) {
+                return null;
+            }
+            const char = m[1];
+            const count = 1 + m[2].length;
+            const label = m[3];
+
+            if (char === MARKS.magic.char) {
+                if (count > 4) {
+                    return null;
+                }
+                return { kind: "section", mark: char, level: count, label: label };
+            }
+            if (char === MARKS.arrow.char || char === MARKS.bubble.char) {
+                if (count > 1) {
+                    return null;
+                }
+                return { kind: char === MARKS.arrow.char ? "point" : "note", mark: char, level: 1, label: label };
+            }
+            return null;
+        },
+
+        /**
+         * The one section definition (docs-lab/FAMOUS-MARK-MATRIX.md section 1, open point 2),
+         * shared by the Outline, folding and Reorder so they can never disagree.
+         * An item with a numeric `level` is a section (a Markdown `#` heading, a `•` line):
+         * it holds every line down to the next section of the same or a higher level
+         * (level <= its own), or the end of the file. Any other item (﹥, °, TODO, code symbol)
+         * holds the lines down to the next item.
+         *
+         * @param {Array<{line: number, level?: number}>} items - outline items, in line order
+         * @param {number} idx - index of the item that starts the range
+         * @param {number} totalLines - number of lines in the document
+         * @returns {{start: number, end: number}} first and last line (inclusive)
+         * @example
+         * // "# A" (0), "﹥ a" (1), "## A1" (3), "# B" (5), 8 lines
+         * FamousMark.sectionRange(items, 0, 8); // { start: 0, end: 4 }
+         */
+        sectionRange: function (items, idx, totalLines) {
+            const item = items[idx];
+            const isSection = typeof item.level === "number";
+            let end = totalLines - 1;
+            for (let i = idx + 1; i < items.length; i++) {
+                const next = items[i];
+                if (!isSection) {
+                    end = next.line - 1;
+                    break;
+                }
+                if (typeof next.level === "number" && next.level <= item.level) {
+                    end = next.line - 1;
+                    break;
+                }
+            }
+            return { start: item.line, end: end };
         }
     };
 
