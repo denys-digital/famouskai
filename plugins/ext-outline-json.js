@@ -25,7 +25,7 @@ window.FamousPluginCore = window.FamousPluginCore || {};
 window.FamousPluginCore.JsonOutline = {
     /**
      * Keys of the first two levels of objects of a JSON text, in document order
-     * (docs-lab/FAMOUS-MARK-MATRIX.md section 3.1). Keys inside arrays and deeper keys
+     * Keys inside arrays and deeper keys
      * are not listed. Never throws, even on invalid JSON.
      *
      * @param {string} text - the JSON text

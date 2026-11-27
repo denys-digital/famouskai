@@ -37,6 +37,8 @@ window.FamousPluginCore.Outline = {
     resetFilter: function() {
         // Clears the outline filter state so a newly opened file is never
         // hidden behind a search term left over from the previous file.
+        // Reorder mode is transient (one move, then done): a new file starts without it.
+        this.leaveReorderMode();
         this.filterTerm = "";
         this.activeMarkFilter = "all";
     
@@ -142,15 +144,24 @@ window.FamousPluginCore.Outline = {
 
         const btnXml = document.getElementById('btn-outline-filter-xml');
         const btnJs = document.getElementById('btn-outline-filter-js');
+        const btnPy = document.getElementById('btn-outline-filter-py');
+        const btnYml = document.getElementById('btn-outline-filter-yml');
+        const btnCss = document.getElementById('btn-outline-filter-css');
 
         const isXmlOrHtml = ['html', 'htm', 'xml', 'svg'].includes(ext);
         const isJsOrHtml = ['html', 'htm', 'js', 'mjs', 'cjs', 'ts', 'tsx'].includes(ext);
 
         if (btnXml) btnXml.style.display = isXmlOrHtml ? 'inline-block' : 'none';
         if (btnJs) btnJs.style.display = isJsOrHtml ? 'inline-block' : 'none';
+        const isPy = ext === 'py' || (!ext && this.editorInstance && this.editorInstance.session && this.editorInstance.session.$modeId === 'ace/mode/python');
+        if (btnPy) btnPy.style.display = isPy ? 'inline-block' : 'none';
+        const isYml = ext === 'yml' || ext === 'yaml' || (!ext && this.editorInstance && this.editorInstance.session && this.editorInstance.session.$modeId === 'ace/mode/yaml');
+        if (btnYml) btnYml.style.display = isYml ? 'inline-block' : 'none';
+        const isCss = ext === 'css' || (!ext && this.editorInstance && this.editorInstance.session && this.editorInstance.session.$modeId === 'ace/mode/css');
+        if (btnCss) btnCss.style.display = isCss ? 'inline-block' : 'none';
 
         // Markdown: '#' badge (headings only) shown, '•' badge hidden ('•' is a plain bullet
-        // there, docs-lab/FAMOUS-MARK-MATRIX.md section 2). The file type comes from FamousMark.profile.
+        // there). The file type comes from FamousMark.profile.
         const session0 = this.editorInstance && this.editorInstance.session;
         const fileProfile = this.fileProfile(filename, session0 && session0.$modeId);
         const isMarkdown = fileProfile === 'markdown';
@@ -174,6 +185,15 @@ window.FamousPluginCore.Outline = {
             this.resetFilter();
         }
         if ((this.activeMarkFilter === 'js' || this.activeMarkFilter === 'JS') && !isJsOrHtml) {
+            this.resetFilter();
+        }
+        if (this.activeMarkFilter === 'py' && !isPy) {
+            this.resetFilter();
+        }
+        if (this.activeMarkFilter === 'yml' && !isYml) {
+            this.resetFilter();
+        }
+        if (this.activeMarkFilter === 'css' && !isCss) {
             this.resetFilter();
         }
         if ((this.activeMarkFilter === '#' && !isMarkdown) || (this.activeMarkFilter === '•' && isMarkdown)
@@ -201,7 +221,6 @@ window.FamousPluginCore.Outline = {
      * has depth N - 1. Every other item (Famous Mark, TODO, @,
      * code symbol) is a leaf of the section that holds it: under a heading of level N it has
      * depth N (one step to the right of that heading); before the first heading, depth 0.
-     * docs-lab/FAMOUS-MARK-MATRIX.md section 3.1.
      *
      * @param {Array<{type: string, level?: number}>} items - outline items, in line order
      * @returns {Array} the same array, each item with a numeric depth
@@ -213,7 +232,8 @@ window.FamousPluginCore.Outline = {
                 sectionLevel = item.level;
                 item.depth = item.level - 1;
             } else {
-                item.depth = sectionLevel;
+                // A nested code symbol (Python method, YAML child key) sits one step right per level
+                item.depth = sectionLevel + (item.subDepth || 0);
             }
         });
         return items;
@@ -226,10 +246,21 @@ window.FamousPluginCore.Outline = {
     setReorderOffered: function(offered) {
         const reorderBtn = document.getElementById('btn-outline-reorder-mode');
         if (reorderBtn) reorderBtn.style.display = offered ? '' : 'none';
-        if (!offered && this.isReorderMode) {
-            this.isReorderMode = false;
-            if (reorderBtn) reorderBtn.classList.remove('active-filter');
-        }
+        if (!offered) this.leaveReorderMode();
+    },
+
+    /**
+     * Turns Reorder mode off and releases the button. Reorder is a transient state: it ends
+     * when another file is opened (resetFilter) or the Outline tab is left (its onHide hook
+     * in ext-sidebar.js). Re-renders the list only when the mode was on.
+     */
+    leaveReorderMode: function() {
+        if (!this.isReorderMode) return;
+        this.isReorderMode = false;
+        this.draggedItemIndex = null;
+        const reorderBtn = document.getElementById('btn-outline-reorder-mode');
+        if (reorderBtn) reorderBtn.classList.remove('active-filter');
+        if (this.editorInstance && typeof this.render === 'function') this.render();
     },
 
     /**
@@ -305,6 +336,15 @@ window.FamousPluginCore.Outline = {
         const regexJSClass = /^\s*(?:export\s+)?class\s+([a-zA-Z0-9_]+)/;
         const regexJSArrow = /^\s*(?:(?:const|let|var)\s+)?([a-zA-Z0-9_-]+)\s*[:=]\s*(?:async\s+)?(?:\([^)]*\)|[a-zA-Z0-9_]+)?\s*=>/;
         const regexJSObjMethod = /^\s*([a-zA-Z0-9_]+)\s*:\s*(?:async\s+)?function\s*\(/;
+        // Python: class, def and async def, nested up to 3 levels (class > method > inner function)
+        const isPython = /\.py$/i.test(this.currentFilename()) || (!this.currentFilename() && modeId === 'ace/mode/python');
+        const regexPySymbol = /^(\s*)(?:(class)\s+([a-zA-Z0-9_]+)|(?:async\s+)?def\s+([a-zA-Z0-9_]+)\s*\()/;
+        const PY_MAX_DEPTH = 3;
+        let pyIndents = []; // indents of the open class / def blocks
+        // CSS: selectors and block at-rules, read once for the whole file (a rule can span lines)
+        const isCss = /\.css$/i.test(this.currentFilename()) || (!this.currentFilename() && modeId === 'ace/mode/css');
+        const cssByLine = new Map();
+        if (isCss) this.cssSymbols(lines).forEach(sym => cssByLine.set(sym.line, sym));
 
         const ignoredTags = [
             'div', 'span', 'p', 'a', 'button', 'main', 'meta', 'title',
@@ -317,6 +357,14 @@ window.FamousPluginCore.Outline = {
 
         let inCodeBlock = false;
         let consecutiveScriptSrc = false;
+
+        // YAML: the mapping keys of the first three levels, outside block scalars and list entries.
+        const isYaml = /\.ya?ml$/i.test(this.currentFilename()) || (!this.currentFilename() && modeId === 'ace/mode/yaml');
+        const regexYamlKey = /^(\s*)("[^"]*"|'[^']*'|[A-Za-z0-9_$][^:#]*?)\s*:(?:\s|$)/;
+        const regexYamlBlockScalar = /:\s*[|>][-+0-9]*\s*(?:#.*)?$/;
+        const YAML_MAX_DEPTH = 3;
+        let yamlIndents = [];      // indents of the open parent keys
+        let yamlScalarIndent = -1; // indent of the key that opened a | or > block, -1 = none
 
         lines.forEach((line, index) => {
             // Fenced code blocks hide marks and headings in Markdown only
@@ -339,7 +387,10 @@ window.FamousPluginCore.Outline = {
             }
 
             // 2. Process Standard Semantic Bookmarks (TODO / @)
-            const todo = this.todoOnLine(line, profile, useTokens ? editor.session.getTokens(index) : null);
+            // In CSS a line starting with '@' is an at-rule (@media, @import), never an @ bookmark,
+            // even before the highlighter is loaded
+            const todo = (isCss && /^\s*@/.test(line)) ? null
+                : this.todoOnLine(line, profile, useTokens ? editor.session.getTokens(index) : null);
             if (todo) {
                 this.items.push({
                     type: todo.kind,
@@ -350,7 +401,58 @@ window.FamousPluginCore.Outline = {
                 return;
             }
 
-            // 3. Process Standard Code Structure
+            // 3. Python symbols (Python files only; the code regexes below do not apply to Python)
+            if (isPython) {
+                if (line.trim() === '' || /^\s*#/.test(line)) return;
+                const indent = line.match(/^\s*/)[0].length;
+                // Any code line closes the blocks opened at its indent or deeper
+                while (pyIndents.length && pyIndents[pyIndents.length - 1] >= indent) pyIndents.pop();
+                const sym = line.match(regexPySymbol);
+                if (!sym) return;
+                const depth = pyIndents.length;
+                pyIndents.push(indent);
+                if (depth < PY_MAX_DEPTH) {
+                    this.items.push({ type: 'py', line: index, subDepth: depth, text: sym[2] ? `class ${sym[3]}` : `${sym[4]}()` });
+                }
+                return;
+            }
+
+            // 3b. YAML keys (YAML files only; the code regexes below do not apply to YAML)
+            if (isYaml) {
+                if (/^(?:---|\.\.\.)\s*$/.test(line)) { yamlIndents = []; yamlScalarIndent = -1; return; }
+                if (line.trim() === '' || /^\s*#/.test(line)) return;
+                const indent = line.match(/^\s*/)[0].length;
+                if (yamlScalarIndent >= 0) {
+                    if (indent > yamlScalarIndent) return;
+                    yamlScalarIndent = -1;
+                }
+                // A list entry ("- ...") is a parent level of its own: keys under it are deeper
+                if (/^\s*-(?:\s|$)/.test(line)) {
+                    while (yamlIndents.length && yamlIndents[yamlIndents.length - 1] >= indent) yamlIndents.pop();
+                    yamlIndents.push(indent);
+                    if (regexYamlBlockScalar.test(line)) yamlScalarIndent = indent;
+                    return;
+                }
+                const key = line.match(regexYamlKey);
+                if (!key) return;
+                while (yamlIndents.length && yamlIndents[yamlIndents.length - 1] >= indent) yamlIndents.pop();
+                const depth = yamlIndents.length;
+                yamlIndents.push(indent);
+                if (regexYamlBlockScalar.test(line)) yamlScalarIndent = indent;
+                if (depth < YAML_MAX_DEPTH) {
+                    this.items.push({ type: 'yaml', text: key[2].replace(/^["']|["']$/g, ''), line: index, subDepth: depth });
+                }
+                return;
+            }
+
+            // 4. CSS rules (CSS files only; the code regexes below do not apply to CSS)
+            if (isCss) {
+                const sym = cssByLine.get(index);
+                if (sym) this.items.push({ type: 'css', line: index, subDepth: sym.subDepth, text: sym.text });
+                return;
+            }
+
+            // 5. Process Standard Code Structure
             // '#' is a heading in Markdown only ('# comment' in YAML or Python is not one)
             const matchMD = profile === 'markdown' ? line.match(regexMD) : null;
             const matchXML = line.match(regexXML);
@@ -398,6 +500,63 @@ window.FamousPluginCore.Outline = {
     },
 
     /**
+     * The CSS rules of a file, for the Outline: every selector (`main > .card`, `a, b`) and
+     * every block at-rule (`@media ...`, `@font-face`, `@layer x`) that opens a `{` block,
+     * nested up to 3 levels (`@media` > `.card` > `& button`). Comments and strings are
+     * skipped, so a `{` inside them opens nothing. Statements ending with `;` (`@import`,
+     * declarations) are not listed, nor the frames inside `@keyframes` (`from`, `50%`).
+     * A rule that spans several lines (`a,` then `b {`) is listed on its first line.
+     *
+     * @param {Array<string>} lines - lines of the file
+     * @returns {Array<{line: number, text: string, subDepth: number}>} rules in line order
+     */
+    cssSymbols: function(lines) {
+        const CSS_MAX_DEPTH = 3;
+        const MAX_TEXT = 60;
+        const symbols = [];
+        const stack = []; // open blocks: 'rule', or 'frames' for the inside of @keyframes
+        let buf = '';
+        let bufLine = 0;
+        let inComment = false;
+        let quote = '';
+        (lines || []).forEach((line, index) => {
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (inComment) {
+                    if (ch === '*' && line[i + 1] === '/') { inComment = false; i++; }
+                    continue;
+                }
+                if (quote) {
+                    buf += ch;
+                    if (ch === '\\') { buf += line[i + 1] || ''; i++; }
+                    else if (ch === quote) quote = '';
+                    continue;
+                }
+                if (ch === '/' && line[i + 1] === '*') { inComment = true; i++; continue; }
+                if (ch === '{') {
+                    const text = buf.replace(/\s+/g, ' ').trim();
+                    const inFrames = stack.includes('frames');
+                    if (text && !inFrames && stack.length < CSS_MAX_DEPTH) {
+                        symbols.push({ line: bufLine, subDepth: stack.length, text: text.length > MAX_TEXT ? text.slice(0, MAX_TEXT - 3) + '...' : text });
+                    }
+                    stack.push(/^@(?:-[a-z]+-)?keyframes\b/i.test(text) ? 'frames' : 'rule');
+                    buf = '';
+                    continue;
+                }
+                if (ch === '}') { stack.pop(); buf = ''; continue; }
+                if (ch === ';') { buf = ''; continue; }
+                if (!buf && /\s/.test(ch)) continue;
+                if (!buf) bufLine = index;
+                buf += ch;
+                if (ch === '\\') { buf += line[i + 1] || ''; i++; }
+                else if (ch === '"' || ch === "'") quote = ch;
+            }
+            if (buf) buf += ' ';
+        });
+        return symbols;
+    },
+
+    /**
      * Shows the heading tools (+ H1-H4, -# +#) where they have something to act on:
      * Markdown files, and code or plain-text files that hold • sections (matrix section 3.4).
      *
@@ -412,7 +571,7 @@ window.FamousPluginCore.Outline = {
     },
 
     /**
-     * The Famous Mark on one line, by the file-type rule of docs-lab/FAMOUS-MARK-MATRIX.md section 2.
+     * The Famous Mark on one line, by its file-type rule.
      * - markdown: ﹥ or ° at the start of the line or right after '<!--'; • is a plain bullet.
      * - commented: the line's first non-blank token must be a comment token (Ace tokens).
      *   Without tokens (no highlighter), the plain rule applies.
@@ -442,8 +601,7 @@ window.FamousPluginCore.Outline = {
     },
 
     /**
-     * The TODO or @ bookmark on one line, by the same file-type rule as the Famous Marks
-     * (docs-lab/FAMOUS-MARK-MATRIX.md section 2):
+     * The TODO or @ bookmark on one line, by the same file-type rule as the Famous Marks:
      * - markdown: at the start of the line or right after '<!--' ('//' is not a comment in Markdown);
      * - commented: in a comment only (first non-blank Ace token is a comment), after its opener
      *   (// /* * <!-- # % ; --); without tokens, the plain rule applies;
@@ -506,6 +664,10 @@ window.FamousPluginCore.Outline = {
         if (filter === "@") return item.type === 'at-mark';
         if (filter === "</>" || filter === "xml") return item.type === 'xml';
         if (filter === "js" || filter === "JS") return item.type === 'js';
+        // A language filter: the code symbols of that language only, no marks
+        if (filter === "py") return item.type === 'py';
+        if (filter === "yml") return item.type === 'yaml';
+        if (filter === "css") return item.type === 'css';
         return true;
     },
 
@@ -527,6 +689,7 @@ window.FamousPluginCore.Outline = {
         divTop.textContent = "[top]";
         divTop.onclick = () => {
             editor.gotoLine(1, 0, true);
+            this.syncPreview(0);
             editor.focus();
         };
         tocList.appendChild(divTop);
@@ -571,7 +734,7 @@ window.FamousPluginCore.Outline = {
                 div.classList.add("toc-item-md");
             } else if (item.type === 'xml') {
                 div.classList.add("toc-item-xml");
-            } else if (item.type === 'js') {
+            } else if (item.type === 'js' || item.type === 'py' || item.type === 'yaml' || item.type === 'css') {
                 div.classList.add("toc-item-js");
             } else if (item.type === 'todo') {
                 div.classList.add("toc-item-todo");
@@ -623,6 +786,7 @@ window.FamousPluginCore.Outline = {
                     editor.session.unfold(item.line);
                     editor.gotoLine(item.line + 1, 0, true);
                     editor.scrollToLine(item.line, true, true, function () {});
+                    this.syncPreview(item.line);
                     editor.focus();
                 };
             }
@@ -650,11 +814,41 @@ window.FamousPluginCore.Outline = {
         const divEnd = document.createElement("div");
         divEnd.classList.add("toc-item", "toc-item-end");
         divEnd.textContent = "[happy end]";
+        // Reorder mode: dropping a section on [happy end] moves it to the end of the file
+        if (this.isReorderMode) {
+            divEnd.title = "Drop here to move a section to the end";
+            divEnd.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                divEnd.classList.add('drag-over');
+            });
+            divEnd.addEventListener('dragleave', () => {
+                divEnd.classList.remove('drag-over');
+            });
+            divEnd.addEventListener('drop', (e) => {
+                e.preventDefault();
+                divEnd.classList.remove('drag-over');
+                if (this.draggedItemIndex !== null) {
+                    this.reorderSection(this.draggedItemIndex, this.items.length);
+                }
+            });
+        }
         divEnd.onclick = () => {
             editor.gotoLine(editor.session.getLength(), 0, true);
+            this.syncPreview(editor.session.getLength() - 1);
             editor.focus();
         };
         tocList.appendChild(divEnd);
+    },
+
+    /**
+     * A click on an Outline item also scrolls the open Markdown preview to that line
+     * (scrollPreviewToLine, core-preview.js). No preview, or not Markdown: nothing happens.
+     *
+     * @param {number} line - 0-based editor line of the clicked item
+     */
+    syncPreview: function(line) {
+        if (typeof scrollPreviewToLine === 'function') scrollPreviewToLine(line);
     },
 
     foldToLevel: function(targetLevel, editor) {
@@ -707,7 +901,7 @@ window.FamousPluginCore.Outline = {
     reorderSection: function(fromIdx, toIdx) {
         const editor = this.editorInstance;
         if (!editor || !this.items || this.items.length === 0) return;
-        if (fromIdx < 0 || fromIdx >= this.items.length || toIdx < 0 || toIdx >= this.items.length) return;
+        if (fromIdx < 0 || fromIdx >= this.items.length || toIdx < 0 || toIdx > this.items.length) return;
 
         const doc = editor.session.getDocument();
         const allLines = doc.getAllLines();
@@ -721,13 +915,13 @@ window.FamousPluginCore.Outline = {
         }
 
         const fromItem = this.items[fromIdx];
-        const toItem = this.items[toIdx];
 
         const range = this.sectionRange(this.items, fromIdx, allLines.length);
         const startA = range.start;
         const endA = range.end;
 
-        const startB = toItem.line;
+        // toIdx === items.length: dropped on [happy end], the section goes to the end of the file
+        const startB = toIdx === this.items.length ? allLines.length : this.items[toIdx].line;
 
         // Dropping a section inside itself (on one of its own sub-headings or marks) changes nothing
         if (startB >= startA && startB <= endA + 1) return;

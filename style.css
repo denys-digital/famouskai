@@ -127,6 +127,7 @@
     --color-filetype-json: var(--fm-purple);
     --color-filetype-log: var(--fm-light);
     --color-filetype-md: var(--fm-magenta);
+    --color-filetype-py: var(--fm-gold);
     --color-filetype-svg: var(--fm-cyan);
     --color-filetype-ts: var(--fm-blue);
     --color-filetype-txt: var(--fm-light);
@@ -853,7 +854,7 @@ body {
    ﹥ 2.d. Mobkai (minimal mobile note mode)
    Active only when core/core-mobkai.js puts the "mobkai" class on <html>.
    Keeps the menu bar (New, Open, Save, As...), the file name, the editor and
-   the Markdown preview. Spec: docs-lab/MOBKAI-SPEC.md (sections 4, 13, 14).
+   the Markdown preview.
    ========================================================================== */
 html.mobkai #sidebar-tab-group,
 html.mobkai #btn-menu,
@@ -865,12 +866,14 @@ html.mobkai #btn-move,
 html.mobkai #btn-reload,
 html.mobkai #btn-reload + .divider,
 html.mobkai #file-name-copy,
+html.mobkai #file-name-redetect,
 html.mobkai #file-name-open-ext,
 html.mobkai #toolbar-plugins,
 html.mobkai #toolbar-plugins-divider,
 html.mobkai #btn-print,
 html.mobkai #btn-export-html,
 html.mobkai #btn-preview-theme,
+html.mobkai #btn-preview-text-size,
 html.mobkai #btn-preview-full,
 html.mobkai #app-version,
 html.mobkai #browser-support-banner {
@@ -1313,7 +1316,7 @@ dialog::backdrop {
 }
 .workspace-name-display:hover { color: var(--color-white); }
 
-#btn-refresh-workspace { rotate: 100deg; }
+#btn-refresh-workspace, #file-name-redetect { rotate: 100deg; }
 
 .workspace-search-box {
     display: flex;
@@ -1383,6 +1386,7 @@ dialog::backdrop {
 .icon-json { color: var(--color-filetype-json); }
 .icon-log { color: var(--color-filetype-log); }
 .icon-md { color: var(--color-filetype-md); }
+.icon-py { color: var(--color-filetype-py); }
 .icon-svg { color: var(--color-filetype-svg); }
 .icon-ts { color: var(--color-filetype-ts); }
 .icon-txt { color: var(--color-filetype-txt); }
@@ -1489,6 +1493,7 @@ dialog::backdrop {
     border-left: 1px solid var(--color-border);
     background: var(--color-bg-app);
     height: 100%;
+    min-width: 0; /* Lets the pane shrink beside the sidebar: a wide table then scrolls inside #preview-content instead of pushing the pane past the window edge */
 }
 
 #preview-toolbar {
@@ -1872,7 +1877,7 @@ dialog::backdrop {
     border-left: 2px solid var(--color-toc-bookmark);
     padding-left: 6px !important; /* Visual indentation for custom marks */
 }
-/* One look per meaning (docs-lab/FAMOUS-MARK-MATRIX.md section 1). A left border means
+/* One look per meaning. A left border means
    "temporary" (TODO, @, °); the marks that stay in the file (• and ﹥) have none, and the
    Outline shows the mark itself (• •• ••• for the level, ﹥ as a pointer). */
 .toc-item-famous.toc-item-section {

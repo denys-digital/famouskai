@@ -150,17 +150,169 @@
                         const filtered = ExportHTML.filterMarkdownBodyCSS(sampleCSS);
                         return filtered.includes(".markdown-body") && !filtered.includes("@media print") && !filtered.includes(".d2h-body");
                     }
+                },
+                {
+                    name: "Dark export: theme checkbox present and checked, body class set",
+                    test: function() {
+                        const html = ExportHTML.buildStandaloneHTML("T", "<p>x</p>", "", "en", true);
+                        const doc = new DOMParser().parseFromString(html, "text/html");
+                        const box = doc.getElementById("fmk-export-dark");
+                        const label = doc.querySelector("label.fmk-export-theme-switch");
+                        return !!(box && box.type === "checkbox" && box.checked && label && label.contains(box)
+                            && label.textContent.trim() === "Dark theme"
+                            && doc.body.classList.contains("fmk-export-page"));
+                    }
+                },
+                {
+                    name: "Light export: theme checkbox present and unchecked (also when the flag is omitted)",
+                    test: function() {
+                        const html = ExportHTML.buildStandaloneHTML("T", "<p>x</p>", "", "en", false);
+                        const legacy = ExportHTML.buildStandaloneHTML("T", "<p>x</p>", "", "en");
+                        const parse = h => new DOMParser().parseFromString(h, "text/html").getElementById("fmk-export-dark");
+                        const a = parse(html), b = parse(legacy);
+                        return !!(a && !a.checked && b && !b.checked);
+                    }
+                },
+                {
+                    name: "Exported file has no script and keeps the CSP (dark and light)",
+                    test: function() {
+                        return [true, false].every(function(dark) {
+                            const html = ExportHTML.buildStandaloneHTML("T", "<p>x</p>", "", "en", dark);
+                            const doc = new DOMParser().parseFromString(html, "text/html");
+                            const meta = doc.head.querySelector('meta[http-equiv="Content-Security-Policy"]');
+                            return doc.querySelectorAll("script").length === 0 && !/<script/i.test(html)
+                                && meta && meta.getAttribute("content") === EXPECTED_CSP;
+                        });
+                    }
+                },
+                {
+                    name: "rewriteDarkSelectors binds dark rules to the checkbox",
+                    test: function() {
+                        const css = ".markdown-body.preview-dark { color: red; } .markdown-body.preview-dark h1, .markdown-body.preview-dark a { color: blue; } .markdown-body h2 { color: green; } .markdown-body.preview-darker { color: pink; }";
+                        const out = ExportHTML.rewriteDarkSelectors(css);
+                        return out === "body:has(#fmk-export-dark:checked) .markdown-body { color: red; } body:has(#fmk-export-dark:checked) .markdown-body h1, body:has(#fmk-export-dark:checked) .markdown-body a { color: blue; } .markdown-body h2 { color: green; } .markdown-body.preview-darker { color: pink; }";
+                    }
+                },
+                {
+                    name: "buildThemeVariablesCSS resolves used variables (chained ones too), skips undefined ones",
+                    test: function() {
+                        const el = document.createElement("div");
+                        el.style.setProperty("--fm-dark", "#202124");
+                        el.style.setProperty("--color-bg-app", "var(--fm-dark)");
+                        el.style.setProperty("--color-unused", "#ffffff");
+                        document.body.appendChild(el);
+                        const out = ExportHTML.buildThemeVariablesCSS("a { background: var(--color-bg-app); color: var(--color-missing, #000); }", el);
+                        el.remove();
+                        return out === ":root {\n    --color-bg-app: #202124;\n}";
+                    }
+                },
+                {
+                    name: "isPreviewDark reads the preview-dark class of #preview-render",
+                    test: function() {
+                        const el = document.createElement("div");
+                        el.id = "preview-render";
+                        document.body.appendChild(el);
+                        const light = ExportHTML.isPreviewDark();
+                        el.classList.add("preview-dark");
+                        const dark = ExportHTML.isPreviewDark();
+                        el.remove();
+                        return light === false && dark === true && ExportHTML.isPreviewDark() === false;
+                    }
+                },
+                {
+                    name: "Text size switch: one radio per size (15, 18, 23), the given size checked, default 15",
+                    test: function() {
+                        const ids = h => {
+                            const doc = new DOMParser().parseFromString(h, "text/html");
+                            const radios = [...doc.querySelectorAll('.fmk-export-text-switch input[type="radio"][name="fmk-export-text"]')];
+                            return radios.map(r => r.id + (r.checked ? ":on" : "")).join(",");
+                        };
+                        const at18 = ids(ExportHTML.buildStandaloneHTML("T", "<p>x</p>", "", "en", false, 18));
+                        const legacy = ids(ExportHTML.buildStandaloneHTML("T", "<p>x</p>", "", "en"));
+                        const bad = ids(ExportHTML.buildStandaloneHTML("T", "<p>x</p>", "", "en", true, 99));
+                        return at18 === "fmk-export-text-15,fmk-export-text-18:on,fmk-export-text-23"
+                            && legacy === "fmk-export-text-15:on,fmk-export-text-18,fmk-export-text-23"
+                            && bad === legacy;
+                    }
+                },
+                {
+                    name: "getPreviewTextSize reads data-text-size of #preview-render (15 when absent or unknown)",
+                    test: function() {
+                        const none = ExportHTML.getPreviewTextSize();
+                        const el = document.createElement("div");
+                        el.id = "preview-render";
+                        document.body.appendChild(el);
+                        const plain = ExportHTML.getPreviewTextSize();
+                        el.setAttribute("data-text-size", "23");
+                        const big = ExportHTML.getPreviewTextSize();
+                        el.setAttribute("data-text-size", "40");
+                        const unknown = ExportHTML.getPreviewTextSize();
+                        el.remove();
+                        return none === 15 && plain === 15 && big === 23 && unknown === 15;
+                    }
+                },
+                {
+                    name: "Real export CSS rendered: text 15/18/23 px, headings unchanged (h1 42 px, h2 31.5 px), h6 never below the text, table follows the text",
+                    test: async function() {
+                        const themes = await fetch("../preview-themes.css").then(r => r.text());
+                        // Fonts left out: the file CSP allows data: fonts only, and sizes do not need them.
+                        const css = ExportHTML.buildExportCSS(ExportHTML.filterMarkdownBodyCSS(themes)).replace(/@font-face\s*\{[^}]*\}/g, "");
+                        const results = [];
+                        for (const size of [15, 18, 23]) {
+                            const html = ExportHTML.buildStandaloneHTML("T", "<h1>A</h1><h2>B</h2><h6>F</h6><p>text</p><table><tr><td>c</td></tr></table>", css, "en", false, size);
+                            const frame = document.createElement("iframe");
+                            frame.style.cssText = "position:absolute;left:-9999px;width:800px;height:400px";
+                            document.body.appendChild(frame);
+                            frame.contentDocument.open();
+                            frame.contentDocument.write(html);
+                            frame.contentDocument.close();
+                            const doc = frame.contentDocument;
+                            const fs = sel => getComputedStyle(doc.querySelector(".markdown-body " + sel)).fontSize;
+                            results.push([fs("p"), fs("h1"), fs("h2"), fs("h6"), fs("table")].join(" "));
+                            frame.remove();
+                        }
+                        const expected = ["15px 42px 31.5px 15px 15px", "18px 42px 31.5px 18px 18px", "23px 42px 31.5px 23px 23px"];
+                        if (results.join("|") !== expected.join("|")) throw new Error("got " + results.join(" | "));
+                        return true;
+                    }
+                },
+                {
+                    name: "Real preview-themes.css: export keeps the switches, no preview-dark left, every variable defined in style.css :root or in the preview CSS",
+                    test: async function() {
+                        const [themes, app] = await Promise.all([
+                            fetch("../preview-themes.css").then(r => r.text()),
+                            fetch("../style.css").then(r => r.text())
+                        ]);
+                        const css = ExportHTML.rewriteDarkSelectors(ExportHTML.filterMarkdownBodyCSS(themes));
+                        if (css.includes("preview-dark")) return false;
+                        if (!css.includes("body:has(#fmk-export-dark:checked) .markdown-body h1")) return false;
+                        if (!css.includes(".fmk-export-theme-switch")) return false;
+                        if (!css.includes(".fmk-export-text-switch")) return false;
+                        if (!css.includes("body:has(#fmk-export-text-18:checked) .markdown-body")) return false;
+                        if (!css.includes("body:has(#fmk-export-text-23:checked) .markdown-body")) return false;
+                        if (!css.includes(".fmk-export-page:has(#fmk-export-dark:checked)")) return false;
+                        if (css.includes("d2h")) return false;
+                        const rootMatch = app.match(/:root\s*\{([\s\S]*?)\n\}/);
+                        if (!rootMatch) return false;
+                        const names = [...new Set([...css.matchAll(/var\(\s*(--[\w-]+)/g)].map(m => m[1]))];
+                        // A variable the preview CSS declares itself (text size) needs no app value.
+                        const declared = n => new RegExp("(^|[\\s;{])" + n + "\\s*:").test(css);
+                        const missing = names.filter(n => !declared(n) && !new RegExp("(^|\\s)" + n + "\\s*:").test(rootMatch[1]));
+                        if (missing.length) throw new Error("not in style.css :root: " + missing.join(", "));
+                        return names.length > 0;
+                    }
                 }
             ];
 
             let passed = 0;
             let total = testCases.length;
 
-            testCases.forEach((tc, index) => {
+            (async () => {
+            for (const [index, tc] of testCases.entries()) {
                 let isPass = false;
                 let errMessage = null;
                 try {
-                    isPass = tc.test();
+                    isPass = await tc.test();
                 } catch (e) {
                     errMessage = e.message;
                 }
@@ -190,13 +342,14 @@
                 }
 
                 container.appendChild(card);
-            });
+            }
 
             const summaryText = `${passed}/${total} passed`;
             summaryEl.className = `summary ${passed === total ? 'passed' : 'failed'}`;
             summaryEl.textContent = summaryText;
 
             console.log(`Unit Tests - Export HTML: ${summaryText}`);
+            })();
         })();
     </script>
 </body>

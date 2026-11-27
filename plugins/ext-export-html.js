@@ -137,10 +137,104 @@ window.FamousPluginCore.ExportHTML = {
     },
 
     /**
-     * Generates a complete standalone HTML document string using strictly preview-themes.css.
+     * Id of the theme checkbox in the exported file. Checked = dark theme.
+     * preview-themes.css ("HTML EXPORT" section) uses the same id.
      */
-    buildStandaloneHTML: function(title, bodyHTML, previewCSS, lang) {
+    DARK_SWITCH_ID: "fmk-export-dark",
+
+    /**
+     * Body text sizes the exported file offers, in px; the first one is the
+     * default. Same list as PREVIEW_TEXT_SIZES (core-settings.js). Each size
+     * is a radio "fmk-export-text-<size>"; preview-themes.css reads them.
+     */
+    TEXT_SIZES: [15, 18, 23],
+
+    /**
+     * The text size the app preview shows right now (data-text-size on
+     * #preview-render, set by the text size button), or the default.
+     */
+    getPreviewTextSize: function() {
+        const fallback = this.TEXT_SIZES[0];
+        if (typeof document === "undefined") return fallback;
+        const previewEl = document.getElementById("preview-render");
+        const size = previewEl ? Number(previewEl.getAttribute("data-text-size")) : NaN;
+        return this.TEXT_SIZES.includes(size) ? size : fallback;
+    },
+
+    /**
+     * The text size switch of the exported file: one radio per size, the
+     * given one checked. It works without a script (preview-themes.css).
+     */
+    buildTextSizeSwitch: function(textSize) {
+        const current = this.TEXT_SIZES.includes(textSize) ? textSize : this.TEXT_SIZES[0];
+        const radios = this.TEXT_SIZES.map(size => {
+            const checked = size === current ? " checked" : "";
+            return `<label><input type="radio" name="fmk-export-text" id="fmk-export-text-${size}"${checked}> ${size}</label>`;
+        }).join(" ");
+        return `<span class="fmk-export-text-switch" role="radiogroup" aria-label="Text size in px">Text ${radios}</span>`;
+    },
+
+    /**
+     * True when the app preview shows the dark theme right now: the class on
+     * #preview-render is what the user sees (theme button, saved setting,
+     * ?preview= link, Mobkai default).
+     */
+    isPreviewDark: function() {
+        if (typeof document === "undefined") return false;
+        const previewEl = document.getElementById("preview-render");
+        return !!(previewEl && previewEl.classList.contains("preview-dark"));
+    },
+
+    /**
+     * The exported file has no script, so its theme follows a checkbox:
+     * every ".markdown-body.preview-dark" rule becomes
+     * "body:has(#fmk-export-dark:checked) .markdown-body".
+     */
+    rewriteDarkSelectors: function(cssText) {
+        if (!cssText) return "";
+        return cssText.replace(/\.markdown-body\.preview-dark(?![\w-])/g,
+            "body:has(#" + this.DARK_SWITCH_ID + ":checked) .markdown-body");
+    },
+
+    /**
+     * The dark preview colors are app CSS variables (style.css :root), which
+     * do not exist in the exported file. Resolves each variable the CSS uses
+     * on sourceEl (default: the app root) and returns a ":root { ... }" block.
+     * A variable with no value is left out.
+     */
+    buildThemeVariablesCSS: function(cssText, sourceEl) {
+        if (!cssText || typeof getComputedStyle !== "function") return "";
+        const el = sourceEl || (typeof document !== "undefined" ? document.documentElement : null);
+        if (!el) return "";
+
+        const names = [...new Set([...cssText.matchAll(/var\(\s*(--[\w-]+)/g)].map(m => m[1]))];
+        const computed = getComputedStyle(el);
+        const lines = [];
+        for (const name of names) {
+            const value = computed.getPropertyValue(name).trim();
+            if (value) lines.push("    " + name + ": " + value + ";");
+        }
+        return lines.length ? ":root {\n" + lines.join("\n") + "\n}" : "";
+    },
+
+    /**
+     * The CSS of an exported file: theme variables first, then the preview
+     * CSS with its dark rules bound to the theme checkbox.
+     */
+    buildExportCSS: function(previewCSS, sourceEl) {
+        const css = this.rewriteDarkSelectors(previewCSS);
+        const vars = this.buildThemeVariablesCSS(css, sourceEl);
+        return vars ? vars + "\n\n" + css : css;
+    },
+
+    /**
+     * Generates a complete standalone HTML document string using strictly preview-themes.css.
+     * isDark: the theme checkbox starts checked (dark theme).
+     * textSize: the text size radio that starts checked (default: the first size).
+     */
+    buildStandaloneHTML: function(title, bodyHTML, previewCSS, lang, isDark, textSize) {
         const docLang = lang || (typeof document !== "undefined" && document.documentElement && document.documentElement.lang) || "en";
+        const checked = isDark ? " checked" : "";
 
         return `<!DOCTYPE html>
 <html lang="${docLang}">
@@ -154,7 +248,11 @@ window.FamousPluginCore.ExportHTML = {
         ${previewCSS}
     </style>
 </head>
-<body>
+<body class="fmk-export-page">
+    <div class="fmk-export-controls">
+        ${this.buildTextSizeSwitch(textSize)}
+        <label class="fmk-export-theme-switch"><input type="checkbox" id="${this.DARK_SWITCH_ID}"${checked}> Dark theme</label>
+    </div>
     <div class="markdown-body">
         ${bodyHTML}
     </div>
@@ -200,12 +298,14 @@ window.FamousPluginCore.ExportHTML = {
             bodyHTML = previewEl ? previewEl.innerHTML : markdownText;
         }
 
-        const previewCSS = await this.getPreviewCSS();
+        const isDark = this.isPreviewDark();
+        const textSize = this.getPreviewTextSize();
+        const previewCSS = this.buildExportCSS(await this.getPreviewCSS());
         const activeName = (typeof currentFileName !== "undefined") ? currentFileName : "";
         const fileName = this.getExportFileName(activeName);
         const title = activeName ? activeName.replace(/\.[^/.]+$/, "") : "Export Markdown";
         const docLang = (typeof document !== "undefined" && document.documentElement && document.documentElement.lang) ? document.documentElement.lang : "en";
-        const fullHTML = this.buildStandaloneHTML(title, bodyHTML, previewCSS, docLang);
+        const fullHTML = this.buildStandaloneHTML(title, bodyHTML, previewCSS, docLang, isDark, textSize);
 
         let saved = false;
         if ('showSaveFilePicker' in window) {

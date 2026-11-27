@@ -31,6 +31,7 @@
  *
  * Globals used:
  *   - ace, document, window, localStorage
+ *   - redetectLanguage (core-shortcuts.js, loaded after: called on click only)
  *   - fileHandle, currentFileName, isModified, isInitialLoad, lastKnownModifiedTime
  *   - autoSaveTimer, isAutoSaveEnabled
  *   - FILE_ICON_MAP
@@ -60,7 +61,7 @@ function updateUI() {
         const modeName = modeId.split('/').pop();
 
         const modeMap = { 'javascript':'js', 'typescript':'ts', 'html':'html', 'xml':'xml',
-           'css':'css', 'json':'json', 'markdown':'md', 'yaml':'yml', 'text':'txt',
+           'css':'css', 'json':'json', 'markdown':'md', 'yaml':'yml', 'python':'py', 'text':'txt',
            'csv':'csv', 'svg':'svg', 'diff':'patch', 'patch':'patch'
         };
         ext = modeMap[modeName] || 'txt';
@@ -72,6 +73,12 @@ function updateUI() {
 
     // Build modular HTML structure for text and copy button
     let content = iconHtml + `<span id="file-name-text">${titleName}${modStar}</span>`;
+
+    // Unsaved [New] buffer with content: the language was detected on the first
+    // paste only; this button detects it again from the whole document.
+    if (!fileHandle && (!currentFileName || currentFileName === "[New]") && isModified) {
+        content += `<button id="file-name-redetect" class="toolbar-icon-btn" title="Detect language again" aria-label="Detect language again">↻</button>`;
+    }
 
     if (fileHandle) {
         // Inline SVG for the copy icon
@@ -99,6 +106,11 @@ function updateUI() {
         if (fileHandle) {
             textEl.addEventListener("click", renameCurrentFile);
         }
+    }
+
+    const redetectEl = document.getElementById("file-name-redetect");
+    if (redetectEl && typeof redetectLanguage === "function") {
+        redetectEl.addEventListener("click", redetectLanguage);
     }
 
     const copyEl = document.getElementById("file-name-copy");
@@ -131,6 +143,7 @@ function updateUI() {
     const btnPreview = document.getElementById("btn-preview");
     const btnExport = document.getElementById("btn-export-html");
     const btnPreviewTheme = document.getElementById("btn-preview-theme");
+    const btnTextSize = document.getElementById("btn-preview-text-size");
     const isMobkaiMode = typeof window.isMobkai === 'function' && window.isMobkai();
     if (ext === 'md') {
         btnPreview.style.display = "inline-block";
@@ -138,20 +151,24 @@ function updateUI() {
             document.getElementById("btn-print").style.display = "inline-block";
             if (btnExport) btnExport.style.display = "inline-block";
             if (btnPreviewTheme) btnPreviewTheme.style.display = "inline-block";
+            if (btnTextSize) btnTextSize.style.display = "inline-block";
         } else {
             if (btnExport) btnExport.style.display = "none";
             if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
+            if (btnTextSize) btnTextSize.style.display = "none";
         }
     } else if (!isMobkaiMode && (ext === 'patch' || ext === 'diff')) {
         btnPreview.style.display = "inline-block";
         document.getElementById("btn-print").style.display = "none";
         if (btnExport) btnExport.style.display = "none";
         if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
+        if (btnTextSize) btnTextSize.style.display = "none";
     } else {
         btnPreview.style.display = "none";
         document.getElementById("btn-print").style.display = "none";
         if (btnExport) btnExport.style.display = "none";
         if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
+        if (btnTextSize) btnTextSize.style.display = "none";
         if (isPreviewOpen) togglePreview();
     }
 
@@ -175,7 +192,7 @@ function updateUI() {
     }
 }
 
-// ﹥ • SECTION FOLDING (docs-lab/FAMOUS-MARK-MATRIX.md section 3.2, private issue 512)
+// ﹥ • SECTION FOLDING
 // In code and plain text, a • line folds its section, like a # heading in Markdown.
 // The language's own fold mode is wrapped (session.$setFolding, as YamlFolding does): no Ace
 // prototype is patched. A section is FamousMark.sectionRange, the definition the Outline

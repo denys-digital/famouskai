@@ -1,7 +1,7 @@
 # Vendor Info: Marked
 
 - **Project**: [Ultra-fast markdown parser and compiler](https://github.com/markedjs/marked)
-- **Version**: 18.1.1
+- **Version**: 18.2.1
 - **License**: MIT
 - **Distribution**: [jsDelivr npm registry](https://www.jsdelivr.com/package/npm/marked)
 
