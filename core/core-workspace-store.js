@@ -27,7 +27,7 @@
  * What it holds:
  *   - Workspace search filter globals and filter handler (applyWorkspaceFilter)
  *   - Multi-workspace selector and storage (MAX_WORKSPACES, isRecentWorkspaceFilterActive, getSavedWorkspaces, saveWorkspaceToStore, renderWorkspaceSelect, initWorkspace)
- *   - Recent files stack and list renderer (MAX_RECENT_FILES, recentFilesChannel, getRecentFiles, addRecentFile, recentFilesRenderToken, renderRecentFilesList)
+ *   - Recent files stack and list renderer (MAX_RECENT_FILES, recentFilesChannel, getRecentFiles, addRecentFile, findRecentFile, updateRecentFile, recentFilesRenderToken, renderRecentFilesList)
  *
  * Globals used:
  *   - idbKeyval, window.currentWorkspaceHandle, window.showToast
@@ -37,7 +37,7 @@
  *   - activeExtFilter, wsSearchInput, wsSearchClear, applyWorkspaceFilter
  *   - MAX_WORKSPACES, MAX_RECENT_FILES, isRecentWorkspaceFilterActive
  *   - getSavedWorkspaces, saveWorkspaceToStore, renderWorkspaceSelect, initWorkspace
- *   - recentFilesChannel, getRecentFiles, addRecentFile, recentFilesRenderToken, renderRecentFilesList
+ *   - recentFilesChannel, getRecentFiles, addRecentFile, findRecentFile, updateRecentFile, recentFilesRenderToken, renderRecentFilesList
  */
 // Workspace Search Filter Globals (Hoisted above refreshWorkspaceList)
 let activeExtFilter = null;
@@ -235,6 +235,45 @@ async function addRecentFile(handle) {
         recentFilesChannel.postMessage('RECENT_FILES_UPDATED');
     } catch (err) {
         console.error("Failed to update recent files stack:", err);
+    }
+}
+
+// A stored handle keeps the path it had when it was saved: after a rename or a move,
+// its entry points to a file that no longer exists. The caller finds the entry
+// BEFORE move() (findRecentFile returns its key, or null), then hands the key and
+// the moved handle to updateRecentFile.
+async function findRecentFile(handle) {
+    if (!handle || typeof handle.isSameEntry !== 'function') return null;
+    const recents = await getRecentFiles();
+    for (const entry of recents) {
+        if (!entry || !entry.handle) continue;
+        try {
+            if (await handle.isSameEntry(entry.handle)) return { name: entry.name, lastOpened: entry.lastOpened };
+        } catch (e) {
+            // A stale or foreign handle: not this file.
+        }
+    }
+    return null;
+}
+
+// Replaces the entry found by findRecentFile with the moved handle and its new name,
+// at the same place in the list.
+async function updateRecentFile(recentKey, handle) {
+    if (!recentKey || !handle || !handle.name) return;
+    try {
+        const recents = await getRecentFiles();
+        const index = recents.findIndex(entry => entry && entry.name === recentKey.name && entry.lastOpened === recentKey.lastOpened);
+        if (index === -1) return;
+        recents[index] = {
+            name: handle.name,
+            handle: handle,
+            lastOpened: recents[index].lastOpened
+        };
+        await idbKeyval.set('famouskai_recent_files', recents);
+        renderRecentFilesList();
+        recentFilesChannel.postMessage('RECENT_FILES_UPDATED');
+    } catch (err) {
+        console.error("Failed to update the renamed recent file:", err);
     }
 }
 

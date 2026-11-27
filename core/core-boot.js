@@ -233,7 +233,7 @@ setTimeout(checkSharedContent, 300);
 // and tests/manual-*.md plans of this site are read.
 // Files of this site that a link may open: any file with a type Famouskai edits
 // (WORKSPACE_ALLOWED_EXT: md, js, json, csv...), subfolders too, for example
-// docs-lab/ when reviewing a PR on its preview. Hidden folders stay closed
+// a docs folder when reviewing a PR on its preview. Hidden folders stay closed
 // except a leading .github/ (contributor guides, templates, bots).
 const SITE_PATH_RE = /^(?:\.github\/)?(?:[A-Za-z0-9_-][A-Za-z0-9._-]*\/)*[A-Za-z0-9_-][A-Za-z0-9._-]*\.[A-Za-z0-9]+$/;
 

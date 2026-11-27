@@ -32,12 +32,12 @@ Famouskai's core code is split into classic JavaScript files in `core/` loaded b
 | `core/core-editor.js` | UI update logic (`updateUI`), Ace Editor setup and configuration cursor position LocalStorage LRU cleanup, active windows tracker (`renderActiveWindowsList`). |
 | `core/core-file.js` | Syntax coloration mode mapping (`applyNativeColoration`), file lifecycle operations (`newFile`, `openFile`, `saveFile`, `saveAsFile`, `reloadFile`), file open trigger emission (`emitFileOpen`), save indicator (`afficherSucces`). |
 | `core/core-workspace-tree.js` | Workspace list refresh (`refreshWorkspaceList`), file icon badge generator (`getFileIcon`), directory tree rendering with lazy loading (`renderDirectoryTree`). |
-| `core/core-settings.js` | Side menu toggle buttons, preferences persistence (`loadPreferences`, `savePreferences`), preview theme button state (`updatePreviewThemeUI`), tool settings injection (`FamousPluginCore.Manager.renderSettings`). |
+| `core/core-settings.js` | Side menu toggle buttons, preferences persistence (`loadPreferences`, `savePreferences`), preview theme button state (`updatePreviewThemeUI`), preview text size button state (`updatePreviewTextSizeUI`), tool settings injection (`FamousPluginCore.Manager.renderSettings`). |
 | `core/core-shortcuts.js` | Clickable links handler, editor change listener for autosave/outline refresh, toolbar action bindings (New, Open, Save, etc.), custom keyboard shortcuts, mode detection on paste, search box match counter patch. |
 | `core/core-pwa.js` | File System Access API browser support banner, Service Worker registration, PWA `launchQueue` file handling, version reading from `sw.js` (`#app-version`), accidental reload/closure guard (`beforeunload`). |
 | `core/core-file-actions.js` | Workspace title click handler, workspace file filter listeners (`initExtFilters`), file rename dialog (`renameCurrentFile`), file move/copy actions (`copyFileName`, `moveFile`), opening HTML in new tab (`openHtmlInNewTab`). |
 | `core/core-sync.js` | BroadcastChannel listener (`'famouskai_sync'`) for cross-window and Diffskai saves/merges, auto-reload and editor update on external file changes. |
-| `core/core-preview.js` | Live preview pane toggle and rendering (`togglePreview`, `updatePreviewContent`), full preview mode (`toggleFullPreview`), PDF print (`window.print`), standalone HTML export, preview dark theme switch, new window/tab toolbar button handler. |
+| `core/core-preview.js` | Live preview pane toggle and rendering (`togglePreview`, `updatePreviewContent`), full preview mode (`toggleFullPreview`), PDF print (`window.print`), standalone HTML export, preview dark theme switch, preview text size button, new window/tab toolbar button handler. |
 | `core/core-snippets.js` | Sidebar Magic Snippets UI filtering and display (`updateSnippetsUI`), click-to-insert snippet logic (`insertSnippetByKey`), HTML escaping helper (`escapeHtml`), snippet search input and filter buttons listeners. |
 | `core/core-boot.js` | Application startup initialization (`initWorkspace`), opening file passed via URL query parameter (`checkOpenFileInNewWindow`), Android Share Target API handling (`checkSharedContent`), initial UI update and editor focus. |
 
@@ -476,6 +476,124 @@ The demo tab is hidden by default so regular users never see it. Developers can 
    localStorage.removeItem('famouskai_dev_demo_tab');
    ```
    and reload.
+
+---
+
+## 4.b Add a language
+
+A language is **supported** by Famouskai only when every use of it works, not when the editor colors it. A Python developer who opens a `.py` file, gets colors, then compares two versions in Diffskai and sees plain text, has met a half-finished feature. So a language ships as **one complete lot**: every row of the checklist below is done, or marked "not applicable" with a reason in the PR. Until then, the README, the CHANGELOG and the release notes do not name it.
+
+The live example in the code is **YAML** (`yml`, `yaml`): the snippets below are copied from it, Outline filter included. Replace `yml` with your extension, `yaml` with your mode or language name.
+
+### Part 1: what "supported" means (the user's view)
+
+| # | Use | Done when | Code rows (part 2) |
+| --- | --- | --- | --- |
+| U1 | Open | The file shows in the workspace tree, the Open picker accepts it, the operating system offers "Open with Famouskai", and an Android share reaches the app. | C1, C2 |
+| U2 | Icon and filter | The file has its own icon and color in the workspace, and the filter bar has a button for it (or it joins an existing group on purpose). | C2, C3 |
+| U3 | Colors in the editor | Every token family of the language is colored, with the Famouskai palette only. | C4, C5, C6 |
+| U4 | Folding | The language's own blocks fold (functions, classes, sections), with the gutter arrows. | C4 (native), C7 (custom) |
+| U5 | Unsaved file | A new, unsaved file switched to (or pasted as) this language gets the same colors and icon. | C8, C9 |
+| U6 | Save | Save As proposes the right file type and keeps the extension. Rename to this extension switches the colors. | C10 |
+| U7 | Outline | The Outline lists the language's structure (functions, classes, keys or sections), and only for this language. Nested symbols are indented by their real nesting, **3 levels at most** (Python: class 🡪 method 🡪 inner function; YAML: key 🡪 child key 🡪 grandchild key). | C11 |
+| U7b | Outline filter | The Outline filter bar has a badge for the language, labelled like its workspace filter (`Pʏ`, `Yᴍʟ`): a click shows only the language's code symbols, without Famous Marks, TODO or @, like `JS` in an HTML file. The badge shows only on a file of this language. A language with no comment syntax (JSON, CSV, log, diff) has no marks to hide: no badge, "not applicable". | C11b |
+| U8 | Famous Marks | A Famous Mark written in the language's own comment (`# ﹥ title`) shows in the Outline and folds; a `#` that is code is never read as a heading. | C12 |
+| U9 | Diffskai | The Compare button shows on this file, and both panes are colored. | C13, C14, C15 |
+| U10 | Tools and snippets | Each tool is offered on this file, or left out on purpose: Cleanup, Beautify, snippets. | C16 |
+| U11 | Offline | After one online visit, the file opens colored with the network cut, Diffskai included. | C17, C18 |
+| U12 | Paste detection (optional) | Pasting a typical snippet in an empty [New] file switches to the language, with no false positive on the other languages. Skip it when the language looks too much like another one; say so in the PR. | C9 |
+
+### Part 2: every place in the code
+
+Before you start: the library files must already be in `vendor/` (the Ace mode `vendor/ace-builds/mode-<name>.js` and, for Diffskai, the Monaco language chunk `vendor/monaco-editor/<name>-<hash>.js`). If one is missing, open an issue: a maintainer adds library files with the vendor tool, never by hand.
+
+| # | File | What to add (YAML example) | Who |
+| --- | --- | --- | --- |
+| C1 | `manifest.json` | the extension in **both** lists: `share_target` (`".yml"`) and `file_handlers` (`".yml"`) | maintainer review (manifest) |
+| C2 | `core/core-state.js`, `WORKSPACE_FILE_GROUPS` | a group `{ filter: 'Yᴍʟ', className: 'icon-yml', types: { yaml: 'Yᴍʟ', yml: 'Yᴍʟ' } }`. This one line also feeds `WORKSPACE_ALLOWED_EXT`: without it, the file is hidden from the workspace and refused by the Open picker | contributor |
+| C3 | `style.css` | the color `--color-filetype-yaml: var(--fm-red);` in `:root` (a `--fm-*` color only) and the rule `.icon-yml { color: var(--color-filetype-yaml); }`. Check the filter bar still fits on one row: it does not wrap yet | contributor |
+| C4 | `core/core-file.js`, `applyNativeColoration()` | `else if (ext === 'yml' \|\| ext === 'yaml') editor.session.setMode("ace/mode/yaml", ...);` in the `if` chain (alphabetical order of the extension where possible) | contributor |
+| C5 | `syntax-themes.css` | a variables block `:is(.ace-famouskai[data-lang="yml"], .ace-famouskai[data-lang="yaml"]) { --yml-...: var(--fm-...); }` at the end of part 1, and the mapping rules (`... :is(.ace_comment) { ... }`) at the end of part 2. `data-lang` is the file extension. To find the token classes, open your fixture, right-click a word, *Inspect*: Ace wraps each token in `<span class="ace_keyword">`, `ace_string`, `ace_constant ace_numeric`... | contributor |
+| C6 | `sw.js`, `URLS_TO_CACHE` | `'./vendor/ace-builds/mode-yaml.js',` in the Ace block (alphabetical order) | contributor; `CACHE_NAME` stays untouched (the maintainer bumps it once per batch) |
+| C7 | `plugins/ace-custom/folding-<name>.js` (only if the native folding is not enough) | see `plugins/ace-custom/folding-yaml.js`, applied in the `setMode` callback of C4 and C9; the new file goes in `index.html` and `sw.js` | maintainer decides first |
+| C8 | `core/core-editor.js`, `updateUI()`, `modeMap` | `'yaml':'yml'` (mode name 🡪 extension, for an unsaved file) | contributor |
+| C9 | `core/core-shortcuts.js` | `'ace/mode/yaml': 'yml'` in `pasteModeToLang()`; the detection rule in `detectPasteMode()` only for U12 | contributor (U12: maintainer decides first) |
+| C10 | `core/core-file.js`, `SAVE_MIME_BY_EXT` | `yaml: 'text/yaml', yml: 'text/yaml'` (the type proposed by Save As; Android builds the name from it) | contributor |
+| C11 | `plugins/ext-outline.js`, `update()` | a block of its own, **gated to the language** (`const isYaml = /\.ya?ml$/i.test(this.currentFilename()) \|\| (!this.currentFilename() && modeId === 'ace/mode/yaml');`), placed after the Famous Marks and TODO steps and before the generic code regexes, ending with `return` so those regexes never read the language. When a symbol can span lines or hide in comments and strings (CSS rules), read the whole file once in a helper (model: `cssSymbols()`) and look items up by line in the loop. It pushes items with **their own type** (`'yaml'`, `'py'`, not `'js'`) and a `subDepth` (0 to 2): keep a stack of the indents of the open parent blocks, pop the ones at the line's indent or deeper, `subDepth` = what remains; skip a symbol at `subDepth` 3 or more (`YAML_MAX_DEPTH = 3`). `assignDepths()` adds `subDepth` to the section depth, nothing to change there. In `render()`, add the type to the `toc-item-js` line. Comment lines and blank lines never close a block; for YAML, a list entry (`- `) is a level of its own and a `\|` or `>` block scalar is skipped. Models: the YAML, Python and CSS blocks | contributor |
+| C11b | `index.html` (`#outline-mark-filters`) and `plugins/ext-outline.js` | the badge `<button class="fold-btn" data-mark-filter="yml" id="btn-outline-filter-yml" title="Show YAML keys only" style="display: none;">Yᴍʟ</button>` after the last language badge (the label is the C2 workspace label; the `data-mark-filter` value is the filter id, the item type by convention, `yml` for YAML). In `ext-outline.js`: show it in `updateFilterButtons()` for the language's extensions, or for an unsaved file in the language's mode (`ext === 'yml' \|\| ext === 'yaml' \|\| (!ext && ... $modeId === 'ace/mode/yaml')`), and `resetFilter()` when it is active on another file; in `matchesMarkFilter()`, `if (filter === "yml") return item.type === 'yaml';` | contributor |
+| C12 | `plugins/ext-famous-core.js`, `FamousMark.profile()` | the extension in the `"commented"` extension list **and** the mode id in the `"commented"` mode list (if the language has comments; `"none"` if it has none). Rules: `docs/FAMOUS-MARK.md` | contributor |
+| C13 | `plugins/tool-diffskai.js`, `extensions` | **every** extension of the language (`'yml'` and `'yaml'`): this list decides whether the Compare button shows | contributor |
+| C14 | `plugins/tool-diffskai-window.js`, `LANGUAGE_BY_EXT` | `'yml': 'yaml', 'yaml': 'yaml'` (extension 🡪 Monaco language id; anything missing falls back to `plaintext`) | contributor |
+| C15 | the vendor configuration, Monaco `keepPatterns` | the Monaco language name in `^/min/vs/(css\|...\|yaml)...\.js$`, then the vendor update on the same branch | maintainer only (vendor) |
+| C16 | `plugins/tool-cleanup.js`, `plugins/tool-beautify.js`, `plugins/ext-snippets.js` (`extensions` of each) | add the extension where the tool makes sense (Cleanup: yes for any text; Beautify: only with a formatter for the language; snippets: only those that fit). An empty list means "every file" | contributor |
+| C17 | Offline, Ace | nothing more than C6; check it (test T4) | contributor |
+| C18 | Offline, Monaco | the Monaco chunk is cached at run time by `sw.js` (`/vendor/monaco-editor/`), so it works offline once Diffskai was opened online with that language; nothing to add, check it (test T4) | contributor |
+
+### Part 3: tests
+
+| # | File | What to add |
+| --- | --- | --- |
+| T1 | `tests/fixtures-syntax-sample.<ext>` | a sample that shows every token family, foldable blocks, a symbol for the Outline and one Famous Mark comment. List it in the fixture list of the test hub, where the repository has one (the sanity check reads it) |
+| T2 | `tests/unit-core-file.html`, `CF-06` | the mode id and the `data-lang` for the new extension |
+| T3 | `tests/unit-famous-mark.html`, `tests/unit-outline-filter.html` | the `profile()` cases (extension and mode id); in `unit-outline-filter.html` (`fileCases`), the Outline symbols (`itemsFor`), their depths with a case deeper than 3 levels (`depthsFor`), the language filter keeping the symbols and dropping a Famous Mark and a TODO (`matchesMarkFilter`), and a file of another language where the same text is not a symbol. Values computed from the code |
+| T4 | manual, on the PR preview (`tests/manual-language-<name>.md`; for the Outline, a row in `tests/manual-sidebar-tabs.md` with its fixture and the expected Outline copy, which `tests/unit-manual-outline-copies.html` checks against the code) | open the fixture: colored, folds, Outline nested, the language badge shows only the symbols, Famous Mark; Compare it in Diffskai: both panes colored; then offline (load once, cut the network, Ctrl+R only, reopen the fixture and Diffskai) |
+| T5 | `tests/unit-core-shortcuts.html`, `tests/manual-paste-detection.md` | only for U12: the detection cases, and the cases of the other languages still detected as before |
+
+`tests/unit-app-integrity.html` must stay green: it checks that every path in `URLS_TO_CACHE` exists.
+
+### Part 4: docs, then announce
+
+| # | File | When |
+| --- | --- | --- |
+| D1 | `README.md` and `README.fr.md`, the "Syntax coloring" line | only when part 1 is complete |
+| D2 | `CHANGELOG.md`, `## [Unreleased]` | same PR, one line: "Language X: colors, folding, Outline, Famous Marks, Diffskai, offline" |
+| D3 | `docs/FAMOUS-MARK.md` | only if the language adds a comment style not listed yet |
+| D4 | Good first issues for the next languages | only after one language went through this whole guide |
+
+### Checklist (copy into the issue or the PR)
+
+```markdown
+Language: <name> (`.<ext>`) · Ace mode: `ace/mode/<name>` · Monaco: `<name>`
+
+Vendor (before the lot)
+- [ ] Ace mode file in vendor/ace-builds/
+- [ ] Monaco chunk in vendor/monaco-editor/ (C15, maintainer)
+
+Code
+- [ ] C1 manifest.json: share_target and file_handlers
+- [ ] C2 core-state.js: WORKSPACE_FILE_GROUPS group
+- [ ] C3 style.css: --color-filetype-<ext> and .icon-<ext>; filter bar still fits
+- [ ] C4 core-file.js: applyNativeColoration()
+- [ ] C5 syntax-themes.css: variables (part 1) and mapping (part 2)
+- [ ] C6 sw.js: mode file in URLS_TO_CACHE (CACHE_NAME untouched)
+- [ ] C7 custom folding: not needed / done
+- [ ] C8 core-editor.js: modeMap
+- [ ] C9 core-shortcuts.js: pasteModeToLang() (detection: skipped / done)
+- [ ] C10 core-file.js: SAVE_MIME_BY_EXT
+- [ ] C11 ext-outline.js: symbols in their own block and type, gated to the language, nested 3 levels at most (subDepth)
+- [ ] C11b index.html + ext-outline.js: Outline filter badge (workspace label), updateFilterButtons(), matchesMarkFilter() (no comment syntax: not applicable)
+- [ ] C12 ext-famous-core.js: FamousMark.profile(), extension and mode id
+- [ ] C13 tool-diffskai.js: every extension in `extensions`
+- [ ] C14 tool-diffskai-window.js: LANGUAGE_BY_EXT
+- [ ] C16 Cleanup / Beautify / snippets: added or left out on purpose (say which)
+
+Tests
+- [ ] T1 fixture + test hub list
+- [ ] T2 CF-06
+- [ ] T3 unit-famous-mark + unit-outline-filter (symbols, depth, language filter)
+- [ ] T4 manual on the preview: editor, Outline nesting and badge (Outline copy in manual-sidebar-tabs.md), Famous Mark, Diffskai, offline
+- [ ] T5 paste detection: skipped / done
+- [ ] unit-app-integrity green
+
+Docs
+- [ ] D1 README.md + README.fr.md
+- [ ] D2 CHANGELOG.md
+- [ ] D3 FAMOUS-MARK.md: not needed / done
+
+Not applicable (with the reason):
+```
+
+Out of scope for a language lot: Ace workers (lint), a formatter, a new folding engine, a Markdown-like preview.
 
 ---
 

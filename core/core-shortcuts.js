@@ -29,7 +29,7 @@
  *   - Autosave and outline refresh editor change listener
  *   - Toolbar button action listeners (New, Open, Save, Save as, Move, Reload)
  *   - Custom keyboard shortcuts (Ctrl+S, Ctrl+F, Ctrl+H, Ctrl+O, Ctrl+N, Ctrl+M, Ctrl+Shift+M, Tab magic snippets)
- *   - Mode auto-detection on paste into empty document
+ *   - Mode auto-detection on paste into empty document, manual re-detection (redetectLanguage)
  *   - Search box match counter patch and DOM observer
  *
  * Globals used:
@@ -59,6 +59,9 @@
  *   - observer
  *   - detectPasteMode
  *   - pasteModeToLang
+ *   - isUnsavedNewDocument
+ *   - applyDetectedMode
+ *   - redetectLanguage
  */
 
 // ﹥ CLICKABLE INTERNET LINKS
@@ -101,7 +104,7 @@ if (editor) {
             window.tocTimer = setTimeout(() => window.FamousPluginCore.Outline.update(editor), 800);
         }
 
-        // Mobkai: no autosave on a phone (docs-lab/MOBKAI-SPEC.md 14.3)
+        // Mobkai: no autosave on a phone
         const isMobkaiMode = typeof window.isMobkai === 'function' && window.isMobkai();
         if (!isInitialLoad && isAutoSaveEnabled && fileHandle && !isMobkaiMode) {
             clearTimeout(autoSaveTimer);
@@ -214,7 +217,7 @@ function detectPasteMode(rawText) {
         newMode = 'ace/mode/yaml';
 
     // Markdown with headings outside code fences — before JS, so a Markdown document
-    // whose code blocks contain const/function stays Markdown (issue 560).
+    // whose code blocks contain const/function stays Markdown.
     } else if (/^#{1,6}\s+\S/m.test(outsideFences)) {
         newMode = 'ace/mode/markdown';
 
@@ -261,30 +264,60 @@ function pasteModeToLang(modeId) {
         'ace/mode/javascript': 'js', 'ace/mode/json': 'json', 'ace/mode/html': 'html',
         'ace/mode/xml': 'xml', 'ace/mode/svg': 'svg', 'ace/mode/css': 'css',
         'ace/mode/yaml': 'yml', 'ace/mode/markdown': 'md', 'ace/mode/csv': 'csv',
-        'ace/mode/diff': 'diff', 'ace/mode/log': 'log'
+        'ace/mode/diff': 'diff', 'ace/mode/log': 'log', 'ace/mode/python': 'py'
     };
     return map[modeId] || 'txt';
 }
 
+/**
+ * True when the open document is an unsaved [New] buffer (no file name yet).
+ * @returns {boolean}
+ */
+function isUnsavedNewDocument() {
+    return currentFileName === "" || currentFileName === "[New]";
+}
+
+/**
+ * Sets the Ace mode and the syntax colors of the document from a text sample.
+ * @param {string} text - the text to detect the language from
+ */
+function applyDetectedMode(text) {
+    const newMode = detectPasteMode(text);
+    // The colors follow data-lang, not the mode: without this, an unsaved
+    // document keeps the default (JavaScript-like) palette after a paste.
+    editor.container.setAttribute('data-lang', pasteModeToLang(newMode));
+
+    if (editor.session.$modeId !== newMode) {
+        editor.session.setMode(newMode, () => {
+            if (newMode === 'ace/mode/yaml' && window.FamousPluginCore?.YamlFolding) {
+                window.FamousPluginCore.YamlFolding.apply(editor.session);
+            }
+        });
+        if (editor.session.bgTokenizer) editor.session.bgTokenizer.start(0);
+        if (editor.renderer) editor.renderer.updateFull(true);
+    }
+    setTimeout(updateUI, 10);
+}
+
+/**
+ * Detects the language again from the whole document (the refresh button
+ * next to [New]). The automatic detection runs only on the first paste.
+ */
+function redetectLanguage() {
+    if (!editor || !isUnsavedNewDocument()) return;
+    applyDetectedMode(editor.getValue());
+    editor.focus();
+}
+
 if (editor) {
     editor.on("paste", function(e) {
-        if (currentFileName === "" || currentFileName === "[New]") {
-            const newMode = detectPasteMode(e.text);
-            // The colors follow data-lang, not the mode: without this, an unsaved
-            // document keeps the default (JavaScript-like) palette after a paste (issue 560).
-            editor.container.setAttribute('data-lang', pasteModeToLang(newMode));
-
-            if (editor.session.$modeId !== newMode) {
-                editor.session.setMode(newMode, () => {
-                    if (newMode === 'ace/mode/yaml' && window.FamousPluginCore?.YamlFolding) {
-                        window.FamousPluginCore.YamlFolding.apply(editor.session);
-                    }
-                });
-                if (editor.session.bgTokenizer) editor.session.bgTokenizer.start(0);
-                if (editor.renderer) editor.renderer.updateFull(true);
-                setTimeout(updateUI, 10);
-            }
-        }
+        if (!isUnsavedNewDocument()) return;
+        // Ace signals "paste" before inserting the text. Detect only when the
+        // paste fills an empty document or replaces all of it (Ctrl+A, Ctrl+V):
+        // a later paste of a fragment keeps the language found by the first one.
+        const before = editor.getValue();
+        const replacesAll = before.trim() === "" || editor.getSelectedText() === before;
+        if (replacesAll) applyDetectedMode(e.text);
     });
 }
 

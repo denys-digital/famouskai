@@ -1,9 +1,9 @@
 --- Monaco Editor Update Log ---
-Timestamp : 2026-09-08T09:43:20.117Z
+Timestamp : 2026-11-23T04:55:59.563Z
 Package   : monaco-editor
 Version   : 0.56.0
-User Agent: Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36
-Summary   : 50 files requested, 50 files downloaded and saved locally.
+User Agent: Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+Summary   : 52 files requested, 52 files downloaded and saved locally.
 Status    : Success
 
 Files Processed:
@@ -112,48 +112,54 @@ Files Processed:
  35. loader.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/loader.js
 
- 36. main-BEx-Fmlo.js
+ 36. lspLanguageFeatures-BIkJOWLw.js
+   Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/lspLanguageFeatures-BIkJOWLw.js
+
+ 37. main-BEx-Fmlo.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/main-BEx-Fmlo.js
 
- 37. main-DsK8pnKg.js
+ 38. main-DsK8pnKg.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/main-DsK8pnKg.js
 
- 38. markdown-C_rD0bIw.js
+ 39. markdown-C_rD0bIw.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/markdown-C_rD0bIw.js
 
- 39. monaco.contribution-9cKT3C7t.js
+ 40. monaco.contribution-9cKT3C7t.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/monaco.contribution-9cKT3C7t.js
 
- 40. monaco.contribution-BE88ZNGY.js
+ 41. monaco.contribution-BE88ZNGY.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/monaco.contribution-BE88ZNGY.js
 
- 41. monaco.contribution-BgRy6xDf.js
+ 42. monaco.contribution-BgRy6xDf.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/monaco.contribution-BgRy6xDf.js
 
- 42. monaco.contribution-BPhsneLd.js
+ 43. monaco.contribution-BPhsneLd.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/monaco.contribution-BPhsneLd.js
 
- 43. nls.messages-loader.js
+ 44. nls.messages-loader.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/nls.messages-loader.js
 
- 44. toggleHighContrast-qGX7E9o7.js
+ 45. python-CqWUUgfu.js
+   Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/python-CqWUUgfu.js
+
+ 46. toggleHighContrast-qGX7E9o7.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/toggleHighContrast-qGX7E9o7.js
 
- 45. ts.worker-2QLmBukE.js
+ 47. ts.worker-2QLmBukE.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/ts.worker-2QLmBukE.js
 
- 46. tsMode-B0S_kp2q.js
+ 48. tsMode-B0S_kp2q.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/tsMode-B0S_kp2q.js
 
- 47. typescript-_2t_511t.js
+ 49. typescript-_2t_511t.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/typescript-_2t_511t.js
 
- 48. workers-BBttULjf.js
+ 50. workers-BBttULjf.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/workers-BBttULjf.js
 
- 49. xml-cZjNDqDT.js
+ 51. xml-cZjNDqDT.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/xml-cZjNDqDT.js
 
- 50. yaml-A1fOIdH6.js
+ 52. yaml-A1fOIdH6.js
    Source: https://cdn.jsdelivr.net/npm/monaco-editor@0.56.0/min/vs/yaml-A1fOIdH6.js
 

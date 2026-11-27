@@ -45,7 +45,9 @@
         const LANGUAGE_BY_EXT = {
             'js': 'javascript', 'javascript': 'javascript', 'ts': 'javascript',
             'json': 'json', 'html': 'html', 'css': 'css', 'xml': 'xml',
-            'md': 'markdown', 'markdown': 'markdown'
+            'md': 'markdown', 'markdown': 'markdown',
+            'py': 'python', 'python': 'python',
+            'yml': 'yaml', 'yaml': 'yaml'
         };
         function languageFor(ext) {
             return LANGUAGE_BY_EXT[String(ext || '').toLowerCase()] || 'plaintext';
@@ -293,7 +295,7 @@
                 diffEditor.updateOptions({ wordWrap: e.target.checked ? "on" : "off" });
             });
 
-            // SCROLL-UP / SCROLL-DOWN (private issue 547): cursor on the first or the
+            // SCROLL-UP / SCROLL-DOWN: cursor on the first or the
             // last line of the left panel, focus in it, view on that line.
             function goToLeftLine(toEnd) {
                 const left = diffEditor.getOriginalEditor();

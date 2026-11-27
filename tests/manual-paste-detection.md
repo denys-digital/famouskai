@@ -19,10 +19,10 @@ Every test copies a sample file from the repository, so each run pastes the same
 | F | `tests/fixtures-syntax-sample.js` | PASTE-06 |
 | G | `tests/fixtures-syntax-sample.json` | PASTE-07 |
 | H | `tests/fixtures-syntax-sample.css` | PASTE-08 |
-| I | `tests/fixtures-syntax-sample.md` | PASTE-09 |
+| I | `tests/fixtures-syntax-sample.md` | PASTE-09, PASTE-13, PASTE-14 |
 | J | `tests/fixtures-paste-front-matter.md` (YAML front matter `---` / `title: Note` / `date: 2026-10-29` / `---`, then `# Heading` and `Body text.`) | PASTE-10 |
 | K | `tests/fixtures-syntax-sample.csv` | PASTE-11 |
-| L | `tests/fixtures-paste-prose.txt` (2 lines: `Todo: buy milk`, `Note: call Bob`) | PASTE-12 |
+| L | `tests/fixtures-paste-prose.txt` (2 lines: `Todo: buy milk`, `Note: call Bob`) | PASTE-12, PASTE-13, PASTE-14 |
 
 ## How to run each test
 
@@ -47,3 +47,12 @@ Every test copies a sample file from the repository, so each run pastes the same
 | **PASTE-10** | Markdown with YAML front matter | J | Icon `M⇣` (not `Yᴍʟ`). Same colors as the opened file. |
 | **PASTE-11** | CSV | K | Icon `▥`. Same colors as the opened file (columns colored, not plain text). |
 | **PASTE-12** | Short prose with colons | L | Icon `Txᴛ` (stays plain text, not YAML). |
+
+## Second paste and manual re-detection
+
+The language is detected on the first paste only (a paste into an empty document, or one that replaces the whole document after Ctrl+A). A later paste keeps the language; the button ↻ next to `[New] *` detects it again from the whole document.
+
+| Test ID | Scenario | Pre-conditions | Action Steps | Expected Outcome |
+| :--- | :--- | :--- | :--- | :--- |
+| **PASTE-13** | A second paste keeps the first language | Dataset I copied, then **New** | 1. Ctrl+V: icon `M⇣`.<br>2. Open dataset L in another window, Ctrl+A, Ctrl+C.<br>3. Back in the `[New]` window, click at the end of the text, press Enter, Ctrl+V. | After step 1 the button ↻ shows next to `[New] *`. After step 3 the icon stays `M⇣` and the Markdown colors stay (no switch to `Txᴛ`). |
+| **PASTE-14** | Re-detect with ↻ | PASTE-13 done | 1. Ctrl+A, Ctrl+V (dataset L is still in the clipboard).<br>2. Ctrl+Z until the Markdown text is back.<br>3. Click ↻ next to `[New] *`. | After step 1 the icon is `Txᴛ` (a paste that replaces all the text detects again). After step 2 the icon stays `Txᴛ`. After step 3 the icon is `M⇣` and the Markdown colors are back. |

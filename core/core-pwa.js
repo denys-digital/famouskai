@@ -52,7 +52,7 @@
 // ﹥ BROWSER SUPPORT BANNER (FILE SYSTEM ACCESS API FEATURE DETECTION)
 (function initBrowserSupportBanner() {
     if ('showOpenFilePicker' in window) return;
-    // Mobkai: no banner on a phone (docs-lab/MOBKAI-SPEC.md 14.2, Q4)
+    // Mobkai: no banner on a phone
     if (typeof window.isMobkai === 'function' && window.isMobkai()) return;
 
     try {

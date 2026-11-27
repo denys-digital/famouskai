@@ -6,11 +6,11 @@
 - **Distribution**: [jsDelivr npm registry](https://www.jsdelivr.com/package/npm/monaco-editor)
 
 **How to update**
-1. Open the central `vendor/updater.html` tool in your browser.
-2. Select **Monaco Editor** from the dropdown menu.
-3. Click "Download" and select this local directory (`vendor/monaco-editor/`) when prompted.
-4. The tool will automatically update this `_VENDOR-INFO.md` file.
-5. Update the version number in the root [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md) and [README.md](../../README.md).
+1. Open the central `updater.html` tool in your browser.
+2. Click "Choose parent folder" and select the root directory (e.g. `vendor/`).
+3. Select **Monaco Editor** from the dropdown menu.
+4. Click "Download Target Version". The tool will automatically target the `vendor/monaco-editor/` subfolder, create it if needed, and write the updated files.
+5. Update [sw.js](../../sw.js), [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md) and [README.md](../../README.md) with generated related snippets.
 
 **Files maintained by the updater**
 * `assets/css.worker-URu8fCFR.js`
@@ -48,6 +48,7 @@
 * `language/typescript/monaco.contribution.js`
 * `language/typescript/ts.worker.js`
 * `loader.js`
+* `lspLanguageFeatures-BIkJOWLw.js`
 * `main-BEx-Fmlo.js`
 * `main-DsK8pnKg.js`
 * `markdown-C_rD0bIw.js`
@@ -56,6 +57,7 @@
 * `monaco.contribution-BgRy6xDf.js`
 * `monaco.contribution-BPhsneLd.js`
 * `nls.messages-loader.js`
+* `python-CqWUUgfu.js`
 * `toggleHighContrast-qGX7E9o7.js`
 * `ts.worker-2QLmBukE.js`
 * `tsMode-B0S_kp2q.js`

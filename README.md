@@ -30,7 +30,7 @@ Think of it as a reliable, editable post-it for your files rather than a heavywe
 ## Core Features
 
 *   **Local & offline-ready:** direct read and write to your disk; the app itself is cached by a Service Worker and keeps working without a network once loaded.
-*   **Syntax coloring** for CSS, CSV, Diff/Patch, HTML, JavaScript/TypeScript, JSON, Markdown, SVG, XML, YAML, `.log` and plain text.
+*   **Syntax coloring** for CSS, CSV, Diff/Patch, HTML, JavaScript/TypeScript, JSON, Markdown, Python, SVG, XML, YAML, `.log` and plain text.
 *   **Markdown preview:** live, sanitized preview side by side with the editor, single-file HTML export and Print to PDF.
 *   **Tabbed sidebar:** Explorer (workspaces and files), Outline (document structure), Tools and Magic Snippets, Windows & Settings.
 *   **Famous Marks:** three markers (`﹥` Famous Arrow, `•` Magic Dot, `°` Flying Bubble) that turn any comment or line into a bookmark listed in the Outline. See [`docs/FAMOUS-MARK.md`](./docs/FAMOUS-MARK.md) ([open in Famouskai](https://app.famouskai.com/?open=docs/FAMOUS-MARK.md&view=read)).
@@ -50,12 +50,12 @@ Famouskai is built to be resilient. To guarantee true offline capability, **all 
 
 | Library | Version | Role | License |
 | --- | --- | --- | --- |
-| **[Ace Editor](https://github.com/ajaxorg/ace)** | 1.44.0 | Core text editing engine | BSD-3-Clause |
+| **[Ace Editor](https://github.com/ajaxorg/ace)** | 1.45.2 | Core text editing engine | BSD-3-Clause |
 | **[Diff2Html](https://github.com/rtfpessoa/diff2html)** | 3.4.56 | Read-only pretty rendering of .patch/.diff files in the Preview pane | MIT |
-| **[DOMPurify](https://github.com/cure53/DOMPurify)** | 3.4.17 | Sanitizes the rendered Markdown preview and HTML export | MPL-2.0 OR Apache-2.0 |
+| **[DOMPurify](https://github.com/cure53/DOMPurify)** | 3.5.0 | Sanitizes the rendered Markdown preview and HTML export | MPL-2.0 OR Apache-2.0 |
 | **[idb-keyval](https://github.com/jakearchibald/idb-keyval)** | 6.3.0 | Promise-based IndexedDB storage | Apache-2.0 |
 | **[js-beautify](https://github.com/beautifier/js-beautify)** | 2.0.3 | Code formatting and indentation tools | MIT |
-| **[Marked](https://github.com/markedjs/marked)** | 18.1.1 | Ultra-fast Markdown parser for live preview | MIT |
+| **[Marked](https://github.com/markedjs/marked)** | 18.2.1 | Ultra-fast Markdown parser for live preview | MIT |
 | **[Monaco Editor](https://github.com/microsoft/monaco-editor)** | 0.56.0 | Diff/Merge resolution engine (Diffskai) | MIT |
 | **[Oswald (Fontsource)](https://github.com/googlefonts/OswaldFont)** | 5.3.0 | Headings font of the Markdown preview themes (weights 500 and 700, latin subset) | OFL-1.1 |
 

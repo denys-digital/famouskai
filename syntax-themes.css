@@ -292,6 +292,31 @@
     --log-hided:        var(--fm-dark);
 }
 
+/* ﹥ ...9. PYTHON */
+.ace-famouskai[data-lang="py"] {
+    /* Comments */
+    --py-comment:         var(--fm-gray);
+    /* Keywords and Operators (def, class, if, import, +, ==) */
+    --py-keyword:         var(--fm-magenta);
+    --py-operator:        var(--fm-magenta);
+    /* Literals (True, False, None, numbers, strings) */
+    --py-constant:        var(--fm-purple);
+    --py-numeric:         var(--fm-purple);
+    --py-string:          var(--fm-yellow);
+    --py-escape:          var(--fm-pink);
+    /* Built-ins and decorators (print, len, @property) */
+    --py-support:         var(--fm-cyan);
+    /* self, cls */
+    --py-language-var:    var(--fm-orange);
+    /* Function names after def */
+    --py-function-name:   var(--fm-green);
+    /* Names (variables, modules, attributes) */
+    --py-identifier:      var(--fm-light);
+    /* Punctuation and Brackets */
+    --py-paren:           var(--fm-light);
+    --py-indent-guide:    var(--fm-gray);
+}
+
 /* ==========================================================================
    ﹥ 2. ACE CLASSES MAPPING (THE ENGINE)
    Maps the chaotic ACE token output to our clean variables.
@@ -1010,3 +1035,60 @@
 .ace-famouskai[data-lang="log"] :is(
     .ace_log-text
 ) { color: var(--log-text); }
+
+
+
+/* --------------------------------------------------------------------------
+   ﹥ ...9. PYTHON
+   -------------------------------------------------------------------------- */
+.ace-famouskai[data-lang="py"] :is(
+    .ace_comment
+) { color: var(--py-comment); font-style: italic; }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_keyword
+) { color: var(--py-keyword); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_keyword.ace_operator
+) { color: var(--py-operator); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_constant.ace_language
+) { color: var(--py-constant); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_constant.ace_numeric
+) { color: var(--py-numeric); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_string
+) { color: var(--py-string); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_constant.ace_language.ace_escape
+) { color: var(--py-escape); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_support.ace_function
+) { color: var(--py-support); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_variable.ace_language
+) { color: var(--py-language-var); font-style: italic; }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_entity.ace_name.ace_function
+) { color: var(--py-function-name); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_identifier
+) { color: var(--py-identifier); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_paren.ace_lparen, .ace_paren.ace_rparen, .ace_punctuation
+) { color: var(--py-paren); }
+
+.ace-famouskai[data-lang="py"] :is(
+    .ace_indent-guide
+) { color: var(--py-indent-guide); }

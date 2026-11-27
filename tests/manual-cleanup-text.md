@@ -1,6 +1,6 @@
 # Manual Test Plan - Tidy & Sanitize Text Tool (`tool-cleanup-text.js`)
 
-This document defines manual test scenarios for verifying the "Tidy & Sanitize Text" tool (`plugins/tool-cleanup-text.js`) according to AGENTS.md requirements.
+This document defines manual test scenarios for verifying the "Tidy & Sanitize Text" tool (`plugins/tool-cleanup-text.js`) following the Manual Testing Protocol of `.github/CONTRIBUTING.md`.
 
 ## Test Datasets
 

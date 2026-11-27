@@ -84,6 +84,7 @@ function applyNativeColoration(filename) {
     else if (ext === 'js' || ext === 'ts') editor.session.setMode("ace/mode/javascript");
     else if (ext === 'json') editor.session.setMode("ace/mode/json");
     else if (ext === 'md') editor.session.setMode("ace/mode/markdown");
+    else if (ext === 'py') editor.session.setMode("ace/mode/python");
     else if (ext === 'svg') editor.session.setMode("ace/mode/svg");
     else if (ext === 'xml') editor.session.setMode("ace/mode/xml");
     else if (ext === 'yml' || ext === 'yaml') editor.session.setMode("ace/mode/yaml", () => window.FamousPluginCore.YamlFolding.apply(editor.session));
@@ -253,7 +254,7 @@ const SAVE_MIME_BY_EXT = {
     txt: 'text/plain', log: 'text/plain', md: 'text/markdown', json: 'application/json',
     js: 'text/javascript', ts: 'text/plain', html: 'text/html', xml: 'text/xml', svg: 'image/svg+xml',
     css: 'text/css', csv: 'text/csv', tsv: 'text/tab-separated-values', yaml: 'text/yaml', yml: 'text/yaml',
-    patch: 'text/plain', diff: 'text/plain'
+    patch: 'text/plain', diff: 'text/plain', py: 'text/x-python'
 };
 
 /**
@@ -353,7 +354,7 @@ async function saveFile() {
         const currentFileOnDisk = await fileHandle.getFile();
         if (currentFileOnDisk.lastModified > lastKnownModifiedTime) {
 
-            // Mobkai: no Diffskai on a phone, a simple confirm instead (docs-lab/MOBKAI-SPEC.md 13.3)
+            // Mobkai: no Diffskai on a phone, a simple confirm instead
             if (typeof window.isMobkai === 'function' && window.isMobkai()) {
                 if (!confirm("The file changed on disk. Overwrite it with your version?")) {
                     return; // Buffer stays unsaved (modified flag kept)

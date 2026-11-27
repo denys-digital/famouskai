@@ -1,7 +1,7 @@
 # Manual Test Specification: Mobkai (minimal mobile note mode), Lots 1 to 4
 
 ## Overview
-Mobkai is Famouskai on a phone, stripped down to the menu bar, the file name, the editor, the Markdown preview and the bottom status bar. Lot 1 covers the detection and what is hidden or turned off. Lot 2 covers touch ergonomics, clean editor framing, Ace mobile menu removal, 44px hit targets, 360px fit, and Preview restriction. Lot 3 covers the bottom status bar: "Copy all" button, toasts in the bar, app version when idle, and virtual keyboard behavior. Lot 4 covers draft recovery for the [New] note on app switch or tab termination. Spec: `docs-lab/MOBKAI-SPEC.md` (sections 3, 4, 6, 7, 8, 13, 14).
+Mobkai is Famouskai on a phone, stripped down to the menu bar, the file name, the editor, the Markdown preview and the bottom status bar. Lot 1 covers the detection and what is hidden or turned off. Lot 2 covers touch ergonomics, clean editor framing, Ace mobile menu removal, 44px hit targets, 360px fit, and Preview restriction. Lot 3 covers the bottom status bar: "Copy all" button, toasts in the bar, app version when idle, and virtual keyboard behavior. Lot 4 covers draft recovery for the [New] note on app switch or tab termination.
 
 ## Scope
 - Detection: automatic on a phone, `?mobkai=1` / `?mobkai=0` / `?mobkai=auto` override.

@@ -1,6 +1,6 @@
 # Manual Test Specification: Famous Marks
 
-This document checks where a Famous Mark (`﹥`, `•`, `°`) counts and where it does not: tolerated prefixes, false positives, Markdown bullets, folding and the Outline click. The rules are in `docs/FAMOUS-MARK.md` ("Where a Mark Counts") and `docs-lab/FAMOUS-MARK-MATRIX.md`.
+This document checks where a Famous Mark (`﹥`, `•`, `°`) counts and where it does not: tolerated prefixes, false positives, Markdown bullets, folding and the Outline click. The rules are in `docs/FAMOUS-MARK.md` ("Where a Mark Counts").
 
 ---
 

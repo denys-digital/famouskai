@@ -9,7 +9,7 @@ Desktop Chromium, on a deployed address (for example `https://app.famouskai.com`
 ## Before you start
 
 1. Open the address once with the network on and wait 10 seconds (the Service Worker installs).
-2. Still online, click toolbar **D** once: Diffskai opens and loads, then close it. Known limit (private issue 572): a Diffskai never opened online does not load offline, because the Service Worker stores Monaco's files only when Diffskai first loads them.
+2. Still online, click toolbar **D** once: Diffskai opens and loads, then close it. Known limit: a Diffskai never opened online does not load offline, because the Service Worker stores Monaco's files only when Diffskai first loads them.
 3. DevTools (`Ctrl+Shift+I`) > **Network**: the reload with `Ctrl+R` shows `(ServiceWorker)` in the **Size** column on almost every line.
 
 ---
