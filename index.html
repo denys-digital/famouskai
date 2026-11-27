@@ -95,6 +95,7 @@
             <button id="btn-print" title="Export to PDF" style="display: none;">Print PDF</button>
             <button id="btn-export-html" title="Export to Standalone HTML" style="display: none;">Export</button>
             <button id="btn-preview-theme" title="Dark preview" aria-label="Switch preview to dark theme" style="display: none;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
+            <button id="btn-preview-text-size" title="Text size 15 px (click: 18 px)" aria-label="Preview text size 15 px, switch to 18 px" style="display: none;">A</button>
             <button id="btn-preview-full" title="Expand preview to full width" style="display: none;">Full View</button>
             <button id="btn-preview" title="Toggle Preview" style="display: none;">Preview</button>
         </div>
@@ -198,6 +199,9 @@
                         <button class="fold-btn" data-mark-filter="@" data-mark-group="marks" title="Filter @ mentions">@</button>
                         <button class="fold-btn" data-mark-filter="</>" id="btn-outline-filter-xml" title="Filter HTML/XML tags" style="display: none;">&lt;/&gt;</button>
                         <button class="fold-btn" data-mark-filter="JS" id="btn-outline-filter-js" title="Filter JavaScript symbols" style="display: none;">JS</button>
+                        <button class="fold-btn" data-mark-filter="py" id="btn-outline-filter-py" title="Show Python symbols only (class, def)" style="display: none;">Pʏ</button>
+                        <button class="fold-btn" data-mark-filter="yml" id="btn-outline-filter-yml" title="Show YAML keys only" style="display: none;">Yᴍʟ</button>
+                        <button class="fold-btn" data-mark-filter="css" id="btn-outline-filter-css" title="Show CSS rules only (selectors, @media)" style="display: none;">#</button>
                     </div>
 
                     <div id="toc-list"></div>

@@ -165,7 +165,7 @@
             Outline.update(mockEditor);
             const parsedMarks = Outline.items.map(function(item) { return item.mark; });
 
-            // Tree indent (lot b, #509): a leaf sits one step under the heading that holds it.
+            // Tree indent: a leaf sits one step under the heading that holds it.
             // Same shape as tests/fixtures-outline-sample.md.
             const treeLines = [
                 "﹥ Before any heading",
@@ -184,7 +184,7 @@
             window.currentFileName = '';
             const treeDepths = Outline.items.map(function(item) { return item.text + "=" + item.depth; }).join(" | ");
 
-            // File-type rule (lot c, #510): docs-lab/FAMOUS-MARK-MATRIX.md section 2
+            // File-type rule
             function kindOf(line, profile, tokens) {
                 const m = Outline.markOnLine(line, profile, tokens);
                 return m ? m.kind + ":" + m.label : "null";
@@ -221,15 +221,29 @@
                 window.currentFileName = '';
                 return Outline.items.map(function(i) { return i.type + ":" + i.text; }).join(" | ");
             }
+            function depthsFor(filename, lines) {
+                itemsFor(filename, lines);
+                return Outline.items.map(function(i) { return i.text + "=" + i.depth; }).join(" | ");
+            }
             const fileCases = [
-                ["config.yaml: '# comment' is not a heading", itemsFor("config.yaml", ["# Settings", "key: 1"]), ""],
+                ["config.yaml: '# comment' is not a heading, the key is listed", itemsFor("config.yaml", ["# Settings", "key: 1"]), "yaml:key"],
+                ["ci.yml: keys of the first three levels, not deeper, not in a | block, not in a list", itemsFor("ci.yml", ["name: Sanity", "on:", "  push:", "    branches: [main]", "jobs:", "  sanity:", "    steps:", "      - name: Check", "        run: |", "          a: b", "\"quoted key\": 1", "---", "release: x", "notes: >", "  text: not a key", "end: 1"]), "yaml:name | yaml:on | yaml:push | yaml:branches | yaml:jobs | yaml:sanity | yaml:steps | yaml:quoted key | yaml:release | yaml:notes | yaml:end"],
+                ["k8s.yaml: depth by indent, 3 levels at most", depthsFor("k8s.yaml", ["spec:", "  template:", "    metadata:", "      name: web", "status: ok"]), "spec=0 | template=1 | metadata=2 | status=0"],
+                ["ci.yml: the Yᴍʟ filter keeps the keys only", itemsFor("ci.yml", ["# ﹥ mark", "name: x", "# TODO: y"]) && Outline.items.filter(function(i) { return Outline.matchesMarkFilter(i, "yml"); }).map(function(i) { return i.text; }).join(","), "name"],
+                ["notes.txt: 'key: 1' is not a symbol outside YAML", itemsFor("notes.txt", ["key: 1"]), ""],
                 ["notes.md: • not listed, ﹥ listed", itemsFor("notes.md", ["# T", "• bullet", "﹥ point"]), "md:T | famous:point"],
                 ["package.json: keys of the first two levels", itemsFor("package.json", ["{", '  "name": "x",', '  "scripts": {', '    "test": "y"', "  },", '  "list": [ { "deep": 1 } ]', "}"]), "json:name | json:scripts | json:test | json:list"],
                 ["data.csv: nothing listed", itemsFor("data.csv", ["﹥ a,b", "# c,d"]), ""],
-                ["notes.md: no mark inside a ~~~ fence", itemsFor("notes.md", ["~~~", "﹥ hidden", "~~~", "﹥ shown"]), "famous:shown"]
+                ["notes.md: no mark inside a ~~~ fence", itemsFor("notes.md", ["~~~", "﹥ hidden", "~~~", "﹥ shown"]), "famous:shown"],
+                ["script.py: class, def and async def listed, '# comment' is not a heading", itemsFor("script.py", ["# Notes", "import os", "class Note:", "    def __init__(self, title):", "async def main():", "def count(lines):", "x = 1"]), "py:class Note | py:__init__() | py:main() | py:count()"],
+                ["script.py: nesting by indent, 3 levels at most, a code line closes the blocks above it", depthsFor("script.py", ["class A:", "    def m(self):", "        def inner():", "            def too_deep():", "                pass", "    class B:", "        pass", "if True:", "    def f():", "        pass", "# ﹥ mark", "async def g():", "    x = 'def not_a_symbol('"]), "class A=0 | m()=1 | inner()=2 | class B=1 | f()=0 | mark=0 | g()=0"],
+                ["script.py: the Pʏ filter keeps the code symbols only", itemsFor("script.py", ["# ﹥ mark", "def f():", "    # TODO: x", "    pass"]) && Outline.items.filter(function(i) { return Outline.matchesMarkFilter(i, "py"); }).map(function(i) { return i.text; }).join(","), "f()"],
+                ["styles.css: selectors and block at-rules, nested, no declaration, no frame, nothing in a comment or a string", depthsFor("styles.css", ["/* .ghost { } */", ":root { --a: 1; }", "a,", "b {", "  color: red;", "}", "@media (min-width: 1px) {", "  .card {", "    & h2 { .too-deep { } }", "  }", "}", "@keyframes fade { from { opacity: 0; } }", "@import url(x.css);", ".q { content: \"{\"; }"]), ":root=0 | a, b=0 | @media (min-width: 1px)=0 | .card=1 | & h2=2 | @keyframes fade=0 | .q=0"],
+                ["styles.css: the CSS filter keeps the rules only", itemsFor("styles.css", ["/* ﹥ mark */", ".a {", "  /* TODO: x */", "}"]) && Outline.items.filter(function(i) { return Outline.matchesMarkFilter(i, "css"); }).map(function(i) { return i.type + ":" + i.text; }).join(","), "css:.a"],
+                ["notes.txt: 'def x(' is not a symbol outside Python", itemsFor("notes.txt", ["def count(lines):"]), ""]
             ];
 
-            // • sections (lot d, #511): the JS example of docs-lab/FAMOUS-MARK-MATRIX.md section 1
+            // • sections: a JS example
             const dotLines = [
                 "// • Connection",            // 0
                 "function connect() {}",      // 1

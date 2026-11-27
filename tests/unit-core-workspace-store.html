@@ -268,6 +268,53 @@
             }
         });
 
+        test("WS-07", "renameCurrentFile() to new.md on an open file listed 2nd of 3 in Recent files (stored as its own handle)", "the entry reads new.md at the same place, holds the moved handle; the list shows new.md, not old.md", async (appWin) => {
+            if (realAddRecentFile) appWin.addRecentFile = realAddRecentFile;
+            await appWin.idbKeyval.set("famouskai_recent_files", []);
+
+            // The stored entry is a separate handle (like a handle read back from IndexedDB).
+            await appWin.addRecentFile(mockFileHandle("a.md"));
+            await appWin.addRecentFile(mockFileHandle("old.md"));
+            await appWin.addRecentFile(mockFileHandle("c.md"));
+
+            const opened = mockFileHandle("old.md", "Content", 1000);
+            opened.move = async (newName) => { opened.name = newName; };
+            appWin.fileHandle = opened;
+            appWin.eval("fileHandle = window.fileHandle; currentFileName = 'old.md'; isModified = false;");
+
+            const promise = appWin.renameCurrentFile();
+            appWin.document.getElementById("rename-input").value = "new.md";
+            appWin.document.getElementById("rename-form").dispatchEvent(new appWin.Event("submit", { cancelable: true }));
+            const res = await promise;
+            if (res !== true) throw new Error(`Expected renameCurrentFile to resolve true, got ${res}`);
+
+            const recents = await appWin.getRecentFiles();
+            const names = recents.map(r => r.name);
+            if (JSON.stringify(names) !== JSON.stringify(["c.md", "new.md", "a.md"])) {
+                throw new Error(`Expected [c.md, new.md, a.md], got ${JSON.stringify(names)}`);
+            }
+            if (recents[1].handle !== opened) throw new Error("Expected the entry to hold the moved handle");
+
+            await appWin.renderRecentFilesList();
+            const listText = appWin.document.getElementById("recent-files-list").textContent;
+            if (!listText.includes("new.md") || listText.includes("old.md")) {
+                throw new Error(`Expected the list to show new.md and not old.md, got '${listText}'`);
+            }
+        });
+
+        test("WS-08", "findRecentFile() + updateRecentFile() for a file not in Recent files", "returns null; the list is unchanged", async (appWin) => {
+            const before = (await appWin.getRecentFiles()).map(r => r.name);
+            const outside = mockFileHandle("outside.md");
+            const key = await appWin.findRecentFile(outside);
+            if (key !== null) throw new Error(`Expected null, got ${key}`);
+            outside.name = "moved.md";
+            await appWin.updateRecentFile(key, outside);
+            const after = (await appWin.getRecentFiles()).map(r => r.name);
+            if (JSON.stringify(after) !== JSON.stringify(before)) {
+                throw new Error(`Expected ${JSON.stringify(before)}, got ${JSON.stringify(after)}`);
+            }
+        });
+
         window.addEventListener("load", async () => {
             let idbHelper = null;
             try {

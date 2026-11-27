@@ -28,6 +28,7 @@
  *   - Side menu buttons: open/close the left sidebar (btn-menu), hide it (btn-hide-sidebar)
  *   - Preferences: defaults, load from and save to localStorage (famouskai_prefs)
  *   - Preview theme button state (updatePreviewThemeUI, dark/light icons)
+ *   - Preview text size button state (updatePreviewTextSizeUI: 15, 18, 23 px)
  *   - Tool settings rendering at startup (FamousPluginCore.Manager.renderSettings)
  *   - Universal change listener for the settings checkboxes
  *
@@ -42,6 +43,8 @@
  *   - previewDarkSetting (saved theme while a link forces another one)
  *   - SVG_MOON, SVG_SUN
  *   - updatePreviewThemeUI
+ *   - PREVIEW_TEXT_SIZES, previewTextSize
+ *   - updatePreviewTextSizeUI, nextPreviewTextSize, normalizePreviewTextSize
  *   - loadPreferences
  *   - savePreferences
  */
@@ -65,11 +68,48 @@ document.getElementById("btn-hide-sidebar").addEventListener("click", () => {
 });
 
 // ﹥ SETTINGS & PREFERENCES MANAGEMENT
-const defaultPrefs = { wrap: true, autosave: false, links: false, sidebarStartup: false, settingsStartup: true, fullPreviewStartup: false, previewOutline: false, previewDark: false };
+const defaultPrefs = { wrap: true, autosave: false, links: false, sidebarStartup: false, settingsStartup: true, fullPreviewStartup: false, previewOutline: false, previewDark: false, previewTextSize: 15 };
 let isPreviewDark = false;
 // The saved preview theme while a link forces another one (&preview=, core-boot.js):
 // null = no link override, so savePreferences() never stores the forced theme.
 let previewDarkSetting = null;
+
+// ﹥ PREVIEW TEXT SIZE
+// Body text sizes of the markdown preview and its export, in px. Headings keep
+// their size (preview-themes.css, --fmk-heading-base). The first one is the default.
+const PREVIEW_TEXT_SIZES = [15, 18, 23];
+let previewTextSize = PREVIEW_TEXT_SIZES[0];
+
+// A stored or given size that is not in the list falls back to the default.
+function normalizePreviewTextSize(size) {
+    const n = Number(size);
+    return PREVIEW_TEXT_SIZES.includes(n) ? n : PREVIEW_TEXT_SIZES[0];
+}
+
+// The size after this one; the last one wraps to the first.
+function nextPreviewTextSize(size) {
+    const i = PREVIEW_TEXT_SIZES.indexOf(normalizePreviewTextSize(size));
+    return PREVIEW_TEXT_SIZES[(i + 1) % PREVIEW_TEXT_SIZES.length];
+}
+
+function updatePreviewTextSizeUI() {
+    previewTextSize = normalizePreviewTextSize(previewTextSize);
+    const isDefault = previewTextSize === PREVIEW_TEXT_SIZES[0];
+    const previewRender = document.getElementById("preview-render");
+    if (previewRender) {
+        if (isDefault) previewRender.removeAttribute("data-text-size");
+        else previewRender.setAttribute("data-text-size", String(previewTextSize));
+    }
+    const btn = document.getElementById("btn-preview-text-size");
+    if (btn) {
+        const level = PREVIEW_TEXT_SIZES.indexOf(previewTextSize);
+        btn.textContent = "A" + "+".repeat(level);
+        const next = nextPreviewTextSize(previewTextSize);
+        btn.title = "Text size " + previewTextSize + " px (click: " + next + " px)";
+        btn.setAttribute("aria-label", "Preview text size " + previewTextSize + " px, switch to " + next + " px");
+        btn.classList.toggle("btn-active", !isDefault);
+    }
+}
 
 const SVG_MOON = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
 const SVG_SUN = '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
@@ -135,9 +175,11 @@ function loadPreferences() {
     // Autosave internal state restoration (visual state is handled by updateUI)
     isAutoSaveEnabled = prefs.autosave;
     isPreviewDark = !!prefs.previewDark;
-    // Mobkai: dark preview by default on a phone (Denys, PR #333; the theme button is hidden there)
+    // Mobkai: dark preview by default on a phone (the theme button is hidden there)
     if (typeof window.isMobkai === 'function' && window.isMobkai()) isPreviewDark = true;
     updatePreviewThemeUI();
+    previewTextSize = normalizePreviewTextSize(prefs.previewTextSize);
+    updatePreviewTextSizeUI();
     
     // Apply editor settings
     if (editor) editor.session.setUseWrapMode(prefs.wrap);
@@ -158,7 +200,8 @@ function savePreferences() {
         sidebarStartup: document.getElementById("toggle-sidebar-startup") ? document.getElementById("toggle-sidebar-startup").checked : false,
         fullPreviewStartup: document.getElementById("toggle-full-preview-startup") ? document.getElementById("toggle-full-preview-startup").checked : false,
         previewOutline: document.getElementById("toggle-preview-outline") ? document.getElementById("toggle-preview-outline").checked : false,
-        previewDark: previewDarkSetting === null ? isPreviewDark : previewDarkSetting
+        previewDark: previewDarkSetting === null ? isPreviewDark : previewDarkSetting,
+        previewTextSize: previewTextSize
     };
     localStorage.setItem('famouskai_prefs', JSON.stringify(prefs));
 }

@@ -191,7 +191,7 @@
             }
         });
 
-        test("CF-06", "applyNativeColoration('a.json'), ('a.yml'), ('a.diff'), ('noext')", "Ace mode matches extension", async (appWin) => {
+        test("CF-06", "applyNativeColoration('a.json'), ('a.yml'), ('a.yaml'), ('a.py'), ('a.diff'), ('noext')", "Ace mode matches extension", async (appWin) => {
             appWin.eval("applyNativeColoration('a.json')");
             if (appWin.editor.session.$modeId !== "ace/mode/json") {
                 throw new Error(`a.json mode expected 'ace/mode/json', got '${appWin.editor.session.$modeId}'`);
@@ -200,6 +200,22 @@
             appWin.eval("applyNativeColoration('a.yml')");
             if (appWin.editor.session.$modeId !== "ace/mode/yaml") {
                 throw new Error(`a.yml mode expected 'ace/mode/yaml', got '${appWin.editor.session.$modeId}'`);
+            }
+
+            appWin.eval("applyNativeColoration('a.yaml')");
+            if (appWin.editor.session.$modeId !== "ace/mode/yaml") {
+                throw new Error(`a.yaml mode expected 'ace/mode/yaml', got '${appWin.editor.session.$modeId}'`);
+            }
+            if (appWin.editor.container.getAttribute('data-lang') !== "yaml") {
+                throw new Error(`a.yaml data-lang expected 'yaml', got '${appWin.editor.container.getAttribute('data-lang')}'`);
+            }
+
+            appWin.eval("applyNativeColoration('a.py')");
+            if (appWin.editor.session.$modeId !== "ace/mode/python") {
+                throw new Error(`a.py mode expected 'ace/mode/python', got '${appWin.editor.session.$modeId}'`);
+            }
+            if (appWin.editor.container.getAttribute('data-lang') !== "py") {
+                throw new Error(`a.py data-lang expected 'py', got '${appWin.editor.container.getAttribute('data-lang')}'`);
             }
 
             appWin.eval("applyNativeColoration('a.diff')");

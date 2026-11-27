@@ -65,6 +65,7 @@ const URLS_TO_CACHE = [
     './vendor/ace-builds/mode-javascript.js',
     './vendor/ace-builds/mode-json.js',
     './vendor/ace-builds/mode-markdown.js',
+    './vendor/ace-builds/mode-python.js',
     './vendor/ace-builds/mode-svg.js',
     './vendor/ace-builds/mode-text.js',
     './vendor/ace-builds/mode-xml.js',
@@ -250,8 +251,8 @@ self.addEventListener('fetch', (event) => {
     // 3. Standard Local-First caching behavior (Cache First strategy)
     event.respondWith((async () => {
         try {
-            // Look in the current cache only, never in an old one (#454: new index.html
-            // with old style.css). caches.match with cacheName does not create the cache,
+            // Look in the current cache only, never in an old one (a new index.html
+            // with an old style.css). caches.match with cacheName does not create the cache,
             // unlike caches.open: an old worker still answering a request must not bring
             // back the cache that the new worker just purged.
             const cachedResponse = await caches.match(event.request, { cacheName: CACHE_NAME, ignoreSearch: true });

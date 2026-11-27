@@ -113,7 +113,7 @@ window.FamousPluginCore.Diffskai = {
 
 window.FamousPluginCore.Manager.register({
     name: "Compare this file (diffskai)",
-    extensions: ['js', 'json', 'md', 'css', 'html', 'xml', 'svg', 'txt', 'log', 'csv', 'tsv', 'ts', 'yml', 'patch', 'diff', ''],
+    extensions: ['js', 'json', 'md', 'css', 'html', 'xml', 'svg', 'txt', 'log', 'csv', 'tsv', 'ts', 'yml', 'yaml', 'py', 'patch', 'diff', ''],
     toolbar: {
         letter: "D",
         color: "var(--fm-pink)"

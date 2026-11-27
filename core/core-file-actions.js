@@ -41,6 +41,7 @@
  *   - applyNativeColoration
  *   - updateUI
  *   - refreshWorkspaceList
+ *   - findRecentFile, updateRecentFile
  *   - window.currentWorkspaceHandle
  *   - window.FamousPluginCore
  *   - window.showToast
@@ -255,8 +256,12 @@ async function renameCurrentFile() {
                     throw new Error("Browser lacks native move API support.");
                 }
 
+                // Found before move(): the stored handle only matches the old path.
+                const recentKey = await findRecentFile(fileHandle);
+
                 // The 'submit' button click provides the FRESH User Activation context required by the OS!
                 await fileHandle.move(finalName);
+                await updateRecentFile(recentKey, fileHandle);
 
                 // Update internal state
                 currentFileName = finalName;
@@ -330,8 +335,12 @@ async function moveFile() {
             throw new Error("Browser lacks native move API support.");
         }
 
+        // Found before move(): the stored handle only matches the old path.
+        const recentKey = await findRecentFile(fileHandle);
+
         // Move the file to the new directory (keeps currentFileName)
         await fileHandle.move(dirHandle);
+        await updateRecentFile(recentKey, fileHandle);
 
         // Refresh Workspace UI if open
         if (window.currentWorkspaceHandle) refreshWorkspaceList();

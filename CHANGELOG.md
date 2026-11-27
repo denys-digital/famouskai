@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- New document: the language detected on the first paste stays when you
+  paste more text; it no longer drops to plain text or switches to another
+  language. The button ↻ next to `[New]` detects the language again from the
+  whole document.
+- Preview: on a small window with the sidebar open, a wide table no longer
+  pushes the preview past the right edge of the window, where it was cut.
+  The table now scrolls inside the preview.
+- Outline Reorder: a section can now be moved to the last position.
+- Diffskai: opening it no longer logs a console error about a missing Monaco
+  file (`lspLanguageFeatures`), which is now in `vendor/monaco-editor/`.
+- Recent files: renaming the open file, or moving it to another folder,
+  updates its entry, which then opens the file under its new name instead
+  of showing `File read error`.
+
+### Changed
+
+- Updated Ace to 1.45.2, DOMPurify to 3.5.0 (security release) and Marked to
+  18.2.1 (CommonMark fixes, faster on long runs of unmatched `*` or `_`).
+
+### Added
+
+- Preview: a text size button (`A`, `A+`, `A++`) next to the theme button
+  sets the Markdown text to 15, 18 or 23 px; headings keep their size. The
+  choice is saved, and the HTML export keeps it, with a `Text 15 18 23`
+  switch at the top right of the exported page.
+- Language Python (`.py`): colors, folding, Outline (`class`, `def`, `async def`, nested 3 levels, with its own `Pʏ` filter), Famous Marks in `#` comments, Diffskai, offline.
+- Language YAML (`.yml`, `.yaml`): Diffskai now colors YAML and shows its Compare button on `.yaml` files too; the Outline lists the keys of the first three levels, with its own `Yᴍʟ` filter.
+- Outline in CSS files: selectors and block at-rules (`@media`, `@font-face`...), nested 3 levels, with their own `#` filter that hides the Famous Marks.
+- Outline: a click on an item also scrolls the Markdown preview to it, in split view and in Full View ([top] and [happy end] too).
+- Export: the standalone HTML file follows the preview theme. A dark preview
+  gives a dark file, a light preview a light one, and a `Dark theme` box at
+  the top right of the file switches it (no script in the file; print stays
+  light).
+
 ## [0.2.2] - 2026-11-20
 
 ### Added

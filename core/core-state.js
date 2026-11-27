@@ -88,6 +88,7 @@ const WORKSPACE_FILE_GROUPS = [
         } },
     { filter: '#',   className: 'icon-css',  types: { css: '#' } },
     { filter: 'Yᴍʟ', className: 'icon-yml',  types: { yaml: 'Yᴍʟ', yml: 'Yᴍʟ' } },
+    { filter: 'Pʏ',  className: 'icon-py',   types: { py: 'Pʏ' } },
     { filter: '±',   className: 'icon-diff', types: { patch: '±', diff: '±' } },
     { filter: 'M⇣',  className: 'icon-md',   types: { md: 'M⇣' } },
     { filter: '≣',   className: 'icon-txt',

@@ -1,66 +1,81 @@
 --- Ace Editor Update Log ---
-Timestamp : 2026-09-27T01:07:38.357Z
+Timestamp : 2026-11-24T06:15:22.241Z
 Package   : ace-builds
-Version   : 1.44.0
-User Agent: Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36
-Summary   : 19 files requested, 19 files downloaded and saved locally.
+Version   : 1.45.2
+User Agent: Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36
+Summary   : 24 files requested, 24 files downloaded and saved locally.
 Status    : Success
 
 Files Processed:
  1. ace.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/ace.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/ace.js
 
  2. ext-searchbox.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/ext-searchbox.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/ext-searchbox.js
 
  3. mode-css.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-css.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-css.js
 
  4. mode-csv.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-csv.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-csv.js
 
  5. mode-diff.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-diff.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-diff.js
 
  6. mode-html.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-html.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-html.js
 
- 7. mode-javascript.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-javascript.js
+ 7. mode-ini.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-ini.js
 
- 8. mode-json.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-json.js
+ 8. mode-javascript.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-javascript.js
 
- 9. mode-markdown.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-markdown.js
+ 9. mode-json.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-json.js
 
- 10. mode-svg.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-svg.js
+ 10. mode-markdown.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-markdown.js
 
- 11. mode-text.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-text.js
+ 11. mode-python.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-python.js
 
- 12. mode-xml.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-xml.js
+ 12. mode-sh.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-sh.js
 
- 13. mode-yaml.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/mode-yaml.js
+ 13. mode-sql.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-sql.js
 
- 14. worker-css.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-css.js
+ 14. mode-svg.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-svg.js
 
- 15. worker-html.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-html.js
+ 15. mode-text.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-text.js
 
- 16. worker-javascript.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-javascript.js
+ 16. mode-toml.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-toml.js
 
- 17. worker-json.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-json.js
+ 17. mode-xml.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-xml.js
 
- 18. worker-xml.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-xml.js
+ 18. mode-yaml.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/mode-yaml.js
 
- 19. worker-yaml.js
-   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src-min-noconflict/worker-yaml.js
+ 19. worker-css.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/worker-css.js
+
+ 20. worker-html.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/worker-html.js
+
+ 21. worker-javascript.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/worker-javascript.js
+
+ 22. worker-json.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/worker-json.js
+
+ 23. worker-xml.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/worker-xml.js
+
+ 24. worker-yaml.js
+   Source: https://cdn.jsdelivr.net/npm/ace-builds@1.45.2/src-min-noconflict/worker-yaml.js
 

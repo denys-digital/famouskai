@@ -528,6 +528,132 @@
             cleanupPreviewState(appWin);
         });
 
+        // Outline to preview sync: a click in the Outline scrolls the Markdown preview
+        const SYNC_MD = (function () {
+            const lines = ["# Title", "", "Intro paragraph."];
+            for (let s = 1; s <= 6; s++) {
+                lines.push("", "## Section " + s, "");
+                for (let p = 1; p <= 8; p++) lines.push("Paragraph " + s + "." + p + " " + "text ".repeat(30), "");
+            }
+            lines.push("## Last section", "", "The end.");
+            return lines.join("\n");
+        })();
+
+        function stripLines(html) {
+            return html.replace(/ data-fk-line="\d+"/g, "");
+        }
+
+        async function openSyncDoc(appWin) {
+            cleanupPreviewState(appWin);
+            const outlineToggle = appWin.document.getElementById("toggle-preview-outline");
+            if (outlineToggle) outlineToggle.checked = false;
+            appWin.eval("newFile()");
+            appWin.eval("currentFileName = 'sync.md'");
+            appWin.applyNativeColoration("sync.md");
+            appWin.editor.setValue(SYNC_MD, -1);
+            appWin.FamousPluginCore.Sidebar.switchTab("outline", true);
+            appWin.togglePreview();
+            await delay(100);
+            appWin.FamousPluginCore.Outline.update(appWin.editor);
+            await delay(50);
+        }
+
+        function tocItem(appWin, text) {
+            const item = Array.from(appWin.document.querySelectorAll("#toc-list .toc-item")).find(d => d.textContent.trim() === text);
+            if (!item) throw new Error("Outline item '" + text + "' not found");
+            return item;
+        }
+
+        function offsetInPreview(appWin, el) {
+            const container = appWin.document.getElementById("preview-content");
+            return el.getBoundingClientRect().top - container.getBoundingClientRect().top;
+        }
+
+        test("CP-14", "renderMarkdownWithLines() on tests/fixtures-syntax-sample.md and tests/fixtures-outline-sample.md (after magicDotToMarkdownList)", "same HTML as marked.parse() once the data-fk-line attributes are removed", async (appWin) => {
+            for (const name of ["fixtures-syntax-sample.md", "fixtures-outline-sample.md"]) {
+                const text = appWin.magicDotToMarkdownList(await (await fetch("../tests/" + name)).text());
+                const got = stripLines(appWin.renderMarkdownWithLines(text));
+                const expected = appWin.marked.parse(text);
+                if (got !== expected) {
+                    let i = 0;
+                    while (i < got.length && got[i] === expected[i]) i++;
+                    throw new Error(name + ": HTML differs at char " + i + ": got " + JSON.stringify(got.slice(i, i + 80)) + ", expected " + JSON.stringify(expected.slice(i, i + 80)));
+                }
+                if (got.length === 0) throw new Error(name + ": empty render");
+            }
+        });
+
+        test("CP-15", "renderMarkdownWithLines() on a text with headings, a paragraph, a list, a fence holding '# not' and CRLF line ends", "first elements tagged h1=0, p=2, h2=4, ul=6, pre=9, h3=12; nothing inside the fence is tagged", async (appWin) => {
+            const text = ["# A", "", "para", "", "## B", "", "- x", "- y", "", "```", "# not", "```", "### C"].join("\r\n");
+            const doc = new DOMParser().parseFromString("<div>" + appWin.renderMarkdownWithLines(text) + "</div>", "text/html");
+            const got = Array.from(doc.querySelectorAll("[data-fk-line]")).map(el => el.tagName.toLowerCase() + "=" + el.getAttribute("data-fk-line")).join(", ");
+            const expected = "h1=0, p=2, h2=4, ul=6, pre=9, h3=12";
+            if (got !== expected) throw new Error("Expected '" + expected + "', got '" + got + "'");
+        });
+
+        test("CP-16", "Preview open on a long sync.md, click the Outline item 'Section 4'", "the preview scrolls: the 'Section 4' h2 sits at the top of #preview-content (0 to 30 px below its top edge)", async (appWin) => {
+            await openSyncDoc(appWin);
+            const container = appWin.document.getElementById("preview-content");
+            if (container.scrollHeight <= container.clientHeight) throw new Error("Test document does not overflow the preview");
+            container.scrollTop = 0;
+            tocItem(appWin, "Section 4").click();
+            await delay(30);
+            const h2 = Array.from(appWin.document.querySelectorAll("#preview-render h2")).find(h => h.textContent === "Section 4");
+            const off = offsetInPreview(appWin, h2);
+            if (off < 0 || off > 30) throw new Error("'Section 4' is " + Math.round(off) + " px from the top of the preview (scrollTop " + container.scrollTop + ")");
+            if (appWin.editor.getCursorPosition().row !== SYNC_MD.split("\n").indexOf("## Section 4")) throw new Error("Editor cursor did not move to the heading line");
+        });
+
+        test("CP-17", "Same document: click '[happy end]', then '[top]', then 'Section 2' in Full View", "end: preview scrolled to its bottom; top: scrollTop 0; Full View: 'Section 2' at the top (0 to 30 px)", async (appWin) => {
+            await openSyncDoc(appWin);
+            const container = appWin.document.getElementById("preview-content");
+            tocItem(appWin, "[happy end]").click();
+            await delay(30);
+            const maxTop = container.scrollHeight - container.clientHeight;
+            if (Math.abs(container.scrollTop - maxTop) > 2) throw new Error("[happy end]: scrollTop " + container.scrollTop + ", expected " + maxTop);
+            tocItem(appWin, "[top]").click();
+            await delay(30);
+            if (container.scrollTop !== 0) throw new Error("[top]: scrollTop " + container.scrollTop + ", expected 0");
+            const outlineToggle = appWin.document.getElementById("toggle-preview-outline");
+            if (outlineToggle) outlineToggle.checked = true; // Full View keeps the Outline open
+            appWin.toggleFullPreview();
+            await delay(50);
+            appWin.FamousPluginCore.Outline.update(appWin.editor);
+            tocItem(appWin, "Section 2").click();
+            await delay(30);
+            const h2 = Array.from(appWin.document.querySelectorAll("#preview-render h2")).find(h => h.textContent === "Section 2");
+            const off = offsetInPreview(appWin, h2);
+            if (off < 0 || off > 30) throw new Error("Full View: 'Section 2' is " + Math.round(off) + " px from the top of the preview");
+            cleanupPreviewState(appWin);
+            if (outlineToggle) outlineToggle.checked = false;
+        });
+
+        test("CP-18", "Type a new heading above Section 3 and click it in the Outline at once (before the 300 ms preview debounce)", "the preview renders at once and scrolls to the new heading", async (appWin) => {
+            await openSyncDoc(appWin);
+            appWin.editor.setValue(SYNC_MD.replace("## Section 3", "## Fresh heading\n\nNew text.\n\n## Section 3"), -1);
+            appWin.FamousPluginCore.Outline.update(appWin.editor);
+            tocItem(appWin, "Fresh heading").click();
+            await delay(30);
+            const h2 = Array.from(appWin.document.querySelectorAll("#preview-render h2")).find(h => h.textContent === "Fresh heading");
+            if (!h2) throw new Error("The preview was not rendered again before scrolling");
+            const off = offsetInPreview(appWin, h2);
+            if (off < 0 || off > 30) throw new Error("'Fresh heading' is " + Math.round(off) + " px from the top of the preview");
+            cleanupPreviewState(appWin);
+        });
+
+        test("CP-19", "scrollPreviewToLine(3) with the preview closed, then with a .diff preview open", "returns false both times, no exception", async (appWin) => {
+            cleanupPreviewState(appWin);
+            if (appWin.scrollPreviewToLine(3) !== false) throw new Error("Preview closed: expected false");
+            appWin.eval("newFile()");
+            appWin.eval("currentFileName = 'a.diff'");
+            appWin.applyNativeColoration("a.diff");
+            appWin.editor.setValue("--- a/x\n+++ b/x\n@@ -1 +1 @@\n-a\n+b", 1);
+            appWin.togglePreview();
+            await delay(50);
+            if (appWin.scrollPreviewToLine(3) !== false) throw new Error("Diff preview: expected false");
+            cleanupPreviewState(appWin);
+        });
+
         window.addEventListener("load", async () => {
             try {
                 const appWin = await loadApp();

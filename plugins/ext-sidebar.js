@@ -33,7 +33,12 @@ window.FamousPluginCore.Sidebar = {
      */
     TABS: [
         { id: 'explorer', title: 'Explorer (Workspaces & Files)', color: 'var(--color-tab-explorer)', static: true, displayStyle: 'flex', icon: 'E' },
-        { id: 'outline', title: 'Outline (Structure & Reorder)', color: 'var(--color-tab-outline)', static: true, displayStyle: 'block', icon: 'O' },
+        { id: 'outline', title: 'Outline (Structure & Reorder)', color: 'var(--color-tab-outline)', static: true, displayStyle: 'block', icon: 'O',
+            // Reorder mode is transient: leaving the Outline tab (other tab or sidebar closed) ends it
+            onHide: () => {
+                const outline = window.FamousPluginCore && window.FamousPluginCore.Outline;
+                if (outline && typeof outline.leaveReorderMode === 'function') outline.leaveReorderMode();
+            } },
         { id: 'tools', title: 'Tools & Magic Snippets', color: 'var(--color-tab-tools)', static: true, displayStyle: 'flex', icon: 'T' },
         { id: 'settings', title: 'Windows, Settings & Lexicon', color: 'var(--color-tab-settings)', static: true, displayStyle: 'block', icon: 'S' }
     ],

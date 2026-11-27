@@ -182,7 +182,7 @@ window.FamousPluginCore.FamousMark = (function () {
                 if (ext === "md" || ext === "markdown") {
                     return "markdown";
                 }
-                if (ext === "css" || ext === "html" || ext === "js" || ext === "ts" || ext === "svg" || ext === "xml" || ext === "yml" || ext === "yaml") {
+                if (ext === "css" || ext === "html" || ext === "js" || ext === "ts" || ext === "svg" || ext === "xml" || ext === "yml" || ext === "yaml" || ext === "py") {
                     return "commented";
                 }
                 if (ext === "json" || ext === "csv" || ext === "tsv" || ext === "log" || ext === "diff" || ext === "patch") {
@@ -193,7 +193,7 @@ window.FamousPluginCore.FamousMark = (function () {
                 if (modeId === "ace/mode/markdown") {
                     return "markdown";
                 }
-                if (modeId === "ace/mode/css" || modeId === "ace/mode/html" || modeId === "ace/mode/javascript" || modeId === "ace/mode/svg" || modeId === "ace/mode/xml" || modeId === "ace/mode/yaml") {
+                if (modeId === "ace/mode/css" || modeId === "ace/mode/html" || modeId === "ace/mode/javascript" || modeId === "ace/mode/svg" || modeId === "ace/mode/xml" || modeId === "ace/mode/yaml" || modeId === "ace/mode/python") {
                     return "commented";
                 }
                 if (modeId === "ace/mode/json" || modeId === "ace/mode/csv" || modeId === "ace/mode/log" || modeId === "ace/mode/diff") {
@@ -236,7 +236,7 @@ window.FamousPluginCore.FamousMark = (function () {
         },
 
         /**
-         * The one section definition (docs-lab/FAMOUS-MARK-MATRIX.md section 1, open point 2),
+         * The one section definition,
          * shared by the Outline, folding and Reorder so they can never disagree.
          * An item with a numeric `level` is a section (a Markdown `#` heading, a `•` line):
          * it holds every line down to the next section of the same or a higher level

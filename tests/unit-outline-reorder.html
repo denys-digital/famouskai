@@ -160,6 +160,18 @@
             check('drop # A on the next # B (same place): nothing changes',
                 move(SAMPLE, 0, 4),
                 { text: SAMPLE.join('\n'), replaced: 0 });
+            check('drop # A on [happy end] moves A with ## A1 to the end of the file',
+                move(SAMPLE, 0, 6),
+                { text: "# B\n° b mark\ntext b\n# A\n﹥ a mark\ntext a\n## A1\n° a1 mark", replaced: 1 });
+            check('drop ## A1 on [happy end] moves only A1 and its ° line to the end',
+                move(SAMPLE, 2, 6),
+                { text: "# A\n﹥ a mark\ntext a\n# B\n° b mark\ntext b\n## A1\n° a1 mark", replaced: 1 });
+            check('drop the last section # B on [happy end]: nothing changes',
+                move(SAMPLE, 4, 6),
+                { text: SAMPLE.join('\n'), replaced: 0 });
+            check('toIdx past [happy end] is refused',
+                move(SAMPLE, 0, 7),
+                { text: SAMPLE.join('\n'), replaced: 0 });
             check('drop a ﹥ mark on # B moves the mark and its text only',
                 move(SAMPLE, 1, 4),
                 { text: "# A\n## A1\n° a1 mark\n﹥ a mark\ntext a\n# B\n° b mark\ntext b", replaced: 1 });
@@ -175,7 +187,7 @@
             check('isReorderable: unsaved file detected as Markdown', Outline.isReorderable('', 'ace/mode/markdown'), true);
             check('isReorderable: unsaved file detected as JSON', Outline.isReorderable('', 'ace/mode/json'), false);
 
-            // • sections outside Markdown (lot f, #513): the JS example of docs-lab/FAMOUS-MARK-MATRIX.md section 1
+            // • sections outside Markdown: a JS example
             const JS_SAMPLE = [
                 "import x from 'y';",                 // 0 (preamble, never moves)
                 "// • Connection",                    // 1
@@ -224,6 +236,19 @@
                     { replaced: 0, displayLine: 8 });
             }
             window.currentFileName = 'sample.md';
+
+            // Reorder mode is transient: a new file or leaving the Outline tab ends it
+            {
+                makeEditor(SAMPLE);
+                Outline.isReorderMode = true;
+                Outline.resetFilter();
+                check('opening another file (resetFilter) leaves Reorder mode', Outline.isReorderMode, false);
+                Outline.isReorderMode = true;
+                Outline.leaveReorderMode();
+                check('leaveReorderMode (Outline tab hidden) turns Reorder mode off', Outline.isReorderMode, false);
+                Outline.leaveReorderMode();
+                check('leaveReorderMode when already off: still off, no error', Outline.isReorderMode, false);
+            }
 
             // Reorder mode lists Markdown headings only
             check('isReorderItem: the parser items kept in Reorder mode are # A, ## A1, # B',

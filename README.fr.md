@@ -30,7 +30,7 @@ Voyez-le comme un post-it fiable et modifiable pour vos fichiers, plutôt que co
 ## Fonctionnalités Clés
 
 *   **Local et prêt pour le hors-ligne :** lecture et écriture directes sur votre disque ; l'application elle-même est mise en cache par un Service Worker et continue de fonctionner sans réseau une fois chargée.
-*   **Coloration syntaxique** pour CSS, CSV, Diff/Patch, HTML, JavaScript/TypeScript, JSON, Markdown, SVG, XML, YAML, `.log` et texte brut.
+*   **Coloration syntaxique** pour CSS, CSV, Diff/Patch, HTML, JavaScript/TypeScript, JSON, Markdown, Python, SVG, XML, YAML, `.log` et texte brut.
 *   **Prévisualisation Markdown :** aperçu en direct et assaini à côté de l'éditeur, export HTML en un seul fichier et impression en PDF.
 *   **Volet latéral à onglets :** Explorer (espaces de travail et fichiers), Outline (structure du document), Tools et Magic Snippets, Windows & Settings.
 *   **Famous Marks :** trois marqueurs (`﹥` Famous Arrow, `•` Magic Dot, `°` Flying Bubble) qui transforment n'importe quel commentaire ou ligne en signet listé dans l'Outline. Voir [`docs/FAMOUS-MARK.md`](./docs/FAMOUS-MARK.md) ([ouvrir dans Famouskai](https://app.famouskai.com/?open=docs/FAMOUS-MARK.md&view=read)) (en anglais).
@@ -50,12 +50,12 @@ Famouskai est conçu pour être résilient. Pour garantir une véritable capacit
 
 | Bibliothèque | Version | Rôle | Licence |
 | --- | --- | --- | --- |
-| **[Ace Editor](https://github.com/ajaxorg/ace)** | 1.44.0 | Moteur principal d'édition de texte | BSD-3-Clause |
+| **[Ace Editor](https://github.com/ajaxorg/ace)** | 1.45.2 | Moteur principal d'édition de texte | BSD-3-Clause |
 | **[Diff2Html](https://github.com/rtfpessoa/diff2html)** | 3.4.56 | Rendu en lecture seule des fichiers .patch/.diff dans le volet de prévisualisation | MIT |
-| **[DOMPurify](https://github.com/cure53/DOMPurify)** | 3.4.17 | Assainit la prévisualisation Markdown et l'export HTML | MPL-2.0 OR Apache-2.0 |
+| **[DOMPurify](https://github.com/cure53/DOMPurify)** | 3.5.0 | Assainit la prévisualisation Markdown et l'export HTML | MPL-2.0 OR Apache-2.0 |
 | **[idb-keyval](https://github.com/jakearchibald/idb-keyval)** | 6.3.0 | Stockage IndexedDB basé sur des Promises | Apache-2.0 |
 | **[js-beautify](https://github.com/beautifier/js-beautify)** | 2.0.3 | Outils de formatage de code et d'indentation | MIT |
-| **[Marked](https://github.com/markedjs/marked)** | 18.1.1 | Parseur Markdown ultra-rapide pour la prévisualisation en direct | MIT |
+| **[Marked](https://github.com/markedjs/marked)** | 18.2.1 | Parseur Markdown ultra-rapide pour la prévisualisation en direct | MIT |
 | **[Monaco Editor](https://github.com/microsoft/monaco-editor)** | 0.56.0 | Moteur de comparaison et de fusion (Diffskai) | MIT |
 | **[Oswald (Fontsource)](https://github.com/googlefonts/OswaldFont)** | 5.3.0 | Police des titres des thèmes de prévisualisation Markdown (graisses 500 et 700, sous-ensemble latin) | OFL-1.1 |
 

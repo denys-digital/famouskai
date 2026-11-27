@@ -37,6 +37,7 @@
  *   - editor
  *   - isPreviewDark, previewDarkSetting
  *   - updatePreviewThemeUI
+ *   - previewTextSize, nextPreviewTextSize, updatePreviewTextSizeUI
  *   - savePreferences
  *   - isPopupWindow
  *   - getPopupAppUrl
@@ -45,7 +46,7 @@
  *   - DOMPurify
  *   - Diff2Html
  *   - window.FamousPluginCore
- *   - DOM elements (#preview-pane, #main-area, #btn-preview, #btn-preview-full, #btn-print, #btn-export-html, #btn-preview-theme, #preview-render, #sidebar-left, #toggle-full-preview-startup, #btn-new-window)
+ *   - DOM elements (#preview-pane, #main-area, #btn-preview, #btn-preview-full, #btn-print, #btn-export-html, #btn-preview-theme, #btn-preview-text-size, #preview-render, #sidebar-left, #toggle-full-preview-startup, #btn-new-window)
  *
  * Globals defined:
  *   - isPreviewOpen
@@ -53,9 +54,12 @@
  *   - previewTimer
  *   - wasSidebarOpen
  *   - wasSidebarTab
+ *   - previewMarkdownText
  *   - togglePreview
  *   - toggleFullPreview
  *   - updatePreviewContent
+ *   - renderMarkdownWithLines
+ *   - scrollPreviewToLine
  *   - btnExportHTML
  *   - btnPreviewTheme
  *   - newWinBtn
@@ -67,6 +71,7 @@ let isPreviewFull = false;
 let previewTimer = null;
 let wasSidebarOpen = false; // Tracks sidebar state for Full View
 let wasSidebarTab = null;
+let previewMarkdownText = null; // editor text the Markdown preview shows, null when it shows none
 
 function togglePreview() {
     isPreviewOpen = !isPreviewOpen;
@@ -101,6 +106,8 @@ function togglePreview() {
             if (btnExport) btnExport.style.display = "inline-block";
             const btnPreviewTheme = document.getElementById("btn-preview-theme");
             if (btnPreviewTheme) btnPreviewTheme.style.display = "inline-block";
+            const btnTextSize = document.getElementById("btn-preview-text-size");
+            if (btnTextSize) btnTextSize.style.display = "inline-block";
         }
 
         updatePreviewContent();
@@ -144,6 +151,8 @@ function togglePreview() {
         if (btnExport) btnExport.style.display = "none";
         const btnPreviewTheme = document.getElementById("btn-preview-theme");
         if (btnPreviewTheme) btnPreviewTheme.style.display = "none";
+        const btnTextSize = document.getElementById("btn-preview-text-size");
+        if (btnTextSize) btnTextSize.style.display = "none";
 
         // Restore sidebar if it was hidden by Full View
         if (wasSidebarOpen && window.FamousPluginCore && window.FamousPluginCore.Sidebar) {
@@ -221,7 +230,7 @@ function toggleFullPreview() {
 /**
  * Markdown preview only: a line "• text" (optional leading spaces, one •, one space)
  * becomes "- text", so marked renders it as a list. In Markdown, • is an ordinary
- * bullet (docs-lab/FAMOUS-MARK-MATRIX.md). Fenced code blocks are never changed.
+ * bullet. Fenced code blocks are never changed.
  * Returns a new string: the editor text is never changed.
  */
 function magicDotToMarkdownList(text) {
@@ -237,10 +246,94 @@ function magicDotToMarkdownList(text) {
     }).join('\n');
 }
 
+/**
+ * Markdown preview only: same HTML as marked.parse(text), plus a data-fk-line attribute
+ * (0-based editor line) on the first element of each top-level block, so the preview can
+ * scroll to a line (scrollPreviewToLine). Raw HTML blocks are left as the user wrote them.
+ * magicDotToMarkdownList() keeps the line count, so its output can be passed here.
+ */
+function renderMarkdownWithLines(text) {
+    const src = String(text).replace(/\r\n|\r/g, '\n'); // marked's own line-end normalisation
+    const tokens = marked.lexer(src);
+    let pos = 0;
+    let line = 0;
+    let html = '';
+    tokens.forEach(token => {
+        const raw = token.raw || '';
+        const at = raw ? src.indexOf(raw, pos) : -1;
+        if (at !== -1) {
+            for (let i = pos; i < at; i++) if (src.charCodeAt(i) === 10) line++;
+            pos = at;
+        }
+        // Inline links are resolved by the lexer: a block renders the same alone.
+        const single = [token];
+        single.links = tokens.links;
+        let part = marked.parser(single);
+        if (token.type !== 'html') {
+            part = part.replace(/^(\s*<[a-zA-Z][a-zA-Z0-9]*)/, '$1 data-fk-line="' + line + '"');
+        }
+        html += part;
+        if (at !== -1) {
+            for (let i = pos; i < pos + raw.length; i++) if (src.charCodeAt(i) === 10) line++;
+            pos += raw.length;
+        }
+    });
+    return html;
+}
+
+/**
+ * Scrolls the open Markdown preview to the block that holds an editor line (0-based):
+ * the block starts at the top of the preview, or, inside a long block (list, code),
+ * the matching share of its height. A line past the last block scrolls to the end.
+ * Returns true when the preview scrolled, false when there is no Markdown preview.
+ */
+function scrollPreviewToLine(line) {
+    if (!isPreviewOpen || !editor) return false;
+    // A click right after typing: render the text now rather than wait for the debounce.
+    if (previewMarkdownText !== editor.getValue()) updatePreviewContent();
+    if (previewMarkdownText === null) return false;
+    const container = document.getElementById('preview-content');
+    const previewEl = document.getElementById('preview-render');
+    if (!container || !previewEl || !previewEl.classList.contains('markdown-body')) return false;
+    const blocks = previewEl.querySelectorAll('[data-fk-line]');
+    if (blocks.length === 0) return false;
+
+    if (line <= 0) {
+        container.scrollTop = 0;
+        return true;
+    }
+    let target = null;
+    let nextLine = null;
+    for (const el of blocks) {
+        const start = Number(el.getAttribute('data-fk-line'));
+        if (start <= line) target = el;
+        else { nextLine = start; break; }
+    }
+    if (!target) {
+        container.scrollTop = 0;
+        return true;
+    }
+    const start = Number(target.getAttribute('data-fk-line'));
+    if (nextLine === null) {
+        const total = editor.session.getLength();
+        if (line >= total - 1 && line > start) {
+            container.scrollTop = container.scrollHeight;
+            return true;
+        }
+        nextLine = Math.max(total, start + 1);
+    }
+    const share = line > start ? (line - start) / (nextLine - start) : 0;
+    const top = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+    const GAP = 8; // keep a little air above the block
+    container.scrollTop = Math.max(0, Math.round(top + share * target.offsetHeight - GAP));
+    return true;
+}
+
 function updatePreviewContent() {
     if (!isPreviewOpen || !editor) return;
 
     const content = editor.getValue();
+    previewMarkdownText = null;
     let ext = currentFileName ? currentFileName.split('.').pop().toLowerCase() : '';
 
     if (!ext) {
@@ -254,7 +347,8 @@ function updatePreviewContent() {
         previewEl.classList.add('markdown-body');
         previewEl.style.display = 'block';
         if (typeof DOMPurify !== 'undefined') {
-            previewEl.innerHTML = DOMPurify.sanitize(marked.parse(magicDotToMarkdownList(content)));
+            previewEl.innerHTML = DOMPurify.sanitize(renderMarkdownWithLines(magicDotToMarkdownList(content)));
+            previewMarkdownText = content;
         } else {
             previewEl.textContent = content;
             console.warn("DOMPurify is undefined, falling back to textContent for Markdown preview");
@@ -316,6 +410,14 @@ if (btnPreviewTheme) {
         previewDarkSetting = null; // a click is the user's own choice: it is saved
         isPreviewDark = !isPreviewDark;
         updatePreviewThemeUI();
+        savePreferences();
+    });
+}
+const btnPreviewTextSize = document.getElementById("btn-preview-text-size");
+if (btnPreviewTextSize) {
+    btnPreviewTextSize.addEventListener("click", () => {
+        previewTextSize = nextPreviewTextSize(previewTextSize);
+        updatePreviewTextSizeUI();
         savePreferences();
     });
 }

@@ -25,7 +25,7 @@
  * Famouskai Core - Mobkai Detection (minimal mobile note mode)
  *
  * Loaded in <head>, before style.css, so the "mobkai" class is on <html>
- * before the first paint. Spec: docs-lab/MOBKAI-SPEC.md (sections 3, 13, 14).
+ * before the first paint.
  *
  * What it holds:
  *   - Pure decision function (window.FamousMobkai.decide), unit tested
@@ -167,7 +167,7 @@
             window.visualViewport.addEventListener('scroll', onViewportChange);
         }
 
-        // Status bar setup (docs-lab/MOBKAI-SPEC.md sections 13.5, 14.2 Q5, 14.5)
+        // Status bar setup
         function initStatusBar() {
             const statusBar = document.getElementById('mobkai-status-bar');
             const toastMsg = document.getElementById('toast-msg');

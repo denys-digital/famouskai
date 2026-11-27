@@ -305,6 +305,51 @@
             if (errors.length) throw new Error(errors.join('; '));
         });
 
+        test("SH-08", "A second paste keeps the language of the first one; the refresh button detects it again", "After New, a Markdown paste sets md; pasting a CSS fragment at the end keeps md; Ctrl+A then a paste detects again (css); the refresh button next to [New] detects from the whole document", async (appWin) => {
+            const ed = appWin.editor;
+            const doc = appWin.document;
+            const realConfirm = appWin.confirm;
+            appWin.confirm = () => true;
+            const errors = [];
+            const lang = () => ed.container.getAttribute('data-lang');
+            const paste = (text) => ed.onPaste(text);
+            try {
+                const md = await (await fetch('fixtures-syntax-sample.md')).text();
+                const css = 'body { color: red; }';
+                appWin.newFile();
+                await delay(80); // newFile() ends its initial load after 50 ms, like a user who pastes later
+                paste(md);
+                if (lang() !== 'md') errors.push(`first paste: expected md, got ${lang()}`);
+                await delay(30);
+                const btn = doc.getElementById('file-name-redetect');
+                if (!btn) errors.push('no refresh button next to [New] after the first paste');
+
+                ed.navigateFileEnd();
+                paste('\n' + css);
+                if (lang() !== 'md') errors.push(`second paste: expected md (kept), got ${lang()}`);
+                if (ed.session.$modeId !== 'ace/mode/markdown') errors.push(`second paste: mode changed to ${ed.session.$modeId}`);
+
+                ed.selectAll();
+                paste(css);
+                if (lang() !== 'css') errors.push(`Ctrl+A then paste: expected css, got ${lang()}`);
+
+                ed.setValue(md, 1);
+                await delay(30);
+                const btn2 = doc.getElementById('file-name-redetect');
+                if (!btn2) errors.push('no refresh button after editing');
+                else btn2.click();
+                if (lang() !== 'md') errors.push(`refresh button: expected md, got ${lang()}`);
+
+                appWin.eval("currentFileName = 'notes.md'");
+                appWin.updateUI();
+                if (doc.getElementById("file-name-redetect")) errors.push("refresh button shown on a named file");
+            } finally {
+                appWin.eval("currentFileName = ''");
+                appWin.confirm = realConfirm;
+            }
+            if (errors.length) throw new Error(errors.join('; '));
+        });
+
         window.addEventListener("load", async () => {
             try {
                 const appWin = await loadApp();
