@@ -21,9 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Outline Reorder: a section can now be moved to the last position.
 - Diffskai: opening it no longer logs a console error about a missing Monaco
   file (`lspLanguageFeatures`), which is now in `vendor/monaco-editor/`.
-- Recent files: renaming the open file, or moving it to another folder,
-  updates its entry, which then opens the file under its new name instead
-  of showing `File read error`.
 
 ### Changed
 
