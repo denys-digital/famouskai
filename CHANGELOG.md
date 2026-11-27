@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-27
+
 ### Fixed
 
 - New document: the language detected on the first paste stays when you
@@ -19,9 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Outline Reorder: a section can now be moved to the last position.
 - Diffskai: opening it no longer logs a console error about a missing Monaco
   file (`lspLanguageFeatures`), which is now in `vendor/monaco-editor/`.
-- Recent files: renaming the open file, or moving it to another folder,
-  updates its entry, which then opens the file under its new name instead
-  of showing `File read error`.
 
 ### Changed
 
@@ -314,7 +313,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Saving files requires the File System Access API, so a desktop Chromium browser such as Chrome or Edge is required; other browsers display a warning banner.
 - Monaco Editor (Diffskai) remains pinned at version 0.56.0 for this release.
 
-[Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/denys-digital/famouskai/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/denys-digital/famouskai/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/denys-digital/famouskai/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/denys-digital/famouskai/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/denys-digital/famouskai/compare/v0.1.3...v0.2.0
